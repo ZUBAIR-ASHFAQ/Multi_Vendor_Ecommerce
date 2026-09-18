@@ -1,0 +1,108 @@
+
+> marketplace-backend@0.1.0 test:run
+> vitest run --reporter=dot
+
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90mD:/multi vendor/Multi_Vendor_Marketplace_Audit_Pass8/module1_pass8_e2e/marketplace-backend[39m
+
+[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m[33m[39m[32m·[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Suites 54 [49m[22m[31m⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m tests/http/app.integration.test.ts[2m [ tests/http/app.integration.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module18/module18.startup.test.ts[2m [ tests/module18/module18.startup.test.ts ][22m
+[31m[1mError[22m: [vitest] No "db" export is defined on the "../../src/database/db.js" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+[39m
+vi[33m.[39m[34mmock[39m([35mimport[39m([32m"../../src/database/db.js"[39m)[33m,[39m [35masync[39m (importOriginal) [33m=>[39m {
+  [35mconst[39m actual [33m=[39m [35mawait[39m [34mimportOriginal[39m()
+  [35mreturn[39m {
+    [33m...[39mactual[33m,[39m
+    [90m// your mocked methods[39m
+  }
+})
+
+[36m [2m❯[22m new AuthRepository src/modules/administration/auth.repository.ts:[2m31:61[22m[39m
+    [90m 29| [39m[35mexport[39m [35mclass[39m [33mAuthRepository[39m {
+    [90m 30| [39m  /** Creates a repository that can use either the root DB client or a…
+    [90m 31| [39m  [34mconstructor[39m([35mprivate[39m readonly executor[33m:[39m [33mDatabaseExecutor[39m [33m=[39m db) {}
+    [90m   | [39m                                                            [31m^[39m
+    [90m 32| [39m
+    [90m 33| [39m  /** Resolves a user by normalized email for credential verification.…
+[90m [2m❯[22m new AuthService src/modules/administration/auth.service.ts:[2m157:39[22m[39m
+[90m [2m❯[22m src/common/middleware/authentication.middleware.ts:[2m11:26[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/54]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/module1/module1.http.test.ts[2m [ tests/module1/module1.http.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module1/module1.integration.test.ts[2m [ tests/module1/module1.integration.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module1/module1.repository.test.ts[2m [ tests/module1/module1.repository.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module10/module10.integration.test.ts[2m [ tests/module10/module10.integration.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module10/module10.repository.test.ts[2m [ tests/module10/module10.repository.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module13/module13.http.test.ts[2m [ tests/module13/module13.http.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module13/module13.integration.test.ts[2m [ tests/module13/module13.integration.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module13/module13.repository.test.ts[2m [ tests/module13/module13.repository.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module14/module14.http.test.ts[2m [ tests/module14/module14.http.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module14/module14.integration.test.ts[2m [ tests/module14/module14.integration.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module14/module14.repository.test.ts[2m [ tests/module14/module14.repository.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module11/module11.integration.test.ts[2m [ tests/module11/module11.integration.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module11/module11.repository.test.ts[2m [ tests/module11/module11.repository.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module12/module12.http.test.ts[2m [ tests/module12/module12.http.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module12/module12.integration.test.ts[2m [ tests/module12/module12.integration.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module12/module12.repository.test.ts[2m [ tests/module12/module12.repository.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module12/module12.service.test.ts[2m [ tests/module12/module12.service.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module15/module15.http.test.ts[2m [ tests/module15/module15.http.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module15/module15.integration.test.ts[2m [ tests/module15/module15.integration.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module15/module15.repository.test.ts[2m [ tests/module15/module15.repository.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module16/module16.http.test.ts[2m [ tests/module16/module16.http.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module16/module16.integration.test.ts[2m [ tests/module16/module16.integration.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module16/module16.repository.test.ts[2m [ tests/module16/module16.repository.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module16/module16.service.test.ts[2m [ tests/module16/module16.service.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module19/module19.integration.test.ts[2m [ tests/module19/module19.integration.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module19/module19.repository.test.ts[2m [ tests/module19/module19.repository.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module18/module18.http.test.ts[2m [ tests/module18/module18.http.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module2/module2.business-rules.integration.test.ts[2m [ tests/module2/module2.business-rules.integration.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module2/module2.integration.test.ts[2m [ tests/module2/module2.integration.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module20/module20.http.test.ts[2m [ tests/module20/module20.http.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module20/module20.integration.test.ts[2m [ tests/module20/module20.integration.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module20/module20.repository.test.ts[2m [ tests/module20/module20.repository.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module17/module17.http.test.ts[2m [ tests/module17/module17.http.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module17/module17.integration.test.ts[2m [ tests/module17/module17.integration.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module17/module17.repository.test.ts[2m [ tests/module17/module17.repository.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module17/module17.service.test.ts[2m [ tests/module17/module17.service.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module3/module3.integration.test.ts[2m [ tests/module3/module3.integration.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module3/module3.repository.test.ts[2m [ tests/module3/module3.repository.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module4/module4.integration.test.ts[2m [ tests/module4/module4.integration.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module4/module4.repository.test.ts[2m [ tests/module4/module4.repository.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module6/module6.integration.test.ts[2m [ tests/module6/module6.integration.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module6/module6.repository.test.ts[2m [ tests/module6/module6.repository.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module5/module5.integration.test.ts[2m [ tests/module5/module5.integration.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module5/module5.repository.test.ts[2m [ tests/module5/module5.repository.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module8/module8.integration.test.ts[2m [ tests/module8/module8.integration.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module8/module8.repository.test.ts[2m [ tests/module8/module8.repository.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module7/module7.integration.test.ts[2m [ tests/module7/module7.integration.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module7/module7.repository.test.ts[2m [ tests/module7/module7.repository.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module7/module7.schemas.test.ts[2m [ tests/module7/module7.schemas.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module9/module9.integration.test.ts[2m [ tests/module9/module9.integration.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/module9/module9.repository.test.ts[2m [ tests/module9/module9.repository.test.ts ][22m
+[41m[1m FAIL [22m[49m tests/regression/implemented-api-contracts.test.ts[2m [ tests/regression/implemented-api-contracts.test.ts ][22m
+[31m[1mError[22m: Transforms cannot be represented in JSON Schema[39m
+[90m [2m❯[22m handleUnrepresentable ../../../../multi%20vendor/Multi_Vendor_Marketplace_Audit_Pass8/module1_pass8_e2e/marketplace-backend/node_modules/zod/v4/core/to-json-schema.js:[2m58:15[22m[39m
+[90m [2m❯[22m Module.transformProcessor ../../../../multi%20vendor/Multi_Vendor_Marketplace_Audit_Pass8/module1_pass8_e2e/marketplace-backend/node_modules/zod/v4/core/json-schema-processors.js:[2m340:5[22m[39m
+[90m [2m❯[22m Internals.inst._zod.processJSONSchema ../../../../multi%20vendor/Multi_Vendor_Marketplace_Audit_Pass8/module1_pass8_e2e/marketplace-backend/node_modules/zod/v4/classic/schemas.js:[2m1196:69[22m[39m
+[90m [2m❯[22m processSchema ../../../../multi%20vendor/Multi_Vendor_Marketplace_Audit_Pass8/module1_pass8_e2e/marketplace-backend/node_modules/zod/v4/core/to-json-schema.js:[2m94:25[22m[39m
+[90m [2m❯[22m Module.pipeProcessor ../../../../multi%20vendor/Multi_Vendor_Marketplace_Audit_Pass8/module1_pass8_e2e/marketplace-backend/node_modules/zod/v4/core/json-schema-processors.js:[2m734:5[22m[39m
+[90m [2m❯[22m Internals.inst._zod.processJSONSchema ../../../../multi%20vendor/Multi_Vendor_Marketplace_Audit_Pass8/module1_pass8_e2e/marketplace-backend/node_modules/zod/v4/classic/schemas.js:[2m1357:69[22m[39m
+[90m [2m❯[22m processSchema ../../../../multi%20vendor/Multi_Vendor_Marketplace_Audit_Pass8/module1_pass8_e2e/marketplace-backend/node_modules/zod/v4/core/to-json-schema.js:[2m94:25[22m[39m
+[90m [2m❯[22m Module.optionalProcessor ../../../../multi%20vendor/Multi_Vendor_Marketplace_Audit_Pass8/module1_pass8_e2e/marketplace-backend/node_modules/zod/v4/core/json-schema-processors.js:[2m753:5[22m[39m
+[90m [2m❯[22m Internals.inst._zod.processJSONSchema ../../../../multi%20vendor/Multi_Vendor_Marketplace_Audit_Pass8/module1_pass8_e2e/marketplace-backend/node_modules/zod/v4/classic/schemas.js:[2m1238:69[22m[39m
+[90m [2m❯[22m processSchema ../../../../multi%20vendor/Multi_Vendor_Marketplace_Audit_Pass8/module1_pass8_e2e/marketplace-backend/node_modules/zod/v4/core/to-json-schema.js:[2m94:25[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/54]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m54 failed[39m[22m[2m | [22m[1m[32m66 passed[39m[22m[90m (120)[39m
+[2m      Tests [22m [1m[32m371 passed[39m[22m[90m (371)[39m
+[2m   Start at [22m 23:43:28
+[2m   Duration [22m 121.00s[2m (transform 2.47s, setup 231ms, collect 28.39s, tests 7.15s, environment 22ms, prepare 10.56s)[22m
+

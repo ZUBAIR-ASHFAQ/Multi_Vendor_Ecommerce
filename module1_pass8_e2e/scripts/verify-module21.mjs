@@ -1,0 +1,307 @@
+import { existsSync } from "node:fs";
+import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+
+const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
+const rootDirectory = path.resolve(scriptDirectory, "..");
+const backendDirectory = path.join(rootDirectory, "marketplace-backend");
+const frontendDirectory = path.join(rootDirectory, "marketplace-frontend");
+const composeFile = path.join(backendDirectory, "docker-compose.test.yml");
+
+const databaseUrl = "postgresql://marketplace_test:marketplace_test@127.0.0.1:55432/marketplace_test";
+const redisUrl = "redis://127.0.0.1:56379";
+const backendOrigin = "http://127.0.0.1:4000";
+const frontendOrigin = "http://127.0.0.1:5173";
+const storageOrigin = "http://127.0.0.1:59000";
+const adminEmail = process.env.E2E_ADMIN_EMAIL ?? "e2e.admin@marketplace.test";
+const adminPassword = process.env.E2E_ADMIN_PASSWORD ?? "E2e-Admin-Password!123";
+const sellerPassword = process.env.E2E_SELLER_PASSWORD ?? "E2e-Seller-Password!123";
+
+const sharedBackendEnvironment = {
+  ...process.env,
+  NODE_ENV: "test",
+  SERVICE_NAME: "marketplace-backend-module21-e2e",
+  LOG_LEVEL: process.env.E2E_LOG_LEVEL ?? "warn",
+  HOST: "127.0.0.1",
+  PORT: "4000",
+  HTTP_TRUST_PROXY: "false",
+  HTTP_BODY_LIMIT: "1mb",
+  CORS_ORIGINS: `${frontendOrigin},http://localhost:5173`,
+  RATE_LIMIT_WINDOW_MS: "60000",
+  RATE_LIMIT_MAX: "10000",
+  SWAGGER_ENABLED: "true",
+  COOKIE_SECURE: "false",
+  COOKIE_SAME_SITE: "lax",
+  DATABASE_URL: databaseUrl,
+  TEST_DATABASE_URL: databaseUrl,
+  DB_POOL_MAX: "6",
+  DB_SSL: "false",
+  DB_SSL_REJECT_UNAUTHORIZED: "true",
+  DB_APPLICATION_NAME: "marketplace-backend-module21-e2e",
+  REDIS_URL: redisUrl,
+  TEST_REDIS_URL: redisUrl,
+  BULLMQ_PREFIX: "marketplace-module21-e2e",
+  JOB_DEFAULT_ATTEMPTS: "2",
+  JOB_BACKOFF_MS: "100",
+  JOB_DEFAULT_CONCURRENCY: "1",
+  JWT_ACCESS_SECRET: "module21-e2e-access-secret-that-is-at-least-32-characters-long",
+  JWT_ISSUER: "marketplace-api-module21-e2e",
+  JWT_AUDIENCE: "marketplace-web-module21-e2e",
+  JWT_ACCESS_TTL_SECONDS: "900",
+  REFRESH_TOKEN_BYTES: "48",
+  REFRESH_TOKEN_TTL_SECONDS: "2592000",
+  ARGON2_MEMORY_COST: "19456",
+  ARGON2_TIME_COST: "2",
+  ARGON2_PARALLELISM: "1",
+  IDEMPOTENCY_LOCK_SECONDS: "30",
+  IDEMPOTENCY_RETENTION_SECONDS: "3600",
+  OUTBOX_BATCH_SIZE: "20",
+  OUTBOX_CLAIM_SECONDS: "30",
+  OUTBOX_BASE_RETRY_DELAY_MS: "100",
+  OUTBOX_MAX_RETRY_DELAY_MS: "5000",
+  STORAGE_PROVIDER: "s3_compatible",
+  STORAGE_BUCKET: "marketplace-module21-e2e",
+  STORAGE_REGION: "us-east-1",
+  STORAGE_ENDPOINT: storageOrigin,
+  STORAGE_ACCESS_KEY_ID: "marketplace-e2e",
+  STORAGE_SECRET_ACCESS_KEY: "marketplace-e2e-secret",
+  STORAGE_FORCE_PATH_STYLE: "true",
+  STORAGE_SIGNED_URL_TTL_SECONDS: "300",
+  DOCUMENT_UPLOAD_POLICY_JSON: JSON.stringify({
+    operational_evidence: { allowedMimeTypes: ["application/pdf"], maxSizeBytes: 1048576 },
+  }),
+  E2E_ADMIN_EMAIL: adminEmail,
+  E2E_ADMIN_PASSWORD: adminPassword,
+  E2E_ADMIN_DISPLAY_NAME: "E2E Platform Admin",
+  E2E_SELLER_PASSWORD: sellerPassword,
+  E2E_SELLER_A_EMAIL: "e2e.seller.a@marketplace.test",
+  E2E_SELLER_B_EMAIL: "e2e.seller.b@marketplace.test",
+  E2E_FRONTEND_ORIGIN: frontendOrigin,
+};
+
+const backendServerEnvironment = { ...sharedBackendEnvironment, NODE_ENV: "development" };
+const frontendEnvironment = {
+  ...process.env,
+  VITE_API_BASE_URL: `${backendOrigin}/api/v1`,
+  VITE_APP_NAME: "Marketplace",
+  E2E_API_ORIGIN: backendOrigin,
+  E2E_FRONTEND_ORIGIN: frontendOrigin,
+  E2E_ADMIN_EMAIL: adminEmail,
+  E2E_ADMIN_PASSWORD: adminPassword,
+  E2E_SELLER_PASSWORD: sellerPassword,
+  E2E_SELLER_A_EMAIL: "e2e.seller.a@marketplace.test",
+  E2E_SELLER_B_EMAIL: "e2e.seller.b@marketplace.test",
+};
+
+/** Returns the platform-specific executable name for npm-like commands. */
+function executable(name) {
+  return process.platform === "win32" ? `${name}.cmd` : name;
+}
+
+/** Runs one child command and rejects when it exits unsuccessfully. */
+async function run(command, args, { cwd = rootDirectory, env = process.env } = {}) {
+  await new Promise((resolve, reject) => {
+    const child = spawn(command, args, { cwd, env, stdio: "inherit" });
+    child.once("error", reject);
+    child.once("exit", (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(`${command} ${args.join(" ")} exited with code ${code ?? "unknown"}`));
+    });
+  });
+}
+
+/** Starts one long-running development server owned by this release verifier. */
+function spawnLongRunning(command, args, { cwd, env }) {
+  return spawn(command, args, { cwd, env, stdio: "inherit", windowsHide: true });
+}
+
+/** Stops one spawned server with a short graceful-shutdown window. */
+async function stopProcessTree(child) {
+  if (!child || child.exitCode !== null || child.killed) return;
+  if (process.platform === "win32" && child.pid) {
+    await new Promise((resolve) => {
+      const killer = spawn("taskkill", ["/pid", String(child.pid), "/T", "/F"], { stdio: "ignore" });
+      killer.once("exit", resolve);
+      killer.once("error", resolve);
+    });
+    return;
+  }
+  child.kill("SIGTERM");
+  await new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      if (child.exitCode === null) child.kill("SIGKILL");
+      resolve();
+    }, 5_000);
+    child.once("exit", () => {
+      clearTimeout(timer);
+      resolve();
+    });
+  });
+}
+
+/** Waits for one HTTP endpoint to return the expected status. */
+async function waitForHttp(url, expectedStatus = 200, timeoutMs = 60_000) {
+  const deadline = Date.now() + timeoutMs;
+  let lastError;
+  while (Date.now() < deadline) {
+    try {
+      const response = await fetch(url, { signal: AbortSignal.timeout(3_000) });
+      if (response.status === expectedStatus) return;
+      lastError = new Error(`${url} returned ${response.status}`);
+    } catch (error) {
+      lastError = error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  throw new Error(`Timed out waiting for ${url}: ${lastError instanceof Error ? lastError.message : String(lastError)}`);
+}
+
+/** Prints one visible release-stage heading. */
+function logStage(name) {
+  console.log(`\n=== ${name} ===`);
+}
+
+/** Fails early with clear setup instructions when dependencies are absent. */
+function requireInstalledDependencies() {
+  for (const directory of [backendDirectory, frontendDirectory]) {
+    if (!existsSync(path.join(directory, "node_modules"))) {
+      throw new Error(`Dependencies are not installed in ${path.basename(directory)}. Run npm install independently in both projects first.`);
+    }
+  }
+}
+
+/** Rebuilds the test database and applies the complete migration chain. */
+async function resetAndMigrate() {
+  await run("node", ["scripts/reset-test-database.mjs"], { cwd: backendDirectory, env: sharedBackendEnvironment });
+  await run(executable("npm"), ["run", "test:migrations"], { cwd: backendDirectory, env: sharedBackendEnvironment });
+}
+
+/** Rebuilds deterministic browser fixtures using public module seeds rather than manual DB edits. */
+async function prepareE2eDatabase() {
+  await resetAndMigrate();
+  await run(executable("npm"), ["run", "db:seed:module21-e2e"], { cwd: backendDirectory, env: sharedBackendEnvironment });
+  await run(executable("npm"), ["run", "db:check"], { cwd: backendDirectory, env: sharedBackendEnvironment });
+}
+
+/** Verifies the live Module 21 OpenAPI paths, HTTP methods and operation IDs exactly. */
+async function verifyLiveOpenApi() {
+  const response = await fetch(`${backendOrigin}/openapi.json`);
+  if (!response.ok) throw new Error(`OpenAPI endpoint returned ${response.status}.`);
+  const document = await response.json();
+  const requiredOperations = [
+    ["/api/v1/documents/uploads/sign", "post", "signDocumentUpload"],
+    ["/api/v1/documents/uploads/{id}/confirm", "post", "confirmDocumentUpload"],
+    ["/api/v1/documents/{id}/link", "post", "linkDocumentFile"],
+    ["/api/v1/documents/{id}/download", "get", "createDocumentDownload"],
+    ["/api/v1/documents/{id}/link/{linkId}", "delete", "unlinkDocumentFile"],
+    ["/api/v1/audit", "get", "listAuditLogs"],
+    ["/api/v1/audit/{id}", "get", "getAuditLog"],
+  ];
+  const requiredPaths = new Set(requiredOperations.map(([route]) => route));
+  const actualPaths = Object.keys(document.paths ?? {}).filter(
+    (route) => route.startsWith("/api/v1/documents") || route.startsWith("/api/v1/audit"),
+  );
+
+  if (actualPaths.length !== requiredPaths.size || actualPaths.some((route) => !requiredPaths.has(route))) {
+    throw new Error(`Live OpenAPI Module 21 paths do not match the approved route surface: ${actualPaths.join(", ")}`);
+  }
+
+  const httpMethods = new Set(["get", "post", "put", "patch", "delete", "head", "options", "trace"]);
+  for (const [route, method, operationId] of requiredOperations) {
+    const pathItem = document.paths?.[route];
+    const operation = pathItem?.[method];
+    if (!operation) throw new Error(`OpenAPI is missing Module 21 operation ${method.toUpperCase()} ${route}.`);
+    if (operation.operationId !== operationId) {
+      throw new Error(`OpenAPI operationId mismatch for ${method.toUpperCase()} ${route}: ${operation.operationId ?? "missing"}.`);
+    }
+
+    const extraMethods = Object.keys(pathItem).filter(
+      (candidate) => httpMethods.has(candidate) && candidate !== method,
+    );
+    if (extraMethods.length > 0) {
+      throw new Error(`OpenAPI exposes unapproved methods on ${route}: ${extraMethods.join(", ")}.`);
+    }
+  }
+}
+
+let composeStarted = false;
+let backendProcess;
+let frontendProcess;
+
+try {
+  logStage("Dependency-free Module 2 + Module 21 structure");
+  await run("node", ["scripts/verify-module2-static.mjs"]);
+  await run("node", ["scripts/verify-module21-static.mjs"]);
+  requireInstalledDependencies();
+
+  logStage("Start isolated PostgreSQL, Redis and S3-compatible storage");
+  await run("docker", ["compose", "--profile", "module21", "-f", composeFile, "up", "-d", "--wait"]);
+  composeStarted = true;
+  await run(executable("npm"), ["run", "storage:prepare:module21-e2e"], { cwd: backendDirectory, env: sharedBackendEnvironment });
+
+  logStage("Backend lint, typecheck and migration gates");
+  await run(executable("npm"), ["run", "lint"], { cwd: backendDirectory, env: sharedBackendEnvironment });
+  await run(executable("npm"), ["run", "typecheck"], { cwd: backendDirectory, env: sharedBackendEnvironment });
+  await run(executable("npm"), ["run", "test:module2:migrations"], { cwd: backendDirectory, env: sharedBackendEnvironment });
+  await run(executable("npm"), ["run", "test:module21:migrations"], { cwd: backendDirectory, env: sharedBackendEnvironment });
+
+  logStage("Foundation backend regression");
+  await resetAndMigrate();
+  await run(executable("npm"), ["run", "db:seed:administration"], { cwd: backendDirectory, env: sharedBackendEnvironment });
+  await run(executable("npm"), ["run", "test:foundation:specs"], { cwd: backendDirectory, env: sharedBackendEnvironment });
+
+  logStage("Module 2 backend regression");
+  await resetAndMigrate();
+  await run(executable("npm"), ["run", "db:seed:administration"], { cwd: backendDirectory, env: sharedBackendEnvironment });
+  await run(executable("npm"), ["run", "test:module2:specs"], { cwd: backendDirectory, env: sharedBackendEnvironment });
+
+  logStage("Module 21 backend regression");
+  await resetAndMigrate();
+  await run(executable("npm"), ["run", "db:seed:administration"], { cwd: backendDirectory, env: sharedBackendEnvironment });
+  await run(executable("npm"), ["run", "test:module21:specs"], { cwd: backendDirectory, env: sharedBackendEnvironment });
+  await run(executable("npm"), ["run", "build"], { cwd: backendDirectory, env: sharedBackendEnvironment });
+
+  logStage("Frontend regression");
+  await run(executable("npm"), ["run", "lint"], { cwd: frontendDirectory, env: frontendEnvironment });
+  await run(executable("npm"), ["run", "typecheck"], { cwd: frontendDirectory, env: frontendEnvironment });
+  await run(executable("npm"), ["run", "test:run"], { cwd: frontendDirectory, env: frontendEnvironment });
+  await run(executable("npm"), ["run", "build"], { cwd: frontendDirectory, env: frontendEnvironment });
+
+  logStage("Prepare deterministic Module 21 browser fixtures");
+  await prepareE2eDatabase();
+  await run(executable("npm"), ["run", "storage:prepare:module21-e2e"], { cwd: backendDirectory, env: sharedBackendEnvironment });
+
+  logStage("Start real backend and frontend");
+  backendProcess = spawnLongRunning("node", ["dist/server.js"], { cwd: backendDirectory, env: backendServerEnvironment });
+  await waitForHttp(`${backendOrigin}/health`);
+  await waitForHttp(`${backendOrigin}/ready`);
+  await verifyLiveOpenApi();
+  frontendProcess = spawnLongRunning(
+    "node",
+    ["node_modules/vite/bin/vite.js", "--host", "127.0.0.1", "--port", "5173"],
+    { cwd: frontendDirectory, env: frontendEnvironment },
+  );
+  await waitForHttp(frontendOrigin);
+
+  logStage("Playwright Foundation, Module 2 and Module 21 workflows");
+  await run(executable("npm"), ["run", "test:e2e", "--", "e2e/foundation.spec.ts", "e2e/module2.spec.ts", "e2e/module21.spec.ts", "--workers=1"], { cwd: frontendDirectory, env: frontendEnvironment });
+
+  logStage("Post-E2E database integrity");
+  await run(executable("npm"), ["run", "db:check"], { cwd: backendDirectory, env: sharedBackendEnvironment });
+
+  logStage("Container build regression");
+  await run("docker", ["build", "-t", "marketplace-backend-module21-release", "."], { cwd: backendDirectory, env: sharedBackendEnvironment });
+  await run("docker", ["build", "--build-arg", `VITE_API_BASE_URL=${backendOrigin}/api/v1`, "--build-arg", "VITE_APP_NAME=Marketplace", "-t", "marketplace-frontend-module21-release", "."], { cwd: frontendDirectory, env: frontendEnvironment });
+
+  console.log("\nModule 21 full release verification completed successfully.");
+} finally {
+  await Promise.allSettled([stopProcessTree(frontendProcess), stopProcessTree(backendProcess)]);
+  if (composeStarted) {
+    try {
+      await run("docker", ["compose", "--profile", "module21", "-f", composeFile, "down", "-v"]);
+    } catch (error) {
+      console.error("Failed to stop Module 21 test infrastructure cleanly:", error);
+    }
+  }
+}

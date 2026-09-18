@@ -1,0 +1,89 @@
+name: Marketplace E2E Release Gate
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: marketplace-e2e-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  BACKEND_REPOSITORY: ${{ vars.MARKETPLACE_BACKEND_REPOSITORY }}
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out frontend
+        uses: actions/checkout@v4
+        with:
+          path: frontend
+
+      - name: Verify cross-repository configuration
+        shell: bash
+        run: |
+          if [ -z "$BACKEND_REPOSITORY" ]; then
+            echo "::error::Set the MARKETPLACE_BACKEND_REPOSITORY repository variable to owner/repository for the independent backend."
+            exit 1
+          fi
+
+      - name: Check out independent backend
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.BACKEND_REPOSITORY }}
+          path: backend
+          token: ${{ secrets.MARKETPLACE_INTEGRATION_TOKEN || github.token }}
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify backend source release gate
+        working-directory: backend
+        run: npm run test:release:static
+
+      - name: Verify frontend source release gate
+        working-directory: frontend
+        run: npm run test:release:static
+
+      - name: Verify backend dependency lock
+        working-directory: backend
+        run: npm run deps:verify-lock
+
+      - name: Verify frontend dependency lock
+        working-directory: frontend
+        run: npm run deps:verify-lock
+
+      - name: Install backend dependencies from lockfile
+        working-directory: backend
+        run: npm ci
+
+      - name: Install frontend dependencies from lockfile
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install Playwright Chromium and Linux dependencies
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Run complete browser release gate
+        working-directory: frontend
+        env:
+          E2E_BACKEND_DIR: ../backend
+        run: node e2e/run-e2e-ci.mjs
+
+      - name: Upload Playwright failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-failure-artifacts
+          if-no-files-found: ignore
+          retention-days: 7
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/playwright-artifacts/

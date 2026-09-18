@@ -1,0 +1,78 @@
+
+> marketplace-backend@0.1.0 test:run
+> vitest run --reporter=basic
+
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90mD:/multi vendor/Multi_Vendor_Marketplace_Audit_Pass8/module1_pass8_e2e/marketplace-backend[39m
+
+[1m[43m DEPRECATED [49m[22m [33m'basic' reporter is deprecated and will be removed in Vitest v3.
+Remove 'basic' from 'reporters' option. To match 'basic' reporter 100%, use configuration:
+{
+  "test": {
+    "reporters": [
+      [
+        "default",
+        {
+          "summary": false
+        }
+      ]
+    ]
+  }
+}[39m
+ [31m❯[39m tests/module14/module14.service.test.ts [2m([22m[2m13 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[32m 40[2mms[22m[39m
+[31m   [31m×[31m Module 14 Return eligibility and seller lifecycle service[2m > [22mcreates one requested Return only from delivered remaining quantity and appends immutable evidence[39m[32m 13[2mms[22m[39m
+[31m     → Cannot read properties of undefined (reading 'toISOString')[39m
+   [32m✓[39m Module 14 Return eligibility and seller lifecycle service[2m > [22mincludes append-only lifecycle history in the existing customer Return list response[32m 4[2mms[22m[39m
+   [32m✓[39m Module 14 Return eligibility and seller lifecycle service[2m > [22mdenies a customer attempting to create a Return for another customer's Order[32m 3[2mms[22m[39m
+   [32m✓[39m Module 14 Return eligibility and seller lifecycle service[2m > [22mrejects expired delivery windows before reserving Return quantity[32m 1[2mms[22m[39m
+   [32m✓[39m Module 14 Return eligibility and seller lifecycle service[2m > [22mrejects over-allocation using already reserved non-rejected Return quantities[32m 1[2mms[22m[39m
+   [32m✓[39m Module 14 Return eligibility and seller lifecycle service[2m > [22mfails closed when a seller has no effective seller.returns.manage scope[32m 1[2mms[22m[39m
+[31m   [31m×[31m Module 14 Return eligibility and seller lifecycle service[2m > [22mapproves only requested Returns and preserves seller scope in the repository lock[39m[32m 2[2mms[22m[39m
+[31m     → repository.listStatusHistory is not a function[39m
+[31m   [31m×[31m Module 14 Return eligibility and seller lifecycle service[2m > [22mrequires receive to inspect every Return Item and derives restock quantity from resolution[39m[32m 2[2mms[22m[39m
+[31m     → repository.listStatusHistory is not a function[39m
+   [32m✓[39m Module 14 provider refund orchestration service[2m > [22mallocates exact cumulative scale-4 money, refunds provider once, reverses Commission, restocks, and closes atomically[32m 5[2mms[22m[39m
+   [32m✓[39m Module 14 provider refund orchestration service[2m > [22mallows an approved no-physical-return refund and never restocks it[32m 1[2mms[22m[39m
+   [32m✓[39m Module 14 provider refund orchestration service[2m > [22mreplays a completed Foundation idempotency result without calling provider, Commission, or Inventory again[32m 2[2mms[22m[39m
+   [32m✓[39m Module 14 provider refund orchestration service[2m > [22mmarks the Foundation key failed when a downstream financial adjustment fails so the exact provider source can be retried safely[32m 2[2mms[22m[39m
+   [32m✓[39m Module 14 provider refund orchestration service[2m > [22mrequires an authenticated platform actor with admin.refunds.issue before beginning idempotency[32m 1[2mms[22m[39m
+ [31m❯[39m tests/module11/module11.service.test.ts [2m([22m[2m7 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 44[2mms[22m[39m
+   [32m✓[39m Module 11 Orders service rules[2m > [22mcreates one immutable parent Order plus deterministic reconciled Seller Orders from Checkout[32m 21[2mms[22m[39m
+   [32m✓[39m Module 11 Orders service rules[2m > [22mrejects a trusted Checkout snapshot whose Seller Order money cannot reconcile[32m 2[2mms[22m[39m
+   [32m✓[39m Module 11 Orders service rules[2m > [22mcommits remaining reservations and moves Seller Orders to pending acceptance on payment confirmation[32m 4[2mms[22m[39m
+   [32m✓[39m Module 11 Orders service rules[2m > [22mreleases reserved quantity and derives child/parent cancellation state in the same transaction[32m 3[2mms[22m[39m
+   [32m✓[39m Module 11 Orders service rules[2m > [22mreplays a completed customer cancellation without opening another transaction[32m 4[2mms[22m[39m
+   [32m✓[39m Module 11 Orders service rules[2m > [22mresolves Notification participants from the immutable Order and de-duplicates seller identities[32m 1[2mms[22m[39m
+[31m   [31m×[31m Module 11 Orders service rules[2m > [22mkeeps seller acceptance scoped and treats an already-processing Seller Order as an exact retry[39m[32m 8[2mms[22m[39m
+[31m     → undefined is not a spy or a call to a spy![39m
+ [31m❯[39m tests/module2/module2.schemas.test.ts [2m([22m[2m9 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 23[2mms[22m[39m
+   [32m✓[39m Module 2 approved boundary schemas[2m > [22mkeeps public registration strict so account type and roles remain server-owned[32m 7[2mms[22m[39m
+   [32m✓[39m Module 2 approved boundary schemas[2m > [22mnormalizes authentication email without mutating the password[32m 1[2mms[22m[39m
+   [32m✓[39m Module 2 approved boundary schemas[2m > [22mrejects unknown login fields and overlong credentials[32m 1[2mms[22m[39m
+   [32m✓[39m Module 2 approved boundary schemas[2m > [22mkeeps user status changes explicit and rejects unrelated user fields[32m 1[2mms[22m[39m
+   [32m✓[39m Module 2 approved boundary schemas[2m > [22mnormalizes stable role codes and keeps role scope explicit[32m 2[2mms[22m[39m
+   [32m✓[39m Module 2 approved boundary schemas[2m > [22mrejects duplicate seller-aware role assignments[32m 1[2mms[22m[39m
+   [32m✓[39m Module 2 approved boundary schemas[2m > [22mrejects duplicate permission identifiers before service execution[32m 1[2mms[22m[39m
+[31m   [31m×[31m Module 2 approved boundary schemas[2m > [22mrejects duplicate platform-setting keys before service execution[39m[32m 6[2mms[22m[39m
+[31m     → expected [Function] to throw error matching /Duplicate/i but got '[\n  {\n    "origin": "string",\n    …'[39m
+   [32m✓[39m Module 2 approved boundary schemas[2m > [22minherits bounded pagination defaults for user and role lists[32m 3[2mms[22m[39m
+ [32m✓[39m tests/module18/module18.service.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 1095[2mms[22m[39m
+ [31m❯[39m tests/module21/module21.integration.test.ts [2m([22m[2m6 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 2929[2mms[22m[39m
+   [33m[2m✓[22m[39m Module 21 repository/service/API integration[2m > [22mpersists file lifecycle/link records and enforces seller predicates plus append-only audit storage [33m 441[2mms[22m[39m
+   [33m[2m✓[22m[39m Module 21 repository/service/API integration[2m > [22mruns signed upload -> confirm -> idempotent link -> download -> unlink with one event per successful transition [33m 473[2mms[22m[39m
+   [33m[2m✓[22m[39m Module 21 repository/service/API integration[2m > [22mcovers all seven HTTP routes with real auth, RBAC, validation, redaction, and unlink behavior [33m 802[2mms[22m[39m
+   [33m[2m✓[22m[39m Module 21 repository/service/API integration[2m > [22mreturns indistinguishable private-file 404 responses and safe provider 503 responses [33m 512[2mms[22m[39m
+[31m   [31m×[31m Module 21 repository/service/API integration[2m > [22mkeeps seller audit list and detail reads inside the server-derived seller scope[39m[33m 377[2mms[22m[39m
+[31m     → insert or update on table "user_roles" violates foreign key constraint "user_roles_seller_id_sellers_id_fk"[39m
+[31m   [31m×[31m Module 21 repository/service/API integration[2m > [22mdenies a Seller A resource operation against Seller B through an injected future-resource policy[39m[33m 323[2mms[22m[39m
+[31m     → insert or update on table "user_roles" violates foreign key constraint "user_roles_seller_id_sellers_id_fk"[39m
+ [32m✓[39m tests/module18/module18.repository.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 722[2mms[22m[39m
+ [32m✓[39m tests/module18/module18.integration.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 982[2mms[22m[39m
+   [33m[2m✓[22m[39m Module 18 Notification runtime integration[2m > [22mdispatches one real order.created event to in-app/email and sends each delivery exactly once [33m 456[2mms[22m[39m
+   [33m[2m✓[22m[39m Module 18 Notification runtime integration[2m > [22mkeeps provider failures retryable and emits notification.failed only on the final attempt [33m 524[2mms[22m[39m
+ [32m✓[39m tests/integration/redis.integration.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 31[2mms[22m[39m
+ [32m✓[39m tests/module21/module21.repository.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 228[2mms[22m[39m
+ [32m✓[39m tests/module2/module2.repository.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 259[2mms[22m[39m
+ [32m✓[39m tests/integration/foundation.persistence.integration.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 202[2mms[22m[39m
+Terminate batch job (Y/N)? 
+^C

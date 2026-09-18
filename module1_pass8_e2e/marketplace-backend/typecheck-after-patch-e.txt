@@ -1,0 +1,52 @@
+
+> marketplace-backend@0.1.0 typecheck
+> tsc --noEmit
+
+src/modules/commissions/commissions.repository.ts(289,11): error TS2322: Type 'CreateCommissionRuleRecordInput' is not assignable to type '{ status: "active" | "inactive"; scopeType: string; startAt: Date; priority: number; ratePercent: string; id?: string | undefined; createdAt?: Date | undefined; updatedAt?: Date | undefined; endAt?: Date | ... 1 more ... | undefined; scopeId?: string | ... 1 more ... | undefined; fixedFee?: string | ... 1 more ... |...'.
+  Types of property 'status' are incompatible.
+    Type 'string' is not assignable to type '"active" | "inactive"'.
+src/modules/commissions/commissions.repository.ts(307,12): error TS2345: Argument of type '{ updatedAt: Date; priority?: number; scopeType?: CommissionRuleScopeType; scopeId?: string | null; ratePercent?: string; fixedFee?: string | null; fundingRulesJson?: unknown | null; startAt?: Date; endAt?: Date | null; status?: string; }' is not assignable to parameter of type '{ status?: SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | "active" | "inactive" | undefined; scopeType?: string | ... 2 more ... | undefined; ... 9 more ...; fundingRulesJson?: unknown; }'.
+  Types of property 'status' are incompatible.
+    Type 'string' is not assignable to type 'SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | "active" | "inactive" | undefined'.
+src/modules/commissions/commissions.repository.ts(326,11): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "status"; tableName: "commission_rules"; dataType: "string"; columnType: "PgVarchar"; data: "active" | "inactive"; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; ... 5 more ...; generated: undefined; }, {}, { ...; }>, right: SQLWrapper | ... 1 more ... | "inactive"): SQL<...>', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'SQLWrapper | "active" | "inactive"'.
+  Overload 2 of 3, '(left: Aliased<string>, right: string | SQLWrapper): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "status"; tableName: "commission_rules"; dataType: "string"; columnType: "PgVarchar"; data: "active" | "inactive"; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; ... 5 more ...; generated: undefined; }, {}, { ...; }>' is not assignable to parameter of type 'Aliased<string>'.
+      Type 'PgColumn<{ name: "status"; tableName: "commission_rules"; dataType: "string"; columnType: "PgVarchar"; data: "active" | "inactive"; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; ... 5 more ...; generated: undefined; }, {}, { ...; }>' is missing the following properties from type 'Aliased<string>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "status"; tableName: "commission_rules"; dataType: "string"; columnType: "PgVarchar"; data: "active" | "inactive"; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; ... 5 more ...; generated: undefined; }, {}, { ...; }>' is not assignable to parameter of type 'never'.
+src/modules/commissions/commissions.repository.ts(359,7): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "status"; tableName: "commission_rules"; dataType: "string"; columnType: "PgVarchar"; data: "active" | "inactive"; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; ... 5 more ...; generated: undefined; }, {}, { ...; }>, right: SQLWrapper | ... 1 more ... | "inactive"): SQL<...>', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'SQLWrapper | "active" | "inactive"'.
+  Overload 2 of 3, '(left: Aliased<string>, right: string | SQLWrapper): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "status"; tableName: "commission_rules"; dataType: "string"; columnType: "PgVarchar"; data: "active" | "inactive"; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; ... 5 more ...; generated: undefined; }, {}, { ...; }>' is not assignable to parameter of type 'Aliased<string>'.
+      Type 'PgColumn<{ name: "status"; tableName: "commission_rules"; dataType: "string"; columnType: "PgVarchar"; data: "active" | "inactive"; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; ... 5 more ...; generated: undefined; }, {}, { ...; }>' is missing the following properties from type 'Aliased<string>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "status"; tableName: "commission_rules"; dataType: "string"; columnType: "PgVarchar"; data: "active" | "inactive"; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; ... 5 more ...; generated: undefined; }, {}, { ...; }>' is not assignable to parameter of type 'never'.
+tests/module10/module10.test-helpers.ts(10,3): error TS2305: Module '"../module7/module7.test-helpers.js"' has no exported member 'readInventoryQuantities'.
+tests/module10/module10.test-helpers.ts(13,3): error TS2305: Module '"../module8/module8.test-helpers.js"' has no exported member 'addCartItemViaHttp'.
+tests/module13/module13.http.test.ts(141,59): error TS2367: This comparison appears to be unintentional because the types '"shipped" | "delivered"' and '"created"' have no overlap.
+tests/module13/module13.test-helpers.ts(17,3): error TS2305: Module '"../module8/module8.test-helpers.js"' has no exported member 'addCartItemViaHttp'.
+tests/module14/module14.service.test.ts(805,25): error TS2339: Property 'clear' does not exist on type 'ReadonlySet<string>'.
+tests/module15/module15.integration.test.ts(60,9): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+tests/module15/module15.integration.test.ts(88,9): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+tests/module15/module15.repository.test.ts(71,40): error TS2345: Argument of type '{ readonly customerUserId: string; readonly productId: string; readonly sellerId: string; readonly storeId: string; readonly rating: 5; readonly title: "First review"; readonly body: "Created once even when requests race."; readonly status: "published"; readonly publishedAt: Date; }' is not assignable to parameter of type 'CreateReviewRecordInput'.
+  Property 'orderItemId' is missing in type '{ readonly customerUserId: string; readonly productId: string; readonly sellerId: string; readonly storeId: string; readonly rating: 5; readonly title: "First review"; readonly body: "Created once even when requests race."; readonly status: "published"; readonly publishedAt: Date; }' but required in type 'CreateReviewRecordInput'.
+tests/module15/module15.repository.test.ts(72,40): error TS2345: Argument of type '{ readonly customerUserId: string; readonly productId: string; readonly sellerId: string; readonly storeId: string; readonly rating: 5; readonly title: "First review"; readonly body: "Created once even when requests race."; readonly status: "published"; readonly publishedAt: Date; }' is not assignable to parameter of type 'CreateReviewRecordInput'.
+  Property 'orderItemId' is missing in type '{ readonly customerUserId: string; readonly productId: string; readonly sellerId: string; readonly storeId: string; readonly rating: 5; readonly title: "First review"; readonly body: "Created once even when requests race."; readonly status: "published"; readonly publishedAt: Date; }' but required in type 'CreateReviewRecordInput'.
+tests/module16/module16.service.test.ts(726,25): error TS2339: Property 'add' does not exist on type 'ReadonlySet<string>'.
+tests/module16/module16.service.test.ts(727,33): error TS2339: Property 'set' does not exist on type 'ReadonlyMap<string, ReadonlySet<string>>'.
+tests/module2/module2.integration.test.ts(105,38): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string[] | undefined'.
+  Type 'string' is not assignable to type 'string[]'.
+tests/module2/module2.integration.test.ts(243,49): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string[] | undefined'.
+  Type 'string' is not assignable to type 'string[]'.
+tests/module2/module2.middleware.test.ts(14,10): error TS2305: Module '"../../src/http/request-id.js"' has no exported member 'requestIdMiddleware'.
+tests/module2/module2.middleware.test.ts(151,59): error TS2551: Property 'USERS_CREATE' does not exist on type '{ readonly USERS_READ: "admin.users.read"; readonly USERS_STATUS_MANAGE: "admin.users.status.manage"; readonly USERS_ROLES_MANAGE: "admin.users.roles.manage"; readonly ROLES_READ: "admin.roles.read"; readonly ROLES_CREATE: "admin.roles.create"; readonly ROLES_PERMISSIONS_MANAGE: "admin.roles.permissions.manage"; rea...'. Did you mean 'USERS_READ'?
+tests/module4/module4.service.test.ts(195,16): error TS2345: Argument of type 'string' is not assignable to parameter of type '`${string}-${string}-${string}-${string}-${string}`'.
+tests/module5/module5.schemas.test.ts(113,12): error TS18046: 'createCategoryOpenApi.properties' is of type 'unknown'.
+tests/module5/module5.schemas.test.ts(116,12): error TS18046: 'createAttributeOpenApi.properties' is of type 'unknown'.
+tests/module5/module5.service.test.ts(99,56): error TS2345: Argument of type '"inactive"' is not assignable to parameter of type '"active"'.
+tests/module5/module5.service.test.ts(233,49): error TS2345: Argument of type '"inactive"' is not assignable to parameter of type '"active"'.

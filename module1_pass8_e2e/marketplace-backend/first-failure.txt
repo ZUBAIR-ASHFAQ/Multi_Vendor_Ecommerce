@@ -1,0 +1,705 @@
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90mD:/multi vendor/Multi_Vendor_Marketplace_Audit_Pass8/module1_pass8_e2e/marketplace-backend[39m
+
+(node:11568) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [31m❯[39m tests/module10/module10.integration.test.ts [2m([22m[2m19 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 5426[2mms[22m[39m
+   [33m[2m✓[22m[39m Module 10 Checkout service/API integration[2m > [22mcreates authoritative totals, confirms exactly once, replays the same key, and exposes attempt status [33m 2701[2mms[22m[39m
+   [33m[2m✓[22m[39m Module 10 Checkout service/API integration[2m > [22mkeeps a confirmed Checkout linked to its Order and leaves overdue unpaid expiry to Module 12 [33m 2070[2mms[22m[39m
+[31m   [31m×[31m Module 10 Checkout service/API integration[2m > [22menforces authentication, route permissions, customer quote isolation, and customer-owned addresses[39m[33m 653[2mms[22m[39m
+[31m     → expected 200 "OK", got 429 "Too Many Requests"[39m
+   [90m·[39m Module 10 Checkout service/API integration[2m > [22mrejects confirmation when a selected customer address changes after quote creation
+   [90m·[39m Module 10 Checkout service/API integration[2m > [22mrejects an expired quote before creating an attempt or reserving stock
+   [90m·[39m Module 10 Checkout service/API integration[2m > [22mdetects a Product price change between quote and confirmation
+   [90m·[39m Module 10 Checkout service/API integration[2m > [22mdetects a Product becoming unpublished between quote and confirmation
+   [90m·[39m Module 10 Checkout service/API integration[2m > [22mdetects exact-quantity stock loss between quote and confirmation
+   [90m·[39m Module 10 Checkout service/API integration[2m > [22mrecords an applied coupon exactly once inside Checkout confirmation
+   [90m·[39m Module 10 Checkout service/API integration[2m > [22mserializes the last coupon use across concurrent confirmations and rolls back the losing Checkout transaction
+   [90m·[39m Module 10 Checkout service/API integration[2m > [22mrolls back coupon redemption when a later Checkout write fails in the same confirmation transaction
+   [90m·[39m Module 10 Checkout service/API integration[2m > [22mdetects a coupon becoming ineligible between quote and confirmation
+   [90m·[39m Module 10 Checkout service/API integration[2m > [22mdetects a Shipping rate change through authoritative confirmation revalidation
+   [90m·[39m Module 10 Checkout service/API integration[2m > [22mdetects an Administration tax change through authoritative confirmation revalidation
+   [90m·[39m Module 10 Checkout service/API integration[2m > [22mmaps one reused idempotency key with a different quote payload to CHECKOUT_IDEMPOTENCY_CONFLICT
+   [90m·[39m Module 10 Checkout service/API integration[2m > [22mserializes different-key concurrent confirmations into one attempt and one reservation set
+   [90m·[39m Module 10 Checkout service/API integration[2m > [22mrolls back the attempt and the first reservation when a later reservation write fails
+   [90m·[39m Module 10 Checkout service/API integration[2m > [22mpersists one Shipping selection per server-derived seller/store group
+   [90m·[39m Module 10 Checkout service/API integration[2m > [22mrejects a currency removed from Administration support before quote persistence
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m tests/module10/module10.integration.test.ts[2m > [22mModule 10 Checkout service/API integration[2m > [22menforces authentication, route permissions, customer quote isolation, and customer-owned addresses
+[31m[1mError[22m: expected 200 "OK", got 429 "Too Many Requests"[39m
+[36m [2m❯[22m loginUser tests/module4/module4.test-helpers.ts:[2m142:6[22m[39m
+    [90m140| [39m    [33m.[39m[34mpost[39m([32m"/api/v1/auth/login"[39m)
+    [90m141| [39m    [33m.[39m[34msend[39m({ email[33m:[39m user[33m.[39memail[33m,[39m password[33m:[39m user[33m.[39mpassword })
+    [90m142| [39m    [33m.[39m[34mexpect[39m([34m200[39m)[33m;[39m
+    [90m   | [39m     [31m^[39m
+    [90m143| [39m  [35mreturn[39m response[33m.[39mbody[33m.[39mdata[33m.[39maccessToken [35mas[39m string[33m;[39m
+    [90m144| [39m}
+[90m [2m❯[22m createApprovedSeller tests/module4/module4.test-helpers.ts:[2m191:31[22m[39m
+[90m [2m❯[22m createProductSellerFixture tests/module6/module6.test-helpers.ts:[2m59:18[22m[39m
+[90m [2m❯[22m createPublishedCartWishlistFixture tests/module8/module8.test-helpers.ts:[2m114:18[22m[39m
+[90m [2m❯[22m prepareSingleSellerCheckout tests/module10/module10.integration.test.ts:[2m67:19[22m[39m
+[90m [2m❯[22m tests/module10/module10.integration.test.ts:[2m299:21[22m[39m
+[90m [2m❯[22m Test._assertStatus node_modules/supertest/lib/test.js:[2m309:14[22m[39m
+[90m [2m❯[22m node_modules/supertest/lib/test.js:[2m365:13[22m[39m
+[90m [2m❯[22m Test._assertFunction node_modules/supertest/lib/test.js:[2m342:13[22m[39m
+[90m [2m❯[22m Test.assert node_modules/supertest/lib/test.js:[2m195:23[22m[39m
+[90m [2m❯[22m localAssert node_modules/supertest/lib/test.js:[2m138:14[22m[39m
+[90m [2m❯[22m Server.<anonymous> node_modules/supertest/lib/test.js:[2m152:11[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Unhandled Errors [49m[22m[31m⎯⎯⎯⎯⎯⎯[39m
+[31m[1m
+Vitest caught 40 unhandled errors during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.[22m[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mcreates authoritative totals, confirms exactly once, replays the same key, and exposes attempt status[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mcreates authoritative totals, confirms exactly once, replays the same key, and exposes attempt status[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mcreates authoritative totals, confirms exactly once, replays the same key, and exposes attempt status[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mcreates authoritative totals, confirms exactly once, replays the same key, and exposes attempt status[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mcreates authoritative totals, confirms exactly once, replays the same key, and exposes attempt status[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mcreates authoritative totals, confirms exactly once, replays the same key, and exposes attempt status[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mcreates authoritative totals, confirms exactly once, replays the same key, and exposes attempt status[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mcreates authoritative totals, confirms exactly once, replays the same key, and exposes attempt status[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mcreates authoritative totals, confirms exactly once, replays the same key, and exposes attempt status[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mcreates authoritative totals, confirms exactly once, replays the same key, and exposes attempt status[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mcreates authoritative totals, confirms exactly once, replays the same key, and exposes attempt status[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mcreates authoritative totals, confirms exactly once, replays the same key, and exposes attempt status[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mcreates authoritative totals, confirms exactly once, replays the same key, and exposes attempt status[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mcreates authoritative totals, confirms exactly once, replays the same key, and exposes attempt status[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mcreates authoritative totals, confirms exactly once, replays the same key, and exposes attempt status[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mcreates authoritative totals, confirms exactly once, replays the same key, and exposes attempt status[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mcreates authoritative totals, confirms exactly once, replays the same key, and exposes attempt status[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mcreates authoritative totals, confirms exactly once, replays the same key, and exposes attempt status[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mcreates authoritative totals, confirms exactly once, replays the same key, and exposes attempt status[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mcreates authoritative totals, confirms exactly once, replays the same key, and exposes attempt status[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mcreates authoritative totals, confirms exactly once, replays the same key, and exposes attempt status[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mkeeps a confirmed Checkout linked to its Order and leaves overdue unpaid expiry to Module 12[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mkeeps a confirmed Checkout linked to its Order and leaves overdue unpaid expiry to Module 12[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mkeeps a confirmed Checkout linked to its Order and leaves overdue unpaid expiry to Module 12[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mkeeps a confirmed Checkout linked to its Order and leaves overdue unpaid expiry to Module 12[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mkeeps a confirmed Checkout linked to its Order and leaves overdue unpaid expiry to Module 12[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mkeeps a confirmed Checkout linked to its Order and leaves overdue unpaid expiry to Module 12[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mkeeps a confirmed Checkout linked to its Order and leaves overdue unpaid expiry to Module 12[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mkeeps a confirmed Checkout linked to its Order and leaves overdue unpaid expiry to Module 12[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mkeeps a confirmed Checkout linked to its Order and leaves overdue unpaid expiry to Module 12[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mkeeps a confirmed Checkout linked to its Order and leaves overdue unpaid expiry to Module 12[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mkeeps a confirmed Checkout linked to its Order and leaves overdue unpaid expiry to Module 12[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mkeeps a confirmed Checkout linked to its Order and leaves overdue unpaid expiry to Module 12[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mkeeps a confirmed Checkout linked to its Order and leaves overdue unpaid expiry to Module 12[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mkeeps a confirmed Checkout linked to its Order and leaves overdue unpaid expiry to Module 12[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mkeeps a confirmed Checkout linked to its Order and leaves overdue unpaid expiry to Module 12[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mkeeps a confirmed Checkout linked to its Order and leaves overdue unpaid expiry to Module 12[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mkeeps a confirmed Checkout linked to its Order and leaves overdue unpaid expiry to Module 12[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1menforces authentication, route permissions, customer quote isolation, and customer-owned addresses[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯⎯[39m[1m[41m Uncaught Exception [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: logger[stringifySym] is not a function[39m
+[90m [2m❯[22m onResFinished node_modules/pino-http/logger.js:[2m107:56[22m[39m
+[90m [2m❯[22m ServerResponse.onResponseComplete node_modules/pino-http/logger.js:[2m178:14[22m[39m
+[90m [2m❯[22m ServerResponse.emit node:events:[2m531:35[22m[39m
+[90m [2m❯[22m onFinish node:_http_outgoing:[2m1084:10[22m[39m
+[90m [2m❯[22m callback node:internal/streams/writable:[2m766:21[22m[39m
+[90m [2m❯[22m afterWrite node:internal/streams/writable:[2m710:5[22m[39m
+[90m [2m❯[22m afterWriteTick node:internal/streams/writable:[2m696:10[22m[39m
+[90m [2m❯[22m processTicksAndRejections node:internal/process/task_queues:[2m88:21[22m[39m
+
+[31mThis error originated in "[1mtests/module10/module10.integration.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1menforces authentication, route permissions, customer quote isolation, and customer-owned addresses[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+[31m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (120)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m2 passed[39m[22m[90m (19)[39m
+[2m     Errors [22m [1m[31m40 errors[39m[22m
+[2m   Start at [22m 23:59:25
+[2m   Duration [22m 9.87s[2m (transform 1.70s, setup 23ms, collect 4.08s, tests 5.43s, environment 0ms, prepare 88ms)[22m
+

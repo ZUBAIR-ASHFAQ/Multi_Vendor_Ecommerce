@@ -1,0 +1,373 @@
+name: Backend CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: marketplace_test
+          POSTGRES_PASSWORD: marketplace_test
+          POSTGRES_DB: marketplace_test
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd "pg_isready -U marketplace_test -d marketplace_test"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 56379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 20
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://marketplace_test:marketplace_test@127.0.0.1:55432/marketplace_test
+      TEST_DATABASE_URL: postgresql://marketplace_test:marketplace_test@127.0.0.1:55432/marketplace_test
+      REDIS_URL: redis://127.0.0.1:56379
+      TEST_REDIS_URL: redis://127.0.0.1:56379
+      JWT_ACCESS_SECRET: ci-only-access-secret-that-is-at-least-32-characters-long
+      INTERNAL_API_KEY: ci-only-module12-internal-api-key-that-is-at-least-32-characters
+      STORAGE_BUCKET: marketplace-ci
+      STRIPE_SECRET_KEY: sk_test_ci_module12_placeholder
+      STRIPE_WEBHOOK_SECRET: whsec_ci_module12_placeholder
+      STRIPE_CURRENCY_EXPONENTS_JSON: '{"USD":2,"PKR":2}'
+      ARGON2_MEMORY_COST: 19456
+      ARGON2_TIME_COST: 2
+      ARGON2_PARALLELISM: 1
+      NOTIFICATION_EMAIL_PROVIDER_MODE: deterministic_test
+      NOTIFICATION_EMAIL_FROM: notifications@example.test
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify dependency-free backend release structure
+        run: npm run test:release:static
+
+      - name: Verify dependency lock
+        run: npm run deps:verify-lock
+
+      - name: Install dependencies from lockfile
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Run implemented API regression contracts
+        run: npm run test:regression:contracts
+
+      - name: Verify Module 2 clean and upgrade migrations
+        run: npm run test:module2:migrations
+
+      - name: Verify Module 21 clean and upgrade migrations
+        run: npm run test:module21:migrations
+
+      - name: Verify Module 3 clean and upgrade migrations
+        run: npm run test:module3:migrations
+
+      - name: Verify Module 4 clean and upgrade migrations
+        run: npm run test:module4:migrations
+
+      - name: Verify Module 5 clean and upgrade migrations
+        run: npm run test:module5:migrations
+
+      - name: Verify Module 6 clean and upgrade migrations
+        run: npm run test:module6:migrations
+
+      - name: Verify Module 7 clean and upgrade migrations
+        run: npm run test:module7:migrations
+
+      - name: Verify Module 19 clean and upgrade migrations
+        run: npm run test:module19:migrations
+
+      - name: Verify Module 8 clean and upgrade migrations
+        run: npm run test:module8:migrations
+
+      - name: Verify Module 9 clean and upgrade migrations
+        run: npm run test:module9:migrations
+
+      - name: Verify Module 13 Shipping fulfillment clean and upgrade migrations
+        run: npm run test:module13:migrations
+
+      - name: Verify Module 10 Checkout clean and upgrade migrations
+        run: npm run test:module10:migrations
+
+      - name: Verify Module 11 Orders clean and upgrade migrations
+        run: npm run test:module11:migrations
+
+      - name: Verify Module 12 Payments clean and upgrade migrations
+        run: npm run test:module12:migrations
+
+      - name: Verify Module 16 Commissions clean and upgrade migrations
+        run: npm run test:module16:migrations
+
+      - name: Verify Module 14 Returns/refunds clean and upgrade migrations
+        run: npm run test:module14:migrations
+
+      - name: Verify Module 17 Seller Wallet/Payouts clean and upgrade migrations
+        run: npm run test:module17:migrations
+
+      - name: Prepare database for Foundation tests
+        run: |
+          node scripts/reset-test-database.mjs
+          npm run test:migrations
+          npm run db:seed:administration
+
+      - name: Run Foundation regression tests
+        run: npm run test:foundation:specs
+
+      - name: Prepare database for Module 2 tests
+        run: |
+          node scripts/reset-test-database.mjs
+          npm run test:migrations
+          npm run db:seed:administration
+
+      - name: Run Module 2 tests
+        run: npm run test:module2:specs
+
+      - name: Prepare database for Module 21 tests
+        run: |
+          node scripts/reset-test-database.mjs
+          npm run test:migrations
+          npm run db:seed:administration
+
+      - name: Run Module 21 tests
+        run: npm run test:module21:specs
+
+      - name: Prepare database for Module 3 tests
+        run: |
+          node scripts/reset-test-database.mjs
+          npm run test:migrations
+          npm run db:seed:administration
+
+      - name: Run Module 3 tests
+        run: npm run test:module3:specs
+
+      - name: Prepare database for Module 4 tests
+        run: |
+          node scripts/reset-test-database.mjs
+          npm run test:migrations
+          npm run db:seed:administration
+
+      - name: Run Module 4 tests
+        run: npm run test:module4:specs
+
+      - name: Prepare database for Module 5 tests
+        run: |
+          node scripts/reset-test-database.mjs
+          npm run test:migrations
+          npm run db:seed:administration
+
+      - name: Run Module 5 tests
+        run: npm run test:module5:specs
+
+      - name: Prepare database for Module 6 tests
+        run: |
+          node scripts/reset-test-database.mjs
+          npm run test:migrations
+          npm run db:seed:administration
+
+      - name: Run Module 6 tests
+        run: npm run test:module6:specs
+
+      - name: Prepare database for Module 7 tests
+        run: |
+          node scripts/reset-test-database.mjs
+          npm run test:migrations
+          npm run db:seed:administration
+
+      - name: Run Module 7 tests
+        run: npm run test:module7:specs
+
+      - name: Prepare database for Module 19 tests
+        run: |
+          node scripts/reset-test-database.mjs
+          npm run test:migrations
+          npm run db:seed:administration
+
+      - name: Run Module 19 tests
+        run: npm run test:module19:specs
+
+      - name: Prepare database for Module 8 tests
+        run: |
+          node scripts/reset-test-database.mjs
+          npm run test:migrations
+          npm run db:seed:administration
+
+      - name: Run Module 8 tests
+        run: npm run test:module8:specs
+
+      - name: Prepare database for Module 9 tests
+        run: |
+          node scripts/reset-test-database.mjs
+          npm run test:migrations
+          npm run db:seed:administration
+
+      - name: Run Module 9 tests
+        run: npm run test:module9:specs
+
+      - name: Prepare database for Module 13 Shipping fulfillment tests
+        run: |
+          node scripts/reset-test-database.mjs
+          npm run test:migrations
+          npm run db:seed:administration
+
+      - name: Run Module 13 Shipping fulfillment backend proof
+        run: npm run test:module13:specs
+
+      - name: Prepare database for Module 10 Checkout service and API tests
+        run: |
+          node scripts/reset-test-database.mjs
+          npm run test:migrations
+          npm run db:seed:administration
+
+      - name: Run Module 10 Checkout service and API tests
+        run: npm run test:module10:specs
+
+      - name: Prepare database for Module 11 Orders service and API tests
+        run: |
+          node scripts/reset-test-database.mjs
+          npm run test:migrations
+          npm run db:seed:administration
+
+      - name: Run Module 11 Orders service and API tests
+        run: npm run test:module11:specs
+
+      - name: Prepare database for Module 12 Payments service and API tests
+        run: |
+          node scripts/reset-test-database.mjs
+          npm run test:migrations
+          npm run db:seed:administration
+
+      - name: Run Module 12 Payments repository, service, provider, API, and integration tests
+        run: npm run test:module12:specs
+
+      - name: Prepare database for Module 16 Commissions repository, service, and API tests
+        run: |
+          node scripts/reset-test-database.mjs
+          npm run test:migrations
+          npm run db:seed:administration
+
+      - name: Run Module 16 Commissions repository, service, API, and integration tests
+        run: npm run test:module16:specs
+
+      - name: Prepare database for Module 14 Returns/refunds backend proof
+        run: |
+          node scripts/reset-test-database.mjs
+          npm run test:migrations
+          npm run db:seed:administration
+
+      - name: Run Module 14 Returns/refunds backend proof
+        run: npm run test:module14:specs
+
+      - name: Prepare database for Module 17 Seller Wallet/Payouts backend proof
+        run: |
+          node scripts/reset-test-database.mjs
+          npm run test:migrations
+          npm run db:seed:administration
+
+      - name: Run Module 17 Seller Wallet/Payouts backend proof
+        run: npm run test:module17:specs
+
+      - name: Build
+        run: npm run build
+
+      - name: Build backend container
+        run: docker build -t marketplace-backend-ci .
+
+      - name: Verify Module 15 Reviews/Ratings clean and upgrade migrations
+        run: npm run test:module15:migrations
+
+      - name: Prepare database for Module 15 Reviews/Ratings backend proof
+        run: |
+          node scripts/reset-test-database.mjs
+          npm run test:migrations
+          npm run db:seed:administration
+
+      - name: Run Module 15 Reviews/Ratings backend proof
+        run: npm run test:module15:specs
+
+      - name: Verify Module 18 Notifications clean and upgrade migrations
+        run: npm run test:module18:migrations
+
+      - name: Verify Module 20 Reports/Analytics clean and upgrade migrations
+        run: npm run test:module20:migrations
+
+      - name: Verify Module 1 Dashboard clean and upgrade migrations
+        run: npm run test:module1:migrations
+
+      - name: Verify Module 1 Dashboard boundary contracts
+        run: npm run test:module1:contracts
+
+      - name: Verify Module 20 Reports/Analytics boundary contracts
+        run: npm run test:module20:contracts
+
+      - name: Prepare database for Module 20 Reports/Analytics backend proof
+        run: |
+          node scripts/reset-test-database.mjs
+          npm run test:migrations
+          npm run db:seed:administration
+          npm run db:seed:module20
+
+      - name: Run complete Module 20 Reports/Analytics backend proof
+        run: npm run test:module20:specs
+
+      - name: Prepare database for Module 1 Dashboard backend proof
+        run: |
+          node scripts/reset-test-database.mjs
+          npm run test:migrations
+          npm run db:seed:administration
+          npm run db:seed:module20
+
+      - name: Run complete Module 1 Dashboard backend proof
+        run: npm run test:module1:specs
+
+      - name: Verify Module 18 Notifications boundary contracts
+        run: npm run test:module18:contracts
+
+      - name: Prepare database for Module 18 Notifications repository proof
+        run: |
+          node scripts/reset-test-database.mjs
+          npm run test:migrations
+          npm run db:seed:administration
+
+      - name: Run Module 18 Notifications repository proof
+        run: npm run test:module18:repository
+
+      - name: Prepare database for Module 18 Notifications service proof
+        run: |
+          node scripts/reset-test-database.mjs
+          npm run test:migrations
+          npm run db:seed:administration
+
+      - name: Run Module 18 Notifications service proof
+        run: npm run test:module18:service
+
+      - name: Run Module 18 Notifications worker and provider proof
+        run: npm run test:module18:runtime
+
+      - name: Prepare database for Module 18 Notifications HTTP/integration proof
+        run: |
+          node scripts/reset-test-database.mjs
+          npm run test:migrations
+          npm run db:seed:administration
+
+      - name: Run complete Module 18 Notifications backend proof
+        run: npm run test:module18:specs

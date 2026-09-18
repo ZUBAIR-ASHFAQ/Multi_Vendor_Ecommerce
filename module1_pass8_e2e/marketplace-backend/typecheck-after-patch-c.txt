@@ -1,0 +1,71 @@
+
+> marketplace-backend@0.1.0 typecheck
+> tsc --noEmit
+
+src/database/relations.ts(470,22): error TS2345: Argument of type '{ relationName: string; }' is not assignable to parameter of type 'RelationConfig<string, any, [AnyColumn<{ tableName: string; }>, ...AnyColumn<{ tableName: string; }>[]]>'.
+  Type '{ relationName: string; }' is missing the following properties from type 'RelationConfig<string, any, [AnyColumn<{ tableName: string; }>, ...AnyColumn<{ tableName: string; }>[]]>': fields, references
+src/database/schema/checkout.ts(213,14): error TS7022: 'checkoutAttempts' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+src/database/schema/checkout.ts(222,42): error TS7024: Function implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of its return expressions.
+src/database/schema/orders.ts(24,14): error TS7022: 'orders' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+src/database/schema/orders.ts(31,19): error TS7024: Function implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of its return expressions.
+src/modules/administration/auth.service.ts(319,7): error TS2322: Type 'ActorType' is not assignable to type '"platform_admin" | "seller" | "customer"'.
+  Type '"system"' is not assignable to type '"platform_admin" | "seller" | "customer"'.
+src/modules/administration/auth.service.ts(415,7): error TS2322: Type 'ActorType' is not assignable to type '"platform_admin" | "seller" | "customer"'.
+  Type '"system"' is not assignable to type '"platform_admin" | "seller" | "customer"'.
+src/modules/checkout/checkout.service.ts(551,20): error TS2345: Argument of type '"INVENTORY_NOT_FOUND" | "INSUFFICIENT_STOCK" | "STOCK_ADJUSTMENT_INVALID" | "DUPLICATE_STOCK_SOURCE" | "STOCK_RESERVATION_NOT_FOUND" | "STOCK_RESERVATION_STATUS_INVALID" | "STOCK_RESERVATION_EXPIRED"' is not assignable to parameter of type '"INVENTORY_NOT_FOUND" | "INSUFFICIENT_STOCK"'.
+  Type '"STOCK_ADJUSTMENT_INVALID"' is not assignable to type '"INVENTORY_NOT_FOUND" | "INSUFFICIENT_STOCK"'.
+src/modules/checkout/checkout.service.ts(799,7): error TS2353: Object literal may only specify known properties, and 'products' does not exist in type '{ customerUserId: string; currency: string; couponCode: string | null; shippingAddress: { id: string; customerUserId: string; label: string; recipientName: string; phone: string; line1: string; ... 9 more ...; updatedAt: string; }; ... 4 more ...; totals: { ...; }; }'.
+src/modules/checkout/checkout.service.ts(805,5): error TS2741: Property 'products' is missing in type '{ stateHash: string; subtotal: string; discountTotal: string; taxTotal: string; shippingTotal: string; grandTotal: string; shippingAddress: { id: string; customerUserId: string; label: string; ... 12 more ...; updatedAt: string; }; ... 5 more ...; shippingSelections: CreateCheckoutQuoteShippingSelectionRecordInput[]...' but required in type 'AuthoritativeCheckoutSnapshot'.
+src/modules/commissions/commissions.service.ts(600,37): error TS2345: Argument of type 'string' is not assignable to parameter of type '`${string}-${string}-${string}-${string}-${string}`'.
+src/modules/commissions/commissions.service.ts(735,37): error TS2345: Argument of type 'string' is not assignable to parameter of type '`${string}-${string}-${string}-${string}-${string}`'.
+src/modules/commissions/commissions.service.ts(1058,37): error TS2345: Argument of type 'string' is not assignable to parameter of type '`${string}-${string}-${string}-${string}-${string}`'.
+src/modules/commissions/commissions.service.ts(1465,7): error TS2322: Type 'string' is not assignable to type '"active" | "inactive"'.
+src/modules/orders/orders.repository.ts(249,11): error TS2488: Type 'any[] | QueryResult<never>' must have a '[Symbol.iterator]()' method that returns an iterator.
+src/modules/payments/payments.service.ts(1272,35): error TS2345: Argument of type 'string' is not assignable to parameter of type '`${string}-${string}-${string}-${string}-${string}`'.
+src/modules/payments/payments.service.ts(1340,35): error TS2345: Argument of type 'string' is not assignable to parameter of type '`${string}-${string}-${string}-${string}-${string}`'.
+src/modules/reviews/reviews.repository.ts(346,7): error TS2322: Type '{ id: string; productId: string; sellerId: string; storeId: string; rating: number; title: string | null; body: string | null; status: string; helpfulCount: number; publishedAt: Date | null; createdAt: Date; updatedAt: Date; }[]' is not assignable to type 'AdminReviewRow[]'.
+  Type '{ id: string; productId: string; sellerId: string; storeId: string; rating: number; title: string | null; body: string | null; status: string; helpfulCount: number; publishedAt: Date | null; createdAt: Date; updatedAt: Date; }' is not assignable to type 'AdminReviewRow'.
+    Types of property 'status' are incompatible.
+      Type 'string' is not assignable to type 'ReviewStatus'.
+src/modules/reviews/reviews.service.ts(286,84): error TS2379: Argument of type '{ updatedAt: Date; publishedAt?: Date | null; status?: string; body?: string | null; title?: string | null; rating?: number; }' is not assignable to parameter of type 'UpdateOwnedReviewRecordInput' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'status' are incompatible.
+    Type 'string' is not assignable to type 'ReviewStatus'.
+src/modules/search-discovery/search-discovery.repository.ts(393,5): error TS2322: Type '{ brand: string | null; updatedAt: Date; categoryId: string; brandId: string | null; productId: string; searchableText: string; categoryPath: string; minPrice: string; maxPrice: string; ratingAvg: string; ratingCount: number; inStock: boolean; filterableAttributes: unknown; } | undefined' is not assignable to type '{ brand: string | null; updatedAt: Date; categoryId: string; brandId: string | null; productId: string; searchableText: string; categoryPath: string; minPrice: string; maxPrice: string; ratingAvg: string; ratingCount: number; inStock: boolean; filterableAttributes: unknown; }'.
+  Type 'undefined' is not assignable to type '{ brand: string | null; updatedAt: Date; categoryId: string; brandId: string | null; productId: string; searchableText: string; categoryPath: string; minPrice: string; maxPrice: string; ratingAvg: string; ratingCount: number; inStock: boolean; filterableAttributes: unknown; }'.
+src/modules/search-discovery/search-discovery.repository.ts(433,5): error TS2322: Type 'unknown[]' is not assignable to type 'string[]'.
+  Type 'unknown' is not assignable to type 'string'.
+src/modules/search-discovery/search-discovery.repository.ts(599,7): error TS2322: Type '{ count: number; }[]' is not assignable to type 'SearchAttributeFacetRow[]'.
+  Type '{ count: number; }' is missing the following properties from type 'SearchAttributeFacetRow': attributeId, attributeLabel, value
+src/modules/search-discovery/search-discovery.repository.ts(709,5): error TS2322: Type '{ id: string; scope: string; status: string; updatedAt: Date; requestedAt: Date; startedAt: Date | null; completedAt: Date | null; errorCode: string | null; } | undefined' is not assignable to type '{ id: string; scope: string; status: string; updatedAt: Date; requestedAt: Date; startedAt: Date | null; completedAt: Date | null; errorCode: string | null; }'.
+  Type 'undefined' is not assignable to type '{ id: string; scope: string; status: string; updatedAt: Date; requestedAt: Date; startedAt: Date | null; completedAt: Date | null; errorCode: string | null; }'.
+src/modules/search-discovery/search-discovery.runtime.ts(24,51): error TS2345: Argument of type 'SearchDiscoveryService' is not assignable to parameter of type 'SearchReindexJobProcessor'.
+  Types of property 'failReindexRun' are incompatible.
+    Type '(reindexRunId: string, errorCode?: "SEARCH_REINDEX_PROCESSING_FAILED") => Promise<void>' is not assignable to type '(reindexRunId: string, errorCode: string) => Promise<void>'.
+      Types of parameters 'errorCode' and 'errorCode' are incompatible.
+        Type 'string' is not assignable to type '"SEARCH_REINDEX_PROCESSING_FAILED"'.
+tests/module10/module10.test-helpers.ts(10,3): error TS2305: Module '"../module7/module7.test-helpers.js"' has no exported member 'readInventoryQuantities'.
+tests/module10/module10.test-helpers.ts(13,3): error TS2305: Module '"../module8/module8.test-helpers.js"' has no exported member 'addCartItemViaHttp'.
+tests/module13/module13.http.test.ts(141,59): error TS2367: This comparison appears to be unintentional because the types '"shipped" | "delivered"' and '"created"' have no overlap.
+tests/module13/module13.test-helpers.ts(17,3): error TS2305: Module '"../module8/module8.test-helpers.js"' has no exported member 'addCartItemViaHttp'.
+tests/module14/module14.service.test.ts(805,25): error TS2339: Property 'clear' does not exist on type 'ReadonlySet<string>'.
+tests/module15/module15.integration.test.ts(60,9): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+tests/module15/module15.integration.test.ts(88,9): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+tests/module15/module15.repository.test.ts(71,40): error TS2345: Argument of type '{ readonly customerUserId: string; readonly productId: string; readonly sellerId: string; readonly storeId: string; readonly rating: 5; readonly title: "First review"; readonly body: "Created once even when requests race."; readonly status: "published"; readonly publishedAt: Date; }' is not assignable to parameter of type 'CreateReviewRecordInput'.
+  Property 'orderItemId' is missing in type '{ readonly customerUserId: string; readonly productId: string; readonly sellerId: string; readonly storeId: string; readonly rating: 5; readonly title: "First review"; readonly body: "Created once even when requests race."; readonly status: "published"; readonly publishedAt: Date; }' but required in type 'CreateReviewRecordInput'.
+tests/module15/module15.repository.test.ts(72,40): error TS2345: Argument of type '{ readonly customerUserId: string; readonly productId: string; readonly sellerId: string; readonly storeId: string; readonly rating: 5; readonly title: "First review"; readonly body: "Created once even when requests race."; readonly status: "published"; readonly publishedAt: Date; }' is not assignable to parameter of type 'CreateReviewRecordInput'.
+  Property 'orderItemId' is missing in type '{ readonly customerUserId: string; readonly productId: string; readonly sellerId: string; readonly storeId: string; readonly rating: 5; readonly title: "First review"; readonly body: "Created once even when requests race."; readonly status: "published"; readonly publishedAt: Date; }' but required in type 'CreateReviewRecordInput'.
+tests/module16/module16.service.test.ts(726,25): error TS2339: Property 'add' does not exist on type 'ReadonlySet<string>'.
+tests/module16/module16.service.test.ts(727,33): error TS2339: Property 'set' does not exist on type 'ReadonlyMap<string, ReadonlySet<string>>'.
+tests/module2/module2.integration.test.ts(105,38): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string[] | undefined'.
+  Type 'string' is not assignable to type 'string[]'.
+tests/module2/module2.integration.test.ts(243,49): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string[] | undefined'.
+  Type 'string' is not assignable to type 'string[]'.
+tests/module2/module2.middleware.test.ts(14,10): error TS2305: Module '"../../src/http/request-id.js"' has no exported member 'requestIdMiddleware'.
+tests/module2/module2.middleware.test.ts(151,59): error TS2551: Property 'USERS_CREATE' does not exist on type '{ readonly USERS_READ: "admin.users.read"; readonly USERS_STATUS_MANAGE: "admin.users.status.manage"; readonly USERS_ROLES_MANAGE: "admin.users.roles.manage"; readonly ROLES_READ: "admin.roles.read"; readonly ROLES_CREATE: "admin.roles.create"; readonly ROLES_PERMISSIONS_MANAGE: "admin.roles.permissions.manage"; rea...'. Did you mean 'USERS_READ'?
+tests/module4/module4.service.test.ts(195,16): error TS2345: Argument of type 'string' is not assignable to parameter of type '`${string}-${string}-${string}-${string}-${string}`'.
+tests/module5/module5.schemas.test.ts(113,12): error TS18046: 'createCategoryOpenApi.properties' is of type 'unknown'.
+tests/module5/module5.schemas.test.ts(116,12): error TS18046: 'createAttributeOpenApi.properties' is of type 'unknown'.
+tests/module5/module5.service.test.ts(99,56): error TS2345: Argument of type '"inactive"' is not assignable to parameter of type '"active"'.
+tests/module5/module5.service.test.ts(233,49): error TS2345: Argument of type '"inactive"' is not assignable to parameter of type '"active"'.

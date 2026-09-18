@@ -1,0 +1,96 @@
+name: Frontend CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      VITE_API_BASE_URL: http://127.0.0.1:4000/api/v1
+      VITE_APP_NAME: Marketplace
+      VITE_STRIPE_PUBLISHABLE_KEY: pk_test_ci_publishable_key
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify dependency-free frontend release structure
+        run: npm run test:release:static
+
+      - name: Verify dependency lock
+        run: npm run deps:verify-lock
+
+      - name: Install dependencies from lockfile
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Run component and API-client tests
+        run: npm run test:run
+
+      - name: Run Module 6 Product frontend tests
+        run: npm run test:module6
+
+      - name: Run Module 7 Inventory frontend tests
+        run: npm run test:module7
+
+      - name: Run Module 19 Search frontend tests
+        run: npm run test:module19
+
+      - name: Run Module 8 Cart and Wishlist frontend tests
+        run: npm run test:module8
+
+      - name: Run Module 9 Promotions frontend tests
+        run: npm run test:module9
+
+      - name: Run Module 10 Checkout frontend tests
+        run: npm run test:module10
+
+      - name: Run Module 11 Orders frontend tests
+        run: npm run test:module11
+
+      - name: Run Module 12 Payments frontend tests
+        run: npm run test:module12
+
+      - name: Run Module 13 Shipping frontend tests
+        run: npm run test:module13
+
+      - name: Run Module 14 Returns/refunds frontend tests
+        run: npm run test:module14
+
+      - name: Run Module 16 Commissions frontend tests
+        run: npm run test:module16
+
+      - name: Run Module 17 Seller Wallet/Payouts frontend tests
+        run: npm run test:module17
+
+      - name: Run Module 15 Reviews/Ratings frontend tests
+        run: npm run test:module15
+
+      - name: Run Module 18 Notifications frontend tests
+        run: npm run test:module18
+
+      - name: Run Module 20 Reports frontend tests
+        run: npm run test:module20
+
+      - name: Run Module 1 Dashboard frontend tests
+        run: npm run test:module1
+
+      - name: Build
+        run: npm run build
+
+      - name: Build frontend container
+        run: >-
+          docker build
+          --build-arg VITE_API_BASE_URL=http://127.0.0.1:4000/api/v1
+          --build-arg VITE_APP_NAME=Marketplace
+          --build-arg VITE_STRIPE_PUBLISHABLE_KEY=pk_test_ci_publishable_key
+          -t marketplace-frontend-ci .
