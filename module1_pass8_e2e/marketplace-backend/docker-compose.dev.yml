@@ -1,0 +1,32 @@
+services:
+  postgres-dev:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: marketplace_dev
+      POSTGRES_PASSWORD: marketplace_dev
+      POSTGRES_DB: marketplace_dev
+    ports:
+      - "55435:5432"
+    volumes:
+      - marketplace_postgres_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U marketplace_dev -d marketplace_dev"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  redis-dev:
+    image: redis:7-alpine
+    ports:
+      - "56379:6379"
+    volumes:
+      - marketplace_redis_dev:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  marketplace_postgres_dev:
+  marketplace_redis_dev:

@@ -60,7 +60,7 @@ const REDACTED_PATHS = [
   "cookie",
 ] as const;
 
-const loggerOptions: LoggerOptions = {
+export const loggerOptions: LoggerOptions = {
   level: env.LOG_LEVEL,
   base: {
     service: env.SERVICE_NAME,
