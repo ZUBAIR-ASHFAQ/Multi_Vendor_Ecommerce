@@ -129,7 +129,10 @@ describe("Implemented marketplace API regression contracts", () => {
       "/api/v1/seller/products/{id}/media": ["post"],
       "/api/v1/seller/products/{id}/publish": ["post"],
       "/api/v1/seller/products/{id}/unpublish": ["post"],
+      "/api/v1/admin/products": ["get"],
+      "/api/v1/admin/products/{id}": ["get"],
       "/api/v1/admin/products/{id}/approve": ["post"],
+      "/api/v1/admin/products/{id}/reject": ["post"],
     });
   });
 

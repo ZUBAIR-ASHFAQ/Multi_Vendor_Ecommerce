@@ -5,6 +5,7 @@ import { requirePermission } from "../../common/middleware/authorization.middlew
 import { PRODUCT_PERMISSION } from "./products.constants.js";
 import { ProductsController } from "./products.controller.js";
 import {
+  adminProductListQuerySchema,
   createProductBodySchema,
   createProductVariantBodySchema,
   linkProductMediaBodySchema,
@@ -15,6 +16,7 @@ import {
   publicProductListDataSchema,
   publicProductListQuerySchema,
   publicProductSlugParamsSchema,
+  rejectProductBodySchema,
   sellerProductListDataSchema,
   sellerProductListQuerySchema,
   updateProductBodySchema,
@@ -83,14 +85,29 @@ export function createSellerProductsRouter(controller: ProductsController): Rout
   return router;
 }
 
-/** Creates the privileged Product moderation route with an explicit review permission. */
+/** Creates the privileged Product moderation queue and decision routes. */
 export function createAdminProductsRouter(controller: ProductsController): Router {
   const router = Router();
   router.use(authenticationMiddleware);
+  router.get(
+    "/",
+    requirePermission(PRODUCT_PERMISSION.ADMIN_REVIEW),
+    controller.listAdminProducts,
+  );
+  router.get(
+    "/:id",
+    requirePermission(PRODUCT_PERMISSION.ADMIN_REVIEW),
+    controller.getAdminProduct,
+  );
   router.post(
     "/:id/approve",
     requirePermission(PRODUCT_PERMISSION.ADMIN_REVIEW),
     controller.approveProduct,
+  );
+  router.post(
+    "/:id/reject",
+    requirePermission(PRODUCT_PERMISSION.ADMIN_REVIEW),
+    controller.rejectProduct,
   );
   return router;
 }
@@ -499,6 +516,64 @@ export const productsOpenApiPaths = {
       responses: {
         "200": {
           description: "Pending Product approved and published.",
+          content: {
+            "application/json": {
+              schema: success(openApiSchema(productDetailResponseSchema)),
+            },
+          },
+        },
+        ...protectedFailures,
+      },
+    },
+  },
+  "/api/v1/admin/products": {
+    get: {
+      tags: ["Products"],
+      summary: "List Products for moderation",
+      security: [{ bearerAuth: [] }],
+      parameters: queryParameters(adminProductListQuerySchema),
+      responses: {
+        "200": {
+          description: "Cross-seller Product moderation queue returned.",
+          content: {
+            "application/json": {
+              schema: paginatedSuccess(openApiSchema(sellerProductListDataSchema)),
+            },
+          },
+        },
+        ...protectedFailures,
+      },
+    },
+  },
+  "/api/v1/admin/products/{id}": {
+    get: {
+      tags: ["Products"],
+      summary: "Read Product moderation detail",
+      security: [{ bearerAuth: [] }],
+      parameters: [productIdParameter],
+      responses: {
+        "200": {
+          description: "Complete Product moderation detail returned.",
+          content: {
+            "application/json": {
+              schema: success(openApiSchema(productDetailResponseSchema)),
+            },
+          },
+        },
+        ...protectedFailures,
+      },
+    },
+  },
+  "/api/v1/admin/products/{id}/reject": {
+    post: {
+      tags: ["Products"],
+      summary: "Reject pending Product",
+      security: [{ bearerAuth: [] }],
+      parameters: [productIdParameter],
+      requestBody: body(rejectProductBodySchema),
+      responses: {
+        "200": {
+          description: "Pending Product rejected and returned to its seller.",
           content: {
             "application/json": {
               schema: success(openApiSchema(productDetailResponseSchema)),

@@ -35,7 +35,9 @@ describe("Foundation environment security", () => {
       PAYOUT_PROVIDER_ADAPTER_MODULE: "/app/providers/configured-payout-provider.js",
     });
 
-    expect(parseEnvironment(input).COOKIE_SECURE).toBe(true);
+    const environment = parseEnvironment(input);
+    expect(environment.COOKIE_SECURE).toBe(true);
+    expect(environment.DOCUMENT_UPLOAD_POLICY_JSON).toBe("{}");
   });
 
 
@@ -74,6 +76,41 @@ describe("Foundation environment security", () => {
     });
 
     expect(parseEnvironment(input).COOKIE_SECURE).toBe(false);
+  });
+
+  it("enables compose-backed seller upload purposes for local development", () => {
+    const environment = parseEnvironment(validEnvironment({ NODE_ENV: "development" }));
+    const policy = JSON.parse(environment.DOCUMENT_UPLOAD_POLICY_JSON) as Record<
+      string,
+      { allowedMimeTypes: string[]; maxSizeBytes: number }
+    >;
+
+    expect(environment.STORAGE_ENDPOINT).toBe("http://127.0.0.1:59010");
+    expect(environment.STORAGE_FORCE_PATH_STYLE).toBe(true);
+    expect(policy.product_media).toEqual({
+      allowedMimeTypes: ["image/png", "image/jpeg", "image/webp"],
+      maxSizeBytes: 5_242_880,
+    });
+    expect(policy.seller_verification).toBeDefined();
+    expect(policy.store_asset).toBeDefined();
+  });
+
+  it("augments a partial local upload policy while preserving explicit rules", () => {
+    const environment = parseEnvironment(
+      validEnvironment({
+        NODE_ENV: "development",
+        DOCUMENT_UPLOAD_POLICY_JSON: JSON.stringify({
+          store_asset: { allowedMimeTypes: ["image/png"], maxSizeBytes: 1_024 },
+        }),
+      }),
+    );
+    const policy = JSON.parse(environment.DOCUMENT_UPLOAD_POLICY_JSON) as Record<
+      string,
+      { allowedMimeTypes: string[]; maxSizeBytes: number }
+    >;
+
+    expect(policy.store_asset?.maxSizeBytes).toBe(1_024);
+    expect(policy.product_media).toBeDefined();
   });
 
   it("requires secure cookies whenever SameSite is none", () => {

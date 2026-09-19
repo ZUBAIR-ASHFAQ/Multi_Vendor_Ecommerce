@@ -11,6 +11,58 @@ function environmentBoolean(defaultValue: "true" | "false") {
 
 const secretSchema = z.string().min(32, "Secret must contain at least 32 characters");
 
+const LOCAL_DEVELOPMENT_UPLOAD_POLICY = {
+  seller_verification: {
+    allowedMimeTypes: ["application/pdf", "image/png", "image/jpeg"],
+    maxSizeBytes: 5_242_880,
+  },
+  store_asset: {
+    allowedMimeTypes: ["image/png", "image/jpeg", "image/webp"],
+    maxSizeBytes: 5_242_880,
+  },
+  product_media: {
+    allowedMimeTypes: ["image/png", "image/jpeg", "image/webp"],
+    maxSizeBytes: 5_242_880,
+  },
+} as const;
+
+/**
+ * Supplies compose-backed storage defaults for local development and augments a partial local
+ * upload policy with the purposes used by the seller workflows. Production remains fail-closed.
+ */
+function applyLocalDevelopmentDefaults(input: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  const normalized = { ...input };
+  if ((normalized.NODE_ENV ?? "development") !== "development") return normalized;
+
+  normalized.STORAGE_PROVIDER ??= "s3_compatible";
+  normalized.STORAGE_REGION ??= "us-east-1";
+  normalized.STORAGE_ENDPOINT ??= "http://127.0.0.1:59010";
+  normalized.STORAGE_ACCESS_KEY_ID ??= "marketplace-dev";
+  normalized.STORAGE_SECRET_ACCESS_KEY ??= "marketplace-dev-secret";
+  normalized.STORAGE_FORCE_PATH_STYLE ??= "true";
+  normalized.STORAGE_SIGNED_URL_TTL_SECONDS ??= "900";
+
+  const configuredPolicy = normalized.DOCUMENT_UPLOAD_POLICY_JSON?.trim();
+  if (!configuredPolicy) {
+    normalized.DOCUMENT_UPLOAD_POLICY_JSON = JSON.stringify(LOCAL_DEVELOPMENT_UPLOAD_POLICY);
+    return normalized;
+  }
+
+  try {
+    const parsed = JSON.parse(configuredPolicy) as unknown;
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      normalized.DOCUMENT_UPLOAD_POLICY_JSON = JSON.stringify({
+        ...LOCAL_DEVELOPMENT_UPLOAD_POLICY,
+        ...(parsed as Record<string, unknown>),
+      });
+    }
+  } catch {
+    // Preserve invalid input so Module 21 reports its existing precise startup error.
+  }
+
+  return normalized;
+}
+
 const environmentObjectSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   SERVICE_NAME: z.string().trim().min(1).max(100).default("marketplace-backend"),
@@ -28,7 +80,7 @@ const environmentObjectSchema = z.object({
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().min(1_000).max(86_400_000).default(60_000),
   RATE_LIMIT_MAX: z.coerce.number().int().min(1).max(100_000).default(300),
   SWAGGER_ENABLED: environmentBoolean("true"),
-  PRODUCT_MODERATION_REQUIRED: environmentBoolean("false"),
+  PRODUCT_MODERATION_REQUIRED: environmentBoolean("true"),
   REVIEW_MODERATION_REQUIRED: environmentBoolean("false"),
   COOKIE_SECURE: environmentBoolean("false"),
   COOKIE_SAME_SITE: z.enum(["strict", "lax", "none"]).default("lax"),
@@ -298,7 +350,7 @@ export type Environment = z.infer<typeof environmentSchema>;
 
 /** Parses runtime environment values and throws one readable startup error when validation fails. */
 export function parseEnvironment(input: NodeJS.ProcessEnv): Environment {
-  const parsedEnvironment = environmentSchema.safeParse(input);
+  const parsedEnvironment = environmentSchema.safeParse(applyLocalDevelopmentDefaults(input));
 
   if (!parsedEnvironment.success) {
     const issues = parsedEnvironment.error.issues

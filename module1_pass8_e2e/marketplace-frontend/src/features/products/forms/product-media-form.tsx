@@ -60,11 +60,14 @@ export function ProductMediaForm({
               <input
                 aria-label="Product media file"
                 type="file"
-                accept="image/*"
+                accept="image/png,image/jpeg,image/webp"
                 className="mt-1 block w-full rounded-md border px-3 py-2 text-sm"
                 onBlur={field.handleBlur}
                 onChange={(event) => field.handleChange(event.target.files?.[0] ?? null)}
               />
+              <span className="mt-1 block text-xs font-normal text-slate-500">
+                PNG, JPEG, or WebP up to 5 MB.
+              </span>
               {fieldError ? <span className="mt-1 block text-xs text-red-600">{fieldError}</span> : null}
             </label>
           );

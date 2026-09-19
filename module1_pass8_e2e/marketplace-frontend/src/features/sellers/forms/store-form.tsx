@@ -12,6 +12,8 @@ type SharedStoreFormProps = {
   submitLabel: string;
   isPending: boolean;
   error: unknown;
+  supportedCurrencies: string[];
+  defaultCurrency: string;
 };
 
 type CreateStoreFormProps = SharedStoreFormProps & {
@@ -28,13 +30,24 @@ type StoreFormProps = CreateStoreFormProps | EditStoreFormProps;
 
 /** Collects store fields and exposes active/inactive status only while editing an existing store. */
 export function StoreForm(props: StoreFormProps) {
+  const currencyOptions = Array.from(
+    new Set([
+      ...(props.store ? [props.store.defaultCurrency] : []),
+      ...props.supportedCurrencies,
+    ]),
+  );
+
   const form = useForm({
     defaultValues: {
       slug: props.store?.slug ?? "",
       name: props.store?.name ?? "",
       description: props.store?.description ?? "",
       logoFileId: props.store?.logoFileId ?? "",
-      defaultCurrency: props.store?.defaultCurrency ?? "",
+      defaultCurrency:
+        props.store?.defaultCurrency ??
+        (props.supportedCurrencies.includes(props.defaultCurrency)
+          ? props.defaultCurrency
+          : props.supportedCurrencies[0] ?? ""),
       supportEmail: props.store?.supportEmail ?? "",
       status: props.store?.status === "inactive" ? "inactive" : "active",
     },
@@ -131,13 +144,27 @@ export function StoreForm(props: StoreFormProps) {
             return (
               <label className="block text-sm font-medium">
                 Default currency
-                <input
+                <select
                   aria-label={props.store ? `Store currency ${props.store.id}` : "Store currency"}
                   className="mt-1 w-full rounded-md border px-3 py-2 uppercase"
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={(event) => field.handleChange(event.target.value)}
-                />
+                  disabled={currencyOptions.length === 0}
+                >
+                  {currencyOptions.length === 0 ? (
+                    <option value="">No currencies configured</option>
+                  ) : (
+                    currencyOptions.map((currency) => (
+                      <option key={currency} value={currency}>
+                        {currency}
+                      </option>
+                    ))
+                  )}
+                </select>
+                <span className="mt-1 block text-xs text-slate-500">
+                  Currency options are controlled by the marketplace configuration.
+                </span>
                 {fieldError ? <span className="mt-1 block text-xs text-red-600">{fieldError}</span> : null}
               </label>
             );
@@ -187,8 +214,15 @@ export function StoreForm(props: StoreFormProps) {
         </form.Field>
       ) : null}
 
+      {currencyOptions.length === 0 ? (
+        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          No marketplace currencies are configured. Ask a platform administrator to configure supported currencies.
+        </p>
+      ) : null}
       <FormError error={props.error} />
-      <Button disabled={props.isPending}>{props.isPending ? "Saving..." : props.submitLabel}</Button>
+      <Button disabled={props.isPending || currencyOptions.length === 0}>
+        {props.isPending ? "Saving..." : props.submitLabel}
+      </Button>
     </form>
   );
 }

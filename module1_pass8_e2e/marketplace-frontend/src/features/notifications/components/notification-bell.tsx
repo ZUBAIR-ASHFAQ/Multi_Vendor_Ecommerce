@@ -8,11 +8,7 @@ import { useNotificationsQuery } from "../hooks/use-notifications";
 
 /** Shows the Notification entry point and unread badge once authenticated user data is already in the query cache. */
 export function NotificationBell() {
-  const currentUser = useQuery({
-    queryKey: authQueryKeys.me,
-    queryFn: getCurrentUser,
-    enabled: false,
-  });
+  const currentUser = useQuery({ queryKey: authQueryKeys.me, queryFn: getCurrentUser, enabled: false });
   const canRead = currentUser.data?.permissions.includes(NOTIFICATIONS_PERMISSION.READ_OWN) ?? false;
   useNotificationRealtime(canRead);
   const notifications = useNotificationsQuery({ page: 1, pageSize: 1 }, canRead);
@@ -22,19 +18,12 @@ export function NotificationBell() {
     <Link
       to="/notifications"
       aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
-      className="relative rounded-md px-3 py-2 hover:bg-slate-50"
+      className="marketplace-notification-link"
     >
-      <span aria-hidden="true">🔔</span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg>
       <span className="sr-only">Notifications</span>
       {canRead && unreadCount > 0 ? (
-        <span
-          className={[
-            "absolute -right-1 -top-1 min-w-5 rounded-full bg-slate-900 px-1.5 py-0.5",
-            "text-center text-[10px] font-semibold text-white",
-          ].join(" ")}
-        >
-          {unreadCount > 99 ? "99+" : unreadCount}
-        </span>
+        <span className="marketplace-count-badge marketplace-notification-badge">{unreadCount > 99 ? "99+" : unreadCount}</span>
       ) : null}
     </Link>
   );

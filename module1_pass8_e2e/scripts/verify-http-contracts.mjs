@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const HTTP_METHODS = new Set(["get", "post", "put", "patch", "delete"]);
-const IMPLEMENTED_OPERATION_COUNT = 165;
+const IMPLEMENTED_OPERATION_COUNT = 168;
 
 /** Reads one UTF-8 project file and fails with a useful message when it is missing. */
 function readProjectFile(relativePath) {
@@ -370,7 +370,10 @@ const moduleContracts = [
       "POST /:id/media",
       "POST /:id/publish",
       "POST /:id/unpublish",
+      "GET /",
+      "GET /:id",
       "POST /:id/approve",
+      "POST /:id/reject",
     ],
     openApi: [
       "GET /api/v1/products",
@@ -384,7 +387,10 @@ const moduleContracts = [
       "POST /api/v1/seller/products/{id}/media",
       "POST /api/v1/seller/products/{id}/publish",
       "POST /api/v1/seller/products/{id}/unpublish",
+      "GET /api/v1/admin/products",
+      "GET /api/v1/admin/products/{id}",
       "POST /api/v1/admin/products/{id}/approve",
+      "POST /api/v1/admin/products/{id}/reject",
     ],
   },
   {
@@ -1563,7 +1569,7 @@ function verifyApprovedExtensions() {
   }
 }
 
-/** Locks the complete implemented business HTTP surface through Module 1 Pass 5 to 165 operations. */
+/** Locks the complete implemented business HTTP surface through Module 1 Pass 5 to 168 operations. */
 function verifyImplementedOperationCount() {
   const operationCount = moduleContracts.reduce(
     (total, contract) => total + contract.openApi.length,

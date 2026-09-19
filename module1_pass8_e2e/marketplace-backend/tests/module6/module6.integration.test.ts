@@ -488,6 +488,72 @@ describe("Module 6 repository/service/API integration", () => {
     expect(await countProductOutboxEvents(PRODUCT_OUTBOX_EVENT.PUBLISHED)).toBe(1);
   });
 
+  it("lets an admin list, inspect, and reject a pending Product with a seller-visible reason", async () => {
+    const admin = await createPlatformAdmin();
+    const adminToken = await loginUser(admin);
+    const seller = await createProductSellerFixture(adminToken, "Rejection");
+    const category = await createCategoryViaHttp(adminToken, {
+      slug: "module6-rejection",
+      name: "Rejection",
+    });
+    const product = await createProductViaHttp(seller.ownerToken, {
+      storeId: seller.storeId,
+      categoryId: category.id,
+      slug: "rejection-product",
+      name: "Rejection Product",
+      description: "Moderation rejection command",
+    });
+    await createVariantViaHttp(seller.ownerToken, product.id, {
+      sku: "REJECTION-SKU",
+      title: "Rejection Variant",
+      price: "75.00",
+      currency: "PKR",
+    });
+    await databasePool.query(
+      "update products set publication_status = $1, published_at = null where id = $2",
+      [PRODUCT_PUBLICATION_STATUS.PENDING_APPROVAL, product.id],
+    );
+    const app = createApp();
+
+    const queue = await request(app)
+      .get("/api/v1/admin/products")
+      .set(bearer(adminToken))
+      .expect(200);
+    expect(queue.body.data.map((entry: { id: string }) => entry.id)).toContain(product.id);
+
+    const detail = await request(app)
+      .get(`/api/v1/admin/products/${product.id}`)
+      .set(bearer(adminToken))
+      .expect(200);
+    expect(detail.body.data.variants).toHaveLength(1);
+
+    await request(app)
+      .post(`/api/v1/admin/products/${product.id}/reject`)
+      .set(bearer(adminToken))
+      .send({ reason: "   " })
+      .expect(422);
+
+    const rejected = await request(app)
+      .post(`/api/v1/admin/products/${product.id}/reject`)
+      .set(bearer(adminToken))
+      .send({ reason: "Add a clear front image." })
+      .expect(200);
+    expect(rejected.body.data).toMatchObject({
+      publicationStatus: PRODUCT_PUBLICATION_STATUS.REJECTED,
+      moderationReason: "Add a clear front image.",
+    });
+    expect(rejected.body.data.reviewedBy).toBe(admin.id);
+    expect(rejected.body.data.reviewedAt).toBeTruthy();
+
+    const sellerDetail = await request(app)
+      .get(`/api/v1/seller/products/${product.id}`)
+      .set(bearer(seller.ownerToken))
+      .expect(200);
+    expect(sellerDetail.body.data.moderationReason).toBe("Add a clear front image.");
+    expect(await countProductAuditActions(PRODUCT_AUDIT_ACTION.REJECTED)).toBe(1);
+    expect(await countProductOutboxEvents(PRODUCT_OUTBOX_EVENT.REJECTED)).toBe(1);
+  });
+
   it("publishes exactly the approved Module 6 operations plus the seller-detail remediation and no generic delete routes", async () => {
     const response = await request(createApp()).get("/openapi.json").expect(200);
     const paths = response.body.paths as Record<string, Record<string, unknown>>;
@@ -501,7 +567,10 @@ describe("Module 6 repository/service/API integration", () => {
       "/api/v1/seller/products/{id}/media": ["post"],
       "/api/v1/seller/products/{id}/publish": ["post"],
       "/api/v1/seller/products/{id}/unpublish": ["post"],
+      "/api/v1/admin/products": ["get"],
+      "/api/v1/admin/products/{id}": ["get"],
       "/api/v1/admin/products/{id}/approve": ["post"],
+      "/api/v1/admin/products/{id}/reject": ["post"],
     };
 
     for (const [path, methods] of Object.entries(expected)) {

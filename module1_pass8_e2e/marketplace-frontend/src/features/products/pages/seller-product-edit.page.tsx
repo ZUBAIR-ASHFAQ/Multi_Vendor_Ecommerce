@@ -101,7 +101,8 @@ function PublicationPanel({ product }: { product: ProductDetail }) {
   const unpublish = useUnpublishProductMutation(product.id);
   const canPublish =
     product.publicationStatus === PRODUCT_PUBLICATION_STATUS.DRAFT ||
-    product.publicationStatus === PRODUCT_PUBLICATION_STATUS.UNPUBLISHED;
+    product.publicationStatus === PRODUCT_PUBLICATION_STATUS.UNPUBLISHED ||
+    product.publicationStatus === PRODUCT_PUBLICATION_STATUS.REJECTED;
   const canUnpublish =
     product.publicationStatus === PRODUCT_PUBLICATION_STATUS.PUBLISHED ||
     product.publicationStatus === PRODUCT_PUBLICATION_STATUS.PENDING_APPROVAL;
@@ -113,13 +114,13 @@ function PublicationPanel({ product }: { product: ProductDetail }) {
           <h2 className="text-lg font-bold">Publication</h2>
           <div className="mt-2"><ProductStatusBadge status={product.publicationStatus} /></div>
           <p className="mt-2 text-sm text-slate-600">
-            Publish revalidates seller/store eligibility, active variants, supported currency, and required taxonomy on the server.
+            Submit for review after confirming the store, variants, pricing, images, and admin-managed taxonomy. The product becomes public only after admin approval.
           </p>
         </div>
         <div className="flex gap-2">
           {canPublish ? (
             <Button disabled={publish.isPending} onClick={() => publish.mutate()}>
-              {publish.isPending ? "Publishing..." : "Publish / submit"}
+              {publish.isPending ? "Submitting..." : "Submit for review"}
             </Button>
           ) : null}
           {canUnpublish ? (
@@ -209,6 +210,18 @@ function SellerProductEditContent({
           </div>
         </div>
       </section>
+
+      {product.data.publicationStatus === PRODUCT_PUBLICATION_STATUS.REJECTED ? (
+        <section role="alert" className="rounded-xl border border-red-200 bg-red-50 p-5 shadow-sm">
+          <h2 className="text-lg font-bold text-red-950">Changes requested by admin</h2>
+          <p className="mt-2 whitespace-pre-wrap text-sm text-red-900">
+            {product.data.moderationReason ?? "The product was rejected without a visible reason. Contact marketplace support."}
+          </p>
+          <p className="mt-3 text-xs text-red-700">
+            Update the product information, variants, or media below, then submit it for review again.
+          </p>
+        </section>
+      ) : null}
 
       {canUpdate ? (
         <section className="rounded-xl border bg-white p-5 shadow-sm">

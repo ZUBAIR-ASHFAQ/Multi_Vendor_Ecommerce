@@ -39,6 +39,7 @@ import {
   type ProductSellerScope,
 } from "./products.repository.js";
 import type {
+  AdminProductListQuery,
   CreateProductInput,
   CreateProductVariantInput,
   LinkProductMediaInput,
@@ -50,6 +51,7 @@ import type {
   PublicProductDetailResponse,
   PublicProductListQuery,
   PublicProductResponse,
+  RejectProductInput,
   SellerProductListQuery,
   UpdateProductInput,
   UpdateProductVariantInput,
@@ -111,6 +113,8 @@ export interface PaginatedSellerProductsResult {
   items: ProductResponse[];
   meta: PaginationMeta;
 }
+
+export type PaginatedAdminProductsResult = PaginatedSellerProductsResult;
 
 /** Current public Product/variant facts Checkout may trust when rebuilding a Cart line. */
 export interface CheckoutProductVariant {
@@ -310,6 +314,32 @@ export class ProductsService {
       items: result.items.map((product) => this.toProductResponse(product)),
       meta: paginationMeta(query, result.totalItems),
     };
+  }
+
+  /** Lists products across sellers for an explicitly authorized marketplace reviewer. */
+  async listAdminProducts(
+    context: RequestContext,
+    query: AdminProductListQuery,
+  ): Promise<PaginatedAdminProductsResult> {
+    this.requireActorId(context);
+    this.assertPlatformPermission(context, PRODUCT_PERMISSION.ADMIN_REVIEW);
+    const result = await this.repository.listAdminProducts(query);
+    return {
+      items: result.items.map((product) => this.toProductResponse(product)),
+      meta: paginationMeta(query, result.totalItems),
+    };
+  }
+
+  /** Returns complete product details for one authorized admin moderation decision. */
+  async getAdminProduct(
+    context: RequestContext,
+    productId: string,
+  ): Promise<ProductDetailResponse> {
+    this.requireActorId(context);
+    this.assertPlatformPermission(context, PRODUCT_PERMISSION.ADMIN_REVIEW);
+    const product = await this.repository.findProductByIdForAdmin(productId);
+    if (!product) throw this.productNotFound();
+    return this.loadSellerProductDetail(this.repository, product);
   }
 
   /** Returns one seller-private Product aggregate with variants, attributes, media, and immutable price history. */
@@ -784,6 +814,9 @@ export class ProductsService {
         {
           publicationStatus: nextStatus,
           publishedAt: nextStatus === PRODUCT_PUBLICATION_STATUS.PUBLISHED ? new Date() : null,
+          moderationReason: null,
+          reviewedBy: null,
+          reviewedAt: null,
         },
       );
       if (!updated) throw this.productNotFound();
@@ -898,6 +931,9 @@ export class ProductsService {
       const updated = await repository.updateProductPublicationForAdmin(productId, {
         publicationStatus: PRODUCT_PUBLICATION_STATUS.PUBLISHED,
         publishedAt: new Date(),
+        moderationReason: null,
+        reviewedBy: context.actorId,
+        reviewedAt: new Date(),
       });
       if (!updated) throw this.productNotFound();
       const detail = await this.loadSellerProductDetail(repository, updated);
@@ -922,6 +958,62 @@ export class ProductsService {
           sellerId: product.sellerId,
           storeId: product.storeId,
           approvedBy: context.actorId,
+        },
+      });
+
+      return detail;
+    });
+  }
+
+  /** Rejects one pending Product with a mandatory seller-visible reason. */
+  async rejectProduct(
+    context: RequestContext,
+    productId: string,
+    input: RejectProductInput,
+  ): Promise<ProductDetailResponse> {
+    this.requireActorId(context);
+    this.assertPlatformPermission(context, PRODUCT_PERMISSION.ADMIN_REVIEW);
+
+    return this.transactionRunner(async (tx) => {
+      const repository = new ProductsRepository(tx);
+      const product = await repository.findProductByIdForAdminUpdate(productId);
+      if (!product) throw this.productNotFound();
+      if (product.publicationStatus !== PRODUCT_PUBLICATION_STATUS.PENDING_APPROVAL) {
+        throw this.productNotPublishable("Only a Product waiting for approval can be rejected.");
+      }
+
+      const updated = await repository.updateProductPublicationForAdmin(productId, {
+        publicationStatus: PRODUCT_PUBLICATION_STATUS.REJECTED,
+        publishedAt: null,
+        moderationReason: input.reason,
+        reviewedBy: context.actorId,
+        reviewedAt: new Date(),
+      });
+      if (!updated) throw this.productNotFound();
+      const detail = await this.loadSellerProductDetail(repository, updated);
+
+      await AuditService.using(tx).record({
+        actorId: context.actorId,
+        actorType: context.actorType,
+        action: PRODUCT_AUDIT_ACTION.REJECTED,
+        entityType: PRODUCT_RESOURCE_TYPE.PRODUCT,
+        entityId: productId,
+        sellerId: product.sellerId,
+        requestId: context.requestId,
+        before: this.toProductResponse(product),
+        after: this.toProductResponse(updated),
+        metadata: { reason: input.reason },
+      });
+      await OutboxService.using(tx).enqueue({
+        eventType: PRODUCT_OUTBOX_EVENT.REJECTED,
+        aggregateType: PRODUCT_RESOURCE_TYPE.PRODUCT,
+        aggregateId: productId,
+        payload: {
+          productId,
+          sellerId: product.sellerId,
+          storeId: product.storeId,
+          rejectedBy: context.actorId,
+          reason: input.reason,
         },
       });
 
@@ -1202,6 +1294,9 @@ export class ProductsService {
       description: product.description,
       status: product.status as ProductResponse["status"],
       publicationStatus: product.publicationStatus as ProductResponse["publicationStatus"],
+      moderationReason: product.moderationReason,
+      reviewedBy: product.reviewedBy,
+      reviewedAt: product.reviewedAt?.toISOString() ?? null,
       publishedAt: product.publishedAt?.toISOString() ?? null,
       createdAt: product.createdAt.toISOString(),
       updatedAt: product.updatedAt.toISOString(),

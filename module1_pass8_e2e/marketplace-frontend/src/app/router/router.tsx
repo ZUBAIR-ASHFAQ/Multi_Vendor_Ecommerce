@@ -46,6 +46,8 @@ import {
   sellerStoresRoute,
 } from "@/app/routes/sellers.routes";
 import {
+  adminProductReviewRoute,
+  adminProductsRoute,
   publicProductDetailRoute,
   publicProductsRoute,
   sellerProductCreateRoute,
@@ -177,6 +179,8 @@ const routeTree = rootRoute.addChildren([
   adminCatalogAttributesRoute,
   adminCatalogCategoryAttributesRoute,
   sellerCatalogTaxonomyRoute,
+  adminProductsRoute,
+  adminProductReviewRoute,
   publicProductsRoute,
   publicProductDetailRoute,
   sellerProductsRoute,

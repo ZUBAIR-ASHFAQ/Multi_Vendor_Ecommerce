@@ -1,8 +1,11 @@
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
+import { SellerLayout } from "@/features/sellers/components/seller-layout";
 import { CATALOG_PERMISSION } from "../catalog-taxonomy.constants";
-import { CatalogTaxonomyLayout, RequireCatalogPermission } from "../components/catalog-taxonomy-layout";
+import { RequireCatalogPermission } from "../components/catalog-taxonomy-layout";
 import { flattenCategoryTree } from "../components/category-tree";
 import { TaxonomySelector } from "../components/taxonomy-selector";
 import {
@@ -12,7 +15,7 @@ import {
   useCategoryAttributesQuery,
 } from "../hooks/use-catalog-taxonomy";
 
-/** Loads active seller-readable taxonomy and the selected category's allowed attribute mapping. */
+/** Provides a read-only reference for the admin-managed taxonomy available to products. */
 function SellerTaxonomySelectorContent() {
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const categories = useCategoriesQuery();
@@ -41,42 +44,53 @@ function SellerTaxonomySelectorContent() {
     );
   }
 
+  const parentOptions = flattenCategoryTree(categories.data);
+
   return (
-    <section className="rounded-xl border bg-white p-5 shadow-sm">
-      <h1 className="text-2xl font-bold">Seller taxonomy selector</h1>
-      <p className="mt-1 text-sm text-slate-600">
-        Choose an active category and brand, then use only the attributes mapped to that category.
-      </p>
-      <div className="mt-5">
-        <TaxonomySelector
-          categories={flattenCategoryTree(categories.data)}
-          brands={brands.data}
-          attributes={attributes.data}
-          mappings={mappings.data ?? []}
-          isMappingPending={mappings.isPending && selectedCategoryId.length > 0}
-          mappingError={mappings.error}
-          onCategoryChange={setSelectedCategoryId}
-          onRetryMapping={() => void mappings.refetch()}
-        />
-      </div>
-    </section>
+    <div className="space-y-6">
+      <section className="rounded-xl border bg-white p-5 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Product setup</p>
+        <h1 className="mt-1 text-2xl font-bold">Approved catalog reference</h1>
+        <p className="mt-1 text-sm text-slate-600">
+          Categories, subcategories, brands, attributes, and their mappings are created by marketplace
+          administrators. Sellers can only select active options while creating or editing a product.
+        </p>
+        <div className="mt-4">
+          <Button asChild><Link to="/seller/products/new">Add product</Link></Button>
+        </div>
+      </section>
+
+      <section className="rounded-xl border bg-white p-5 shadow-sm">
+        <h2 className="text-xl font-bold">Preview available product taxonomy</h2>
+        <p className="mt-1 text-sm text-slate-600">
+          Review the active category, optional brand, and administrator-mapped attributes available to product drafts.
+        </p>
+        <div className="mt-5">
+          <TaxonomySelector
+            categories={parentOptions}
+            brands={brands.data}
+            attributes={attributes.data}
+            mappings={mappings.data ?? []}
+            isMappingPending={mappings.isPending && selectedCategoryId.length > 0}
+            mappingError={mappings.error}
+            onCategoryChange={setSelectedCategoryId}
+            onRetryMapping={() => void mappings.refetch()}
+          />
+        </div>
+      </section>
+    </div>
   );
 }
 
-/** Protects the seller selector with seller account type plus catalog.read. */
+/** Protects seller taxonomy with seller workspace layout plus server-derived catalog permissions. */
 export function SellerTaxonomySelectorPage() {
   return (
-    <CatalogTaxonomyLayout>
-      {(user) => {
-        if (user.accountType !== "seller") {
-          return <ErrorState title="Seller account required" message="This taxonomy selector is reserved for seller product workflows." />;
-        }
-        return (
-          <RequireCatalogPermission user={user} permission={CATALOG_PERMISSION.READ}>
-            <SellerTaxonomySelectorContent />
-          </RequireCatalogPermission>
-        );
-      }}
-    </CatalogTaxonomyLayout>
+    <SellerLayout>
+      {(user) => (
+        <RequireCatalogPermission user={user} permission={CATALOG_PERMISSION.READ}>
+          <SellerTaxonomySelectorContent />
+        </RequireCatalogPermission>
+      )}
+    </SellerLayout>
   );
 }

@@ -12,7 +12,17 @@ import { SELLER_PERMISSION } from "../sellers.constants";
 import type { CreateStoreInput, SellerStore, UpdateStoreInput } from "../types/sellers.types";
 
 /** Renders one seller-owned store with safe active/inactive editing and admin-suspension awareness. */
-function StoreEditor({ store, canManageAssets }: { store: SellerStore; canManageAssets: boolean }) {
+function StoreEditor({
+  store,
+  canManageAssets,
+  supportedCurrencies,
+  defaultCurrency,
+}: {
+  store: SellerStore;
+  canManageAssets: boolean;
+  supportedCurrencies: string[];
+  defaultCurrency: string;
+}) {
   const [editing, setEditing] = useState(false);
   const update = useUpdateStoreMutation(store.id);
   const isSuspended = store.status === "suspended";
@@ -57,6 +67,8 @@ function StoreEditor({ store, canManageAssets }: { store: SellerStore; canManage
             submitLabel="Save store"
             isPending={update.isPending}
             error={update.error}
+            supportedCurrencies={supportedCurrencies}
+            defaultCurrency={defaultCurrency}
             onSubmit={saveStore}
           />
         </div>
@@ -106,6 +118,8 @@ function SellerStoresContent({ canManageAssets }: { canManageAssets: boolean }) 
             submitLabel="Create store"
             isPending={create.isPending}
             error={create.error}
+            supportedCurrencies={seller.data.supportedCurrencies}
+            defaultCurrency={seller.data.defaultCurrency}
             onSubmit={createStore}
           />
         </div>
@@ -117,7 +131,13 @@ function SellerStoresContent({ canManageAssets }: { canManageAssets: boolean }) 
           <p className="rounded-xl border bg-white p-5 text-sm text-slate-500 shadow-sm">No stores have been created yet.</p>
         ) : (
           seller.data.stores.map((store) => (
-            <StoreEditor key={store.id} store={store} canManageAssets={canManageAssets} />
+            <StoreEditor
+              key={store.id}
+              store={store}
+              canManageAssets={canManageAssets}
+              supportedCurrencies={seller.data.supportedCurrencies}
+              defaultCurrency={seller.data.defaultCurrency}
+            />
           ))
         )}
       </section>

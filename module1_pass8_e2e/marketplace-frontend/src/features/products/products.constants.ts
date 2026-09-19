@@ -13,6 +13,7 @@ export const PRODUCT_PUBLICATION_STATUS = {
   DRAFT: "draft",
   PENDING_APPROVAL: "pending_approval",
   PUBLISHED: "published",
+  REJECTED: "rejected",
   UNPUBLISHED: "unpublished",
 } as const;
 
@@ -24,6 +25,7 @@ export const PRODUCT_LIMITS = {
   SKU_MAX_LENGTH: 120,
   VARIANT_TITLE_MAX_LENGTH: 200,
   ALT_TEXT_MAX_LENGTH: 500,
+  MODERATION_REASON_MAX_LENGTH: 2_000,
 } as const;
 
 /** Public Product sort options accepted by the backend. */
@@ -39,4 +41,3 @@ export const SELLER_PRODUCT_SORT_OPTIONS = [
   { value: "name", label: "Name" },
   { value: "publicationStatus", label: "Publication status" },
 ] as const;
-

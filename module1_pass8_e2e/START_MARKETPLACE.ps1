@@ -20,6 +20,7 @@ Write-Host ""
 # ------------------------------------------------------------
 
 $env:NODE_ENV = "development"
+$env:PRODUCT_MODERATION_REQUIRED = "true"
 
 $env:DATABASE_URL =
     "postgresql://marketplace_dev:marketplace_dev@127.0.0.1:55435/marketplace_dev"
@@ -33,8 +34,35 @@ $env:JWT_ACCESS_SECRET =
 $env:INTERNAL_API_KEY =
     "development-internal-key-at-least-32-characters"
 
+$env:STORAGE_PROVIDER =
+    "s3_compatible"
+
 $env:STORAGE_BUCKET =
     "marketplace-dev"
+
+$env:STORAGE_REGION =
+    "us-east-1"
+
+$env:STORAGE_ENDPOINT =
+    "http://127.0.0.1:59010"
+
+$env:STORAGE_ACCESS_KEY_ID =
+    "marketplace-dev"
+
+$env:STORAGE_SECRET_ACCESS_KEY =
+    "marketplace-dev-secret"
+
+$env:STORAGE_FORCE_PATH_STYLE =
+    "true"
+
+$env:STORAGE_SIGNED_URL_TTL_SECONDS =
+    "900"
+
+# Seller verification, store logos, and product images use the existing
+# Module 21 signed-upload flow. Keep every development purpose explicit so
+# production remains deployment-configured and fail-closed.
+$env:DOCUMENT_UPLOAD_POLICY_JSON =
+    '{"seller_verification":{"allowedMimeTypes":["application/pdf","image/png","image/jpeg"],"maxSizeBytes":5242880},"store_asset":{"allowedMimeTypes":["image/png","image/jpeg","image/webp"],"maxSizeBytes":5242880},"product_media":{"allowedMimeTypes":["image/png","image/jpeg","image/webp"],"maxSizeBytes":5242880}}'
 
 $env:STRIPE_SECRET_KEY =
     "sk_test_local_development_placeholder"
@@ -80,14 +108,14 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # ------------------------------------------------------------
-# Start the persistent development PostgreSQL and Redis.
+# Start the persistent development PostgreSQL, Redis, and S3-compatible storage.
 # ------------------------------------------------------------
 
 Set-Location $backend
 
-Write-Host "Starting development database and Redis..."
+Write-Host "Starting development database, Redis, and object storage..."
 
-docker compose -f docker-compose.dev.yml up -d --wait
+npm run dev:infra
 
 if ($LASTEXITCODE -ne 0) {
     throw "Development Docker infrastructure failed to start."
@@ -122,38 +150,51 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # ------------------------------------------------------------
-# Do not accidentally start duplicate servers.
+# Restart any existing development backend before launching.
+# The backend reads upload/storage policy once at process startup, so reusing
+# an older listener can leave new development configuration unapplied.
 # ------------------------------------------------------------
 
-$backendRunning = Get-NetTCPConnection `
+$backendListeners = @(Get-NetTCPConnection `
     -LocalPort 4000 `
     -State Listen `
-    -ErrorAction SilentlyContinue
+    -ErrorAction SilentlyContinue)
 
 $frontendRunning = Get-NetTCPConnection `
     -LocalPort 5174 `
     -State Listen `
     -ErrorAction SilentlyContinue
 
+if ($backendListeners.Count -gt 0) {
+    Write-Host ""
+    Write-Host "Restarting existing backend on port 4000 to apply current development configuration..."
+
+    $backendProcessIds = @(
+        $backendListeners |
+            Select-Object -ExpandProperty OwningProcess -Unique
+    )
+
+    foreach ($processId in $backendProcessIds) {
+        Stop-Process -Id $processId -Force -ErrorAction Stop
+    }
+
+    Start-Sleep -Seconds 1
+}
+
 # ------------------------------------------------------------
 # Start backend.
 # Child PowerShell inherits the development environment above.
 # ------------------------------------------------------------
 
-if (-not $backendRunning) {
-    Write-Host ""
-    Write-Host "Starting backend on port 4000..."
+Write-Host ""
+Write-Host "Starting backend on port 4000..."
 
-    Start-Process powershell.exe -ArgumentList @(
-        "-NoExit",
-        "-NoProfile",
-        "-Command",
-        "Set-Location '$backend'; npm run dev"
-    )
-}
-else {
-    Write-Host "Backend port 4000 is already running."
-}
+Start-Process powershell.exe -ArgumentList @(
+    "-NoExit",
+    "-NoProfile",
+    "-Command",
+    "Set-Location '$backend'; npm run dev"
+)
 
 # Give backend a moment to initialize.
 Start-Sleep -Seconds 3

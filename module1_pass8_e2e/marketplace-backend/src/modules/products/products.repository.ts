@@ -43,6 +43,7 @@ import {
   PRODUCT_STATUS,
 } from "./products.constants.js";
 import type {
+  AdminProductListQuery,
   PublicProductListQuery,
   SellerProductListQuery,
 } from "./products.schema.js";
@@ -78,6 +79,9 @@ export interface UpdateProductRecordInput {
 export interface UpdateProductPublicationRecordInput {
   publicationStatus: ProductRow["publicationStatus"];
   publishedAt: Date | null;
+  moderationReason?: string | null;
+  reviewedBy?: string | null;
+  reviewedAt?: Date | null;
 }
 
 /** Variant fields persisted after Product/taxonomy/currency rules have passed in the service. */
@@ -336,6 +340,41 @@ export class ProductsRepository {
     return { items, totalItems: Number(totalRow?.totalItems ?? 0) };
   }
 
+  /** Lists the cross-seller product moderation queue for an authorized platform reviewer. */
+  async listAdminProducts(query: AdminProductListQuery): Promise<PaginatedProductRows> {
+    const { limit, offset } = toLimitOffset(query);
+    const where = combineConditions([
+      query.sellerId ? eq(products.sellerId, query.sellerId) : undefined,
+      query.storeId ? eq(products.storeId, query.storeId) : undefined,
+      eq(products.publicationStatus, query.publicationStatus),
+      productTextSearch(query.q),
+    ]);
+
+    const items = await this.executor
+      .select()
+      .from(products)
+      .where(where)
+      .orderBy(...sellerProductOrder(query))
+      .limit(limit)
+      .offset(offset);
+    const [totalRow] = await this.executor
+      .select({ totalItems: count() })
+      .from(products)
+      .where(where);
+
+    return { items, totalItems: Number(totalRow?.totalItems ?? 0) };
+  }
+
+  /** Reads one Product by ID for a permission-checked admin moderation detail page. */
+  async findProductByIdForAdmin(productId: string): Promise<ProductRow | null> {
+    const [row] = await this.executor
+      .select()
+      .from(products)
+      .where(eq(products.id, productId))
+      .limit(1);
+    return row ?? null;
+  }
+
   /** Reads one private Product only inside the server-derived seller/store scope. */
   async findProductByIdInSellerScope(
     productId: string,
@@ -442,6 +481,11 @@ export class ProductsRepository {
       .set({
         publicationStatus: input.publicationStatus,
         publishedAt: input.publishedAt,
+        ...(input.moderationReason !== undefined
+          ? { moderationReason: input.moderationReason }
+          : {}),
+        ...(input.reviewedBy !== undefined ? { reviewedBy: input.reviewedBy } : {}),
+        ...(input.reviewedAt !== undefined ? { reviewedAt: input.reviewedAt } : {}),
         updatedAt,
       })
       .where(and(eq(products.id, productId), productSellerScopeCondition(scope)))
@@ -461,6 +505,11 @@ export class ProductsRepository {
       .set({
         publicationStatus: input.publicationStatus,
         publishedAt: input.publishedAt,
+        ...(input.moderationReason !== undefined
+          ? { moderationReason: input.moderationReason }
+          : {}),
+        ...(input.reviewedBy !== undefined ? { reviewedBy: input.reviewedBy } : {}),
+        ...(input.reviewedAt !== undefined ? { reviewedAt: input.reviewedAt } : {}),
         updatedAt,
       })
       .where(eq(products.id, productId))

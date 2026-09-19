@@ -75,7 +75,7 @@ function verifyCleanup() {
 
   for (const project of ["marketplace-backend", "marketplace-frontend"]) {
     const packageJson = JSON.parse(
-      readFileSync(path.join(root, project, "package.json"), "utf8"),
+      readFileSync(path.join(root, project, "package.json"), "utf8").replace(/^\uFEFF/, ""),
     );
     const scripts = packageJson.scripts ?? {};
     const obsoleteScripts = Object.keys(scripts).filter((name) =>
@@ -109,7 +109,9 @@ function verifyDependencyInstallPolicy() {
 
   for (const project of ["marketplace-backend", "marketplace-frontend"]) {
     const projectRoot = path.join(root, project);
-    const packageJson = JSON.parse(readFileSync(path.join(projectRoot, "package.json"), "utf8"));
+    const packageJson = JSON.parse(
+      readFileSync(path.join(projectRoot, "package.json"), "utf8").replace(/^\uFEFF/, ""),
+    );
     const npmrc = readFileSync(path.join(projectRoot, ".npmrc"), "utf8");
 
     if (packageJson.packageManager !== "npm@10.9.2") {

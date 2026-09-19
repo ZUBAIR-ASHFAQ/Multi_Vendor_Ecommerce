@@ -56,7 +56,7 @@ function read(relativePath) {
   if (!existsSync(absolutePath)) {
     throw new Error(`Required backend release file is missing: ${relativePath}`);
   }
-  return readFileSync(absolutePath, "utf8");
+  return readFileSync(absolutePath, "utf8").replace(/^\uFEFF/, "");
 }
 
 /** Confirms every implemented backend module keeps the required layered files. */
@@ -153,10 +153,10 @@ function verifyMigrationChain() {
     .filter((name) => /^\d{4}_.+\.sql$/u.test(name))
     .sort();
 
-  if (migrations.length !== 35) {
-    throw new Error(`Expected 35 backend migrations, found ${migrations.length}.`);
+  if (migrations.length !== 37) {
+    throw new Error(`Expected 37 backend migrations, found ${migrations.length}.`);
   }
-  if (migrations.at(-1) !== "0034_dashboard.sql") {
+  if (migrations.at(-1) !== "0036_product_moderation_workflow.sql") {
     throw new Error(`Unexpected migration head: ${migrations.at(-1) ?? "none"}.`);
   }
 

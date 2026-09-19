@@ -251,6 +251,8 @@ export const mySellerResponseSchema = z
     seller: sellerResponseSchema,
     stores: z.array(sellerStoreResponseSchema),
     staffSummary: sellerStaffSummaryResponseSchema,
+    supportedCurrencies: z.array(storeCurrencySchema),
+    defaultCurrency: storeCurrencySchema,
   })
   .strict();
 

@@ -169,6 +169,18 @@ export const sellerProductListQuerySchema = paginationQuerySchema
   })
   .strict();
 
+/** Bounded cross-seller moderation queue filters available only to product reviewers. */
+export const adminProductListQuerySchema = paginationQuerySchema
+  .extend({
+    q: z.string().trim().min(1).max(PRODUCT_LIMITS.SEARCH_MAX_LENGTH).optional(),
+    sellerId: uuidSchema.optional(),
+    storeId: uuidSchema.optional(),
+    publicationStatus: productPublicationStatusSchema.default("pending_approval"),
+    sort: z.enum(SELLER_PRODUCT_SORT_VALUES).default("updatedAt"),
+    direction: z.enum(PRODUCT_SORT_DIRECTION_VALUES).default("asc"),
+  })
+  .strict();
+
 /** Request body for POST /api/v1/seller/products. Seller identity and publication state are server-derived. */
 export const createProductBodySchema = z
   .object({
@@ -243,6 +255,13 @@ export const linkProductMediaBodySchema = z
 /** Empty Product command body that also accepts an omitted JSON body. */
 export const emptyProductCommandBodySchema = z.object({}).strict().default({});
 
+/** Mandatory reviewer explanation for returning a submitted Product to its seller. */
+export const rejectProductBodySchema = z
+  .object({
+    reason: nonBlankString(PRODUCT_LIMITS.MODERATION_REASON_MAX_LENGTH),
+  })
+  .strict();
+
 /** Safe Product representation returned to seller/admin Product workflows. */
 export const productResponseSchema = z
   .object({
@@ -256,6 +275,9 @@ export const productResponseSchema = z
     description: z.string().min(1),
     status: productStatusSchema,
     publicationStatus: productPublicationStatusSchema,
+    moderationReason: z.string().nullable(),
+    reviewedBy: uuidSchema.nullable(),
+    reviewedAt: isoDateTimeSchema.nullable(),
     publishedAt: isoDateTimeSchema.nullable(),
     createdAt: isoDateTimeSchema,
     updatedAt: isoDateTimeSchema,
@@ -267,6 +289,9 @@ export const publicProductResponseSchema = productResponseSchema.omit({
   sellerId: true,
   status: true,
   publicationStatus: true,
+  moderationReason: true,
+  reviewedBy: true,
+  reviewedAt: true,
 });
 
 /** Safe variant representation; NUMERIC fields remain bounded decimal strings over HTTP. */
@@ -359,11 +384,13 @@ export const sellerProductListDataSchema = z.array(productResponseSchema);
 
 export type PublicProductListQuery = z.infer<typeof publicProductListQuerySchema>;
 export type SellerProductListQuery = z.infer<typeof sellerProductListQuerySchema>;
+export type AdminProductListQuery = z.infer<typeof adminProductListQuerySchema>;
 export type CreateProductInput = z.infer<typeof createProductBodySchema>;
 export type UpdateProductInput = z.infer<typeof updateProductBodySchema>;
 export type CreateProductVariantInput = z.infer<typeof createProductVariantBodySchema>;
 export type UpdateProductVariantInput = z.infer<typeof updateProductVariantBodySchema>;
 export type LinkProductMediaInput = z.infer<typeof linkProductMediaBodySchema>;
+export type RejectProductInput = z.infer<typeof rejectProductBodySchema>;
 export type ProductAttributeInput = z.infer<typeof productAttributeInputSchema>;
 export type ProductResponse = z.infer<typeof productResponseSchema>;
 export type PublicProductResponse = z.infer<typeof publicProductResponseSchema>;

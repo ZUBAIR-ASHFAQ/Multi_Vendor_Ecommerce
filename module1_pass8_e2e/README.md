@@ -1,5 +1,7 @@
 # Multi-Vendor E-Commerce Marketplace
 
+The requested Daraz-style business-flow audit and implementation traceability are documented in [`MARKETPLACE_FLOW_ALIGNMENT.md`](./MARKETPLACE_FLOW_ALIGNMENT.md). The current source is substantially aligned; that document identifies the remaining product-rejection, COD, and explicit order-completion gaps without treating similarly named UI states as completed business transitions.
+
 Production-oriented multi-vendor marketplace implemented as **two independent projects**:
 
 ```text

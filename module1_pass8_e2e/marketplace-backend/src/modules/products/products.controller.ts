@@ -3,6 +3,7 @@ import { getRequestContext } from "../../common/middleware/authentication.middle
 import { successResponse } from "../../common/utils/api-response.js";
 import { getRequestId } from "../../http/request-id.js";
 import {
+  adminProductListQuerySchema,
   createProductBodySchema,
   createProductVariantBodySchema,
   emptyProductCommandBodySchema,
@@ -11,6 +12,7 @@ import {
   productVariantIdParamsSchema,
   publicProductListQuerySchema,
   publicProductSlugParamsSchema,
+  rejectProductBodySchema,
   sellerProductListQuerySchema,
   updateProductBodySchema,
   updateProductVariantBodySchema,
@@ -76,6 +78,49 @@ export class ProductsController {
           meta: result.meta,
           requestId: getRequestId(response),
         }),
+      );
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /** Returns the cross-seller moderation queue to an authorized platform reviewer. */
+  listAdminProducts = async (
+    request: Request,
+    response: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const query = adminProductListQuerySchema.parse(request.query);
+      const result = await this.productsService.listAdminProducts(
+        getRequestContext(response),
+        query,
+      );
+      response.status(200).json(
+        successResponse(result.items, {
+          meta: result.meta,
+          requestId: getRequestId(response),
+        }),
+      );
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /** Returns complete product information for one admin review decision. */
+  getAdminProduct = async (
+    request: Request,
+    response: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const { id } = productIdParamsSchema.parse(request.params);
+      const result = await this.productsService.getAdminProduct(
+        getRequestContext(response),
+        id,
+      );
+      response.status(200).json(
+        successResponse(result, { requestId: getRequestId(response) }),
       );
     } catch (error) {
       next(error);
@@ -265,6 +310,28 @@ export class ProductsController {
       const result = await this.productsService.approveProduct(
         getRequestContext(response),
         id,
+      );
+      response.status(200).json(
+        successResponse(result, { requestId: getRequestId(response) }),
+      );
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /** Rejects one pending Product and returns its mandatory reason to the seller workflow. */
+  rejectProduct = async (
+    request: Request,
+    response: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const { id } = productIdParamsSchema.parse(request.params);
+      const input = rejectProductBodySchema.parse(request.body);
+      const result = await this.productsService.rejectProduct(
+        getRequestContext(response),
+        id,
+        input,
       );
       response.status(200).json(
         successResponse(result, { requestId: getRequestId(response) }),

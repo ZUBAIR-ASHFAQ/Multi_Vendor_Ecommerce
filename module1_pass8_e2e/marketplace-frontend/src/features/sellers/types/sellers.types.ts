@@ -61,6 +61,8 @@ export interface MySeller {
   seller: Seller;
   stores: SellerStore[];
   staffSummary: SellerStaffSummary;
+  supportedCurrencies: string[];
+  defaultCurrency: string;
 }
 
 export interface PublicStore {

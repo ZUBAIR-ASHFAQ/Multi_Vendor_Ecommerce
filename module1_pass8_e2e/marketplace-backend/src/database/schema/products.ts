@@ -44,6 +44,9 @@ export const products = pgTable(
     publicationStatus: varchar("publication_status", { length: 30 })
       .notNull()
       .default("draft"),
+    moderationReason: text("moderation_reason"),
+    reviewedBy: uuid("reviewed_by").references(() => users.id, { onDelete: "restrict" }),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true, mode: "date" }),
     createdBy: uuid("created_by")
       .notNull()
       .references(() => users.id, { onDelete: "restrict" }),
@@ -77,7 +80,7 @@ export const products = pgTable(
     check("products_status_check", sql`${table.status} in ('active', 'inactive')`),
     check(
       "products_publication_status_check",
-      sql`${table.publicationStatus} in ('draft', 'pending_approval', 'published', 'unpublished')`,
+      sql`${table.publicationStatus} in ('draft', 'pending_approval', 'published', 'rejected', 'unpublished')`,
     ),
     check(
       "products_slug_normalized_check",
@@ -91,6 +94,15 @@ export const products = pgTable(
     check(
       "products_published_at_state_check",
       sql`(${table.publicationStatus} = 'published' and ${table.publishedAt} is not null) or (${table.publicationStatus} <> 'published')`,
+    ),
+    check(
+      "products_moderation_reason_check",
+      sql`(${table.publicationStatus} = 'rejected' and ${table.moderationReason} is not null and length(btrim(${table.moderationReason})) > 0) or (${table.publicationStatus} <> 'rejected')`,
+    ),
+    index("products_moderation_queue_idx").on(
+      table.publicationStatus,
+      table.updatedAt,
+      table.id,
     ),
   ],
 );

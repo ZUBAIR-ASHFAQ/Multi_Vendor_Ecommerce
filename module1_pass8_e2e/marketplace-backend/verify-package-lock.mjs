@@ -6,7 +6,9 @@ const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
 /** Reads and parses one JSON file from the backend project root. */
 function readJson(fileName) {
-  return JSON.parse(readFileSync(path.join(projectRoot, fileName), "utf8"));
+  return JSON.parse(
+    readFileSync(path.join(projectRoot, fileName), "utf8").replace(/^\uFEFF/, ""),
+  );
 }
 
 /** Returns a stable representation so dependency-map key order does not affect comparison. */

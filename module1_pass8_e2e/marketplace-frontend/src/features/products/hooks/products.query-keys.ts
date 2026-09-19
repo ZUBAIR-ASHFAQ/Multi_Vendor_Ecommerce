@@ -1,4 +1,4 @@
-import type { PublicProductListParams, SellerProductListParams } from "../types/products.types";
+import type { AdminProductListParams, PublicProductListParams, SellerProductListParams } from "../types/products.types";
 
 /** Stable TanStack Query keys for all Module 6 frontend server state. */
 export const productQueryKeys = {
@@ -9,4 +9,7 @@ export const productQueryKeys = {
   seller: ["products", "seller"] as const,
   sellerList: (params: SellerProductListParams) => ["products", "seller", "list", params] as const,
   sellerDetail: (id: string) => ["products", "seller", "detail", id] as const,
+  admin: ["products", "admin"] as const,
+  adminList: (params: AdminProductListParams) => ["products", "admin", "list", params] as const,
+  adminDetail: (id: string) => ["products", "admin", "detail", id] as const,
 };

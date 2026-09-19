@@ -354,6 +354,15 @@ describe("Module 4 repository/service/API integration", () => {
       status: STORE_STATUS.ACTIVE,
     });
 
+    const mySeller = await request(app)
+      .get("/api/v1/sellers/me")
+      .set(bearer(firstSeller.ownerToken))
+      .expect(200);
+    expect(mySeller.body.data).toMatchObject({
+      supportedCurrencies: ["PKR", "USD"],
+      defaultCurrency: "PKR",
+    });
+
     const authMe = await request(app)
       .get("/api/v1/auth/me")
       .set(bearer(firstSeller.ownerToken))

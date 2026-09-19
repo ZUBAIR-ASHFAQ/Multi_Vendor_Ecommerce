@@ -3,9 +3,11 @@ import { DOCUMENT_PURPOSE } from "@/features/documents-audit/documents-audit.con
 import { documentsAuditApi } from "@/features/documents-audit/api/documents-audit.api";
 import { productsApi } from "../api/products.api";
 import type {
+  AdminProductListParams,
   CreateProductInput,
   CreateProductVariantInput,
   PublicProductListParams,
+  RejectProductInput,
   SellerProductListParams,
   UpdateProductInput,
   UpdateProductVariantInput,
@@ -160,6 +162,55 @@ export function useUnpublishProductMutation(productId: string) {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: productQueryKeys.seller }),
         queryClient.invalidateQueries({ queryKey: productQueryKeys.public }),
+      ]);
+    },
+  });
+}
+
+/** Loads the platform-wide moderation queue. */
+export function useAdminProductsQuery(params: AdminProductListParams, enabled = true) {
+  return useQuery({
+    queryKey: productQueryKeys.adminList(params),
+    queryFn: () => productsApi.listAdminProducts(params),
+    enabled,
+  });
+}
+
+/** Loads one complete Product for an admin review decision. */
+export function useAdminProductQuery(productId: string, enabled = true) {
+  return useQuery({
+    queryKey: productQueryKeys.adminDetail(productId),
+    queryFn: () => productsApi.getAdminProduct(productId),
+    enabled: enabled && productId.length > 0,
+  });
+}
+
+/** Approves one pending Product and refreshes all affected catalog state. */
+export function useApproveProductMutation(productId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => productsApi.approveProduct(productId),
+    onSuccess: async (product) => {
+      queryClient.setQueryData(productQueryKeys.adminDetail(productId), product);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: productQueryKeys.admin }),
+        queryClient.invalidateQueries({ queryKey: productQueryKeys.seller }),
+        queryClient.invalidateQueries({ queryKey: productQueryKeys.public }),
+      ]);
+    },
+  });
+}
+
+/** Rejects one pending Product and returns it to the seller with a reason. */
+export function useRejectProductMutation(productId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: RejectProductInput) => productsApi.rejectProduct(productId, input),
+    onSuccess: async (product) => {
+      queryClient.setQueryData(productQueryKeys.adminDetail(productId), product);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: productQueryKeys.admin }),
+        queryClient.invalidateQueries({ queryKey: productQueryKeys.seller }),
       ]);
     },
   });

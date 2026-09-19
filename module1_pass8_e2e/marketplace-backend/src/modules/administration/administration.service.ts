@@ -222,14 +222,28 @@ export class AdministrationService {
     return user ? { id: user.id, email: user.email } : null;
   }
 
-  /** Returns true only when the normalized currency exists in the Administration-supported currency setting. */
-  async isSupportedCurrency(currency: string): Promise<boolean> {
-    const normalized = currency.trim().toUpperCase();
+  /** Returns the normalized Administration-owned currency allow-list for seller-facing configuration. */
+  async getSupportedCurrencies(): Promise<string[]> {
     const rows = await this.repository.findPlatformSettingsByKeys([
       PLATFORM_SETTING_KEY.SUPPORTED_CURRENCIES,
     ]);
     const value = rows[0]?.valueJson;
-    return Array.isArray(value) && value.includes(normalized);
+    if (!Array.isArray(value)) return [];
+
+    return Array.from(
+      new Set(
+        value
+          .filter((entry): entry is string => typeof entry === "string")
+          .map((entry) => entry.trim().toUpperCase())
+          .filter((entry) => /^[A-Z]{3}$/.test(entry)),
+      ),
+    ).sort();
+  }
+
+  /** Returns true only when the normalized currency exists in the Administration-supported currency setting. */
+  async isSupportedCurrency(currency: string): Promise<boolean> {
+    const normalized = currency.trim().toUpperCase();
+    return (await this.getSupportedCurrencies()).includes(normalized);
   }
 
   /** Returns the marketplace default currency used by downstream empty commerce views. */

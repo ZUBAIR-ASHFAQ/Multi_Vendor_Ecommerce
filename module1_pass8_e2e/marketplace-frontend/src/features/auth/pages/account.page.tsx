@@ -100,6 +100,9 @@ function AccountContent({ user }: { user: AuthenticatedUser }) {
                   <Link to="/customer/addresses">Address book</Link>
                 </Button>
               )}
+              <Button asChild variant="outline">
+                <Link to="/seller/apply">Become a seller</Link>
+              </Button>
             </div>
           </section>
         )}

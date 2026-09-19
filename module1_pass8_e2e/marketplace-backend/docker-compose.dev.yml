@@ -27,6 +27,20 @@ services:
       timeout: 3s
       retries: 20
 
+  minio-dev:
+    image: quay.io/minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: marketplace-dev
+      MINIO_ROOT_PASSWORD: marketplace-dev-secret
+      MINIO_API_CORS_ALLOW_ORIGIN: "http://localhost:5174,http://127.0.0.1:5174"
+    ports:
+      - "59010:9000"
+      - "59011:9001"
+    volumes:
+      - marketplace_minio_dev:/data
+
 volumes:
   marketplace_postgres_dev:
   marketplace_redis_dev:
+  marketplace_minio_dev:

@@ -1,12 +1,15 @@
 import { apiClient } from "@/lib/api-client";
 import type { ApiResponse, PaginationMeta } from "@/types/api";
 import type {
+  AdminProductListParams,
   CreateProductInput,
   CreateProductVariantInput,
   LinkProductMediaInput,
+  PaginatedAdminProducts,
   PaginatedPublicProducts,
   PaginatedSellerProducts,
   ProductDetail,
+  RejectProductInput,
   PublicProductDetail,
   PublicProductListParams,
   SellerProductListParams,
@@ -15,7 +18,7 @@ import type {
 } from "../types/products.types";
 
 /** Removes empty optional query values before sending documented Product filters. */
-function queryParams(value: Record<string, unknown>): Record<string, string | number> {
+function queryParams<T extends object>(value: T): Record<string, string | number> {
   return Object.fromEntries(
     Object.entries(value).filter(([, entry]) => entry !== undefined && entry !== ""),
   ) as Record<string, string | number>;
@@ -88,4 +91,22 @@ export const productsApi = {
   /** Unpublishes one seller-owned Product without deleting commerce history. */
   unpublishProduct: (id: string) =>
     one<ProductDetail>(apiClient.post(`/seller/products/${id}/unpublish`, {})),
+
+  /** Lists products across sellers for marketplace moderation. */
+  listAdminProducts: (params: AdminProductListParams) =>
+    page<PaginatedAdminProducts["items"][number]>(
+      apiClient.get("/admin/products", { params: queryParams(params) }),
+    ),
+
+  /** Reads the complete Product aggregate required for an admin decision. */
+  getAdminProduct: (id: string) =>
+    one<ProductDetail>(apiClient.get(`/admin/products/${id}`)),
+
+  /** Approves and publishes one pending Product. */
+  approveProduct: (id: string) =>
+    one<ProductDetail>(apiClient.post(`/admin/products/${id}/approve`, {})),
+
+  /** Rejects one pending Product with a seller-visible reason. */
+  rejectProduct: (id: string, input: RejectProductInput) =>
+    one<ProductDetail>(apiClient.post(`/admin/products/${id}/reject`, input)),
 };

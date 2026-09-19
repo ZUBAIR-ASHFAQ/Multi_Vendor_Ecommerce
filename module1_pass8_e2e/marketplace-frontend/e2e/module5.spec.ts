@@ -373,7 +373,7 @@ test.describe("Module 5 Catalog Taxonomy E2E", () => {
     await browserLogin(page, seller.email, seller.password, "/seller/profile");
     await page.goto("/seller/catalog-taxonomy");
 
-    await expect(page.getByRole("heading", { name: "Seller taxonomy selector" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Approved catalog reference" })).toBeVisible();
     await page.getByLabel("Taxonomy category selector").selectOption({ label: electronicsName });
     await page.getByLabel("Taxonomy brand selector").selectOption({ label: brandName });
     await page.getByLabel(`Select taxonomy attribute ${sizeName}`).check();

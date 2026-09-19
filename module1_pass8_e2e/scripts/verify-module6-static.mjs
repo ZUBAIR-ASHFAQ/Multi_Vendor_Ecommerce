@@ -10,7 +10,7 @@ function readProjectFile(relativePath) {
   if (!existsSync(absolutePath)) {
     throw new Error(`Required file is missing: ${relativePath}`);
   }
-  return readFileSync(absolutePath, "utf8");
+  return readFileSync(absolutePath, "utf8").replace(/^\uFEFF/, "");
 }
 
 /** Fails when required source text is missing. */
@@ -573,7 +573,10 @@ function verifyHttpPass() {
     'controller.linkMedia',
     'controller.publishProduct',
     'controller.unpublishProduct',
+    'controller.listAdminProducts',
+    'controller.getAdminProduct',
     'controller.approveProduct',
+    'controller.rejectProduct',
   ]) {
     requireText(routes, route, "Module 6 route table");
   }
@@ -588,7 +591,10 @@ function verifyHttpPass() {
     '"/api/v1/seller/products/{id}/media"',
     '"/api/v1/seller/products/{id}/publish"',
     '"/api/v1/seller/products/{id}/unpublish"',
+    '"/api/v1/admin/products"',
+    '"/api/v1/admin/products/{id}"',
     '"/api/v1/admin/products/{id}/approve"',
+    '"/api/v1/admin/products/{id}/reject"',
   ]) {
     requireText(routes, openApiPath, "Module 6 OpenAPI path");
   }
@@ -626,7 +632,7 @@ function verifyHttpPass() {
   const envExample = readProjectFile("marketplace-backend/.env.example");
   requireText(environment, "PRODUCT_MODERATION_REQUIRED", "Typed Product moderation environment");
   requireText(appConfig, "productModerationRequired", "Product moderation application config");
-  requireText(envExample, "PRODUCT_MODERATION_REQUIRED=false", "Product moderation environment example");
+  requireText(envExample, "PRODUCT_MODERATION_REQUIRED=true", "Product moderation environment example");
 
   requireText(openApi, "productsOpenApiPaths", "Global OpenAPI Product registration");
   requireText(openApi, '{ name: "Products"', "Global OpenAPI Product tag");
@@ -739,6 +745,8 @@ function verifyFrontendPass() {
   const sellerList = readProjectFile("marketplace-frontend/src/features/products/pages/seller-products.page.tsx");
   const sellerCreate = readProjectFile("marketplace-frontend/src/features/products/pages/seller-product-create.page.tsx");
   const sellerEdit = readProjectFile("marketplace-frontend/src/features/products/pages/seller-product-edit.page.tsx");
+  const adminList = readProjectFile("marketplace-frontend/src/features/products/pages/admin-products.page.tsx");
+  const adminReview = readProjectFile("marketplace-frontend/src/features/products/pages/admin-product-review.page.tsx");
   const publicList = readProjectFile("marketplace-frontend/src/features/products/pages/public-products.page.tsx");
   const publicDetail = readProjectFile("marketplace-frontend/src/features/products/pages/public-product-detail.page.tsx");
   const productTests = readProjectFile("marketplace-frontend/tests/module6-products.test.tsx");
@@ -756,6 +764,8 @@ function verifyFrontendPass() {
     'path: "/seller/products"',
     'path: "/seller/products/new"',
     'path: "/seller/products/$productId"',
+    'path: "/admin/products"',
+    'path: "/admin/products/$productId"',
   ]) {
     requireText(routes, routePath, "Module 6 frontend route table");
   }
@@ -765,6 +775,8 @@ function verifyFrontendPass() {
     "sellerProductsRoute",
     "sellerProductCreateRoute",
     "sellerProductEditRoute",
+    "adminProductsRoute",
+    "adminProductReviewRoute",
   ]) {
     requireText(router, registration, "Module 6 router registration");
   }
@@ -781,6 +793,10 @@ function verifyFrontendPass() {
     'apiClient.post(`/seller/products/${productId}/media`, input)',
     'apiClient.post(`/seller/products/${id}/publish`, {})',
     'apiClient.post(`/seller/products/${id}/unpublish`, {})',
+    'apiClient.get("/admin/products"',
+    'apiClient.get(`/admin/products/${id}`)',
+    'apiClient.post(`/admin/products/${id}/approve`, {})',
+    'apiClient.post(`/admin/products/${id}/reject`, input)',
   ]) {
     requireText(api, endpoint, "Module 6 frontend API client");
   }
@@ -798,6 +814,10 @@ function verifyFrontendPass() {
     "useUploadProductMediaMutation",
     "usePublishProductMutation",
     "useUnpublishProductMutation",
+    "useAdminProductsQuery",
+    "useAdminProductQuery",
+    "useApproveProductMutation",
+    "useRejectProductMutation",
   ]) {
     requireText(hooks, required, "Module 6 TanStack Query hooks");
   }
@@ -818,7 +838,7 @@ function verifyFrontendPass() {
   for (const required of ["useForm({", "variantAxis", "Variant SKU", "Variant price", "Variant currency"]) {
     requireText(variantForm, required, "Product variant form");
   }
-  for (const required of ["useForm({", "Product media file", 'accept="image/*"', "Upload and link media"]) {
+  for (const required of ["useForm({", "Product media file", 'accept="image/png,image/jpeg,image/webp"', "Upload and link media"]) {
     requireText(mediaForm, required, "Product media form");
   }
 
@@ -831,11 +851,17 @@ function verifyFrontendPass() {
     "Media manager",
     "Pricing history",
     "Publication",
-    "Publish / submit",
+    "Submit for review",
     "Unpublish",
     "Inventory quantities are intentionally not edited here",
   ]) {
     requireText(sellerEdit, required, "Seller Product edit workflow");
+  }
+  for (const required of ["Product approvals", "PENDING_APPROVAL", "Review"]) {
+    requireText(adminList, required, "Admin Product approval queue");
+  }
+  for (const required of ["Approve and publish", "Reject and return to seller", "Rejection reason"]) {
+    requireText(adminReview, required, "Admin Product review workflow");
   }
   requireText(publicList, "No published Products match these filters.", "Public Product empty state");
   requireText(publicDetail, "The current Product API exposes safe media metadata/file IDs", "Public media contract honesty");

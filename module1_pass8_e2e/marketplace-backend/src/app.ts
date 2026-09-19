@@ -298,6 +298,16 @@ function createComposedApplication(): ComposedApplication {
       async isSupportedCurrency(currency) {
         return administrationService.isSupportedCurrency(currency);
       },
+
+      /** Exposes only the normalized seller-facing currency allow-list, never the full settings surface. */
+      async getSupportedCurrencies() {
+        return administrationService.getSupportedCurrencies();
+      },
+
+      /** Reuses the Administration-owned default when initializing seller store creation. */
+      async getDefaultCurrency() {
+        return administrationService.getDefaultCurrency();
+      },
     },
     /** Reuses Module 21's file authorization and purpose validation for store logos. */
     async storeAssetValidator(context, fileId, purpose) {

@@ -274,6 +274,8 @@ describe("Module 4 Seller & Store Management UI", () => {
             seller: seller(),
             stores: [],
             staffSummary: { totalCount: 3, activeCount: 2, inactiveCount: 1 },
+            supportedCurrencies: ["PKR", "USD"],
+            defaultCurrency: "USD",
           },
         }),
       ),
@@ -313,12 +315,14 @@ describe("Module 4 Seller & Store Management UI", () => {
             seller: seller(),
             stores,
             staffSummary: { totalCount: 1, activeCount: 1, inactiveCount: 0 },
+            supportedCurrencies: ["PKR", "USD"],
+            defaultCurrency: "USD",
           },
         }),
       ),
       http.post(`${env.VITE_API_BASE_URL}/sellers/me/stores`, async ({ request }) => {
         createBody = await request.json();
-        stores = [store()];
+        stores = [store({ defaultCurrency: "PKR" })];
         return HttpResponse.json({ success: true, data: stores[0] }, { status: 201 });
       }),
     );
@@ -329,8 +333,7 @@ describe("Module 4 Seller & Store Management UI", () => {
     await user.clear(screen.getByLabelText("Store name"));
     await user.type(screen.getByLabelText("Store name"), "Example Store");
     await user.type(screen.getByLabelText("Store slug"), "Example-Store");
-    await user.clear(screen.getByLabelText("Store currency"));
-    await user.type(screen.getByLabelText("Store currency"), "usd");
+    await user.selectOptions(screen.getByLabelText("Store currency"), "PKR");
     await user.type(screen.getByLabelText("Store support email"), "SUPPORT@EXAMPLE.COM");
     await user.click(screen.getByRole("button", { name: "Create store" }));
 
@@ -340,7 +343,7 @@ describe("Module 4 Seller & Store Management UI", () => {
       name: "Example Store",
       description: null,
       logoFileId: null,
-      defaultCurrency: "USD",
+      defaultCurrency: "PKR",
       supportEmail: "support@example.com",
     });
   });
@@ -362,6 +365,8 @@ describe("Module 4 Seller & Store Management UI", () => {
             seller: seller(),
             stores: [store()],
             staffSummary: { totalCount: 1, activeCount: 1, inactiveCount: 0 },
+            supportedCurrencies: ["PKR", "USD"],
+            defaultCurrency: "USD",
           },
         }),
       ),
@@ -439,6 +444,8 @@ describe("Module 4 Seller & Store Management UI", () => {
             seller: seller(),
             stores: [currentStore],
             staffSummary: { totalCount: 1, activeCount: 1, inactiveCount: 0 },
+            supportedCurrencies: ["PKR", "USD"],
+            defaultCurrency: "USD",
           },
         }),
       ),
@@ -480,6 +487,8 @@ describe("Module 4 Seller & Store Management UI", () => {
             seller: seller(),
             stores: [],
             staffSummary: { totalCount: 1, activeCount: 1, inactiveCount: 0 },
+            supportedCurrencies: ["PKR", "USD"],
+            defaultCurrency: "USD",
           },
         }),
       ),
@@ -586,6 +595,8 @@ describe("Module 4 Seller & Store Management UI", () => {
             seller: seller(),
             stores: [],
             staffSummary: { totalCount: 1, activeCount: 1, inactiveCount: 0 },
+            supportedCurrencies: ["PKR", "USD"],
+            defaultCurrency: "USD",
           },
         }),
       ),

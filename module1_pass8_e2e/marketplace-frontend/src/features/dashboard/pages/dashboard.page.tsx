@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
@@ -82,6 +83,67 @@ function DashboardQueryError({
   );
 }
 
+function DashboardWorkspaceNavigation({ user }: { user: AuthenticatedUser }) {
+  const has = (permission: string) => user.permissions.includes(permission);
+  const isSeller = user.accountType === "seller";
+
+  return (
+    <aside className="workspace-sidebar" aria-label={isSeller ? "Seller dashboard navigation" : "Admin dashboard navigation"}>
+      <div className="workspace-sidebar-header">
+        <p className="workspace-sidebar-kicker">{isSeller ? "Seller workspace" : "Marketplace control center"}</p>
+        <h2 className="workspace-sidebar-title">{user.displayName}</h2>
+        <p className="workspace-sidebar-subtitle">{user.email}</p>
+      </div>
+
+      <div className="workspace-nav-group">
+        <p className="workspace-nav-label">Overview</p>
+        <nav className="workspace-nav-list">
+          <Link to="/dashboard" className="workspace-nav-link" activeProps={{ className: "workspace-nav-link workspace-nav-link-active" }}>Dashboard <span>⌂</span></Link>
+          {isSeller && has("seller.orders.read") ? <Link to="/seller/orders" className="workspace-nav-link">Orders <span>›</span></Link> : null}
+          {isSeller && has("seller.products.read") ? <Link to="/seller/products" className="workspace-nav-link">Products <span>›</span></Link> : null}
+          {isSeller && has("inventory.read") ? <Link to="/seller/inventory" className="workspace-nav-link">Inventory <span>›</span></Link> : null}
+          {!isSeller && has("admin.orders.read") ? <Link to="/admin/orders" className="workspace-nav-link">Orders <span>›</span></Link> : null}
+          {!isSeller && has("admin.sellers.review") ? <Link to="/admin/seller-applications" className="workspace-nav-link">Sellers <span>›</span></Link> : null}
+          {!isSeller && has("admin.customers.read") ? <Link to="/admin/customers" className="workspace-nav-link">Customers <span>›</span></Link> : null}
+        </nav>
+      </div>
+
+      <div className="workspace-nav-group">
+        <p className="workspace-nav-label">{isSeller ? "Growth & finance" : "Commerce"}</p>
+        <nav className="workspace-nav-list">
+          {isSeller && has("seller.promotions.manage") ? <Link to="/seller/promotions" className="workspace-nav-link">Promotions <span>›</span></Link> : null}
+          {isSeller && has("seller.returns.manage") ? <Link to="/seller/returns" className="workspace-nav-link">Returns <span>›</span></Link> : null}
+          {isSeller && has("seller.wallet.read") ? <Link to="/seller/wallet" className="workspace-nav-link">Wallet & payouts <span>›</span></Link> : null}
+          {isSeller && has("seller.commissions.read") ? <Link to="/seller/commissions" className="workspace-nav-link">Commissions <span>›</span></Link> : null}
+          {!isSeller && has("admin.payments.read") ? <Link to="/admin/payments" className="workspace-nav-link">Payments <span>›</span></Link> : null}
+          {!isSeller && has("admin.returns.manage") ? <Link to="/admin/returns" className="workspace-nav-link">Returns & refunds <span>›</span></Link> : null}
+          {!isSeller && has("admin.payouts.read") ? <Link to="/admin/payouts" className="workspace-nav-link">Payouts <span>›</span></Link> : null}
+          {!isSeller && has("admin.commissions.read") ? <Link to="/admin/commissions/entries" className="workspace-nav-link">Commissions <span>›</span></Link> : null}
+        </nav>
+      </div>
+
+      <div className="workspace-nav-group">
+        <p className="workspace-nav-label">Workspace</p>
+        <nav className="workspace-nav-list">
+          {isSeller && has("seller.store.manage") ? <Link to="/seller/stores" className="workspace-nav-link">Stores <span>›</span></Link> : null}
+          {isSeller && has("seller.staff.manage") ? <Link to="/seller/staff" className="workspace-nav-link">Staff <span>›</span></Link> : null}
+          {isSeller && has("seller.profile.read") ? <Link to="/seller/profile" className="workspace-nav-link">Seller profile <span>›</span></Link> : null}
+          {!isSeller && has("catalog.manage_categories") ? <Link to="/admin/catalog/categories" className="workspace-nav-link">Catalog & taxonomy <span>›</span></Link> : null}
+          {!isSeller && has("admin.users.read") ? <Link to="/admin/users" className="workspace-nav-link">Users & roles <span>›</span></Link> : null}
+          {has("reports.sales.read") || has("reports.seller.read") || has("reports.finance.read") || has("reports.inventory.read") ? <Link to="/reports" className="workspace-nav-link">Reports <span>›</span></Link> : null}
+          {!isSeller && has("audit.read") ? <Link to="/audit" className="workspace-nav-link">Documents & audit <span>›</span></Link> : null}
+        </nav>
+      </div>
+
+      <div className="workspace-sidebar-footer">
+        <strong>● Platform healthy</strong>
+        <p>Dashboard data remains permission-filtered and sourced from the existing backend modules.</p>
+        <div className="workspace-account-actions"><Link to="/account" className="workspace-nav-link">Account <span>›</span></Link></div>
+      </div>
+    </aside>
+  );
+}
+
 /** Coordinates the role-aware Dashboard widgets while keeping each server read independently retryable. */
 function DashboardContent({ user }: { user: AuthenticatedUser }) {
   const [filters, setFilters] = useState<DashboardFilter>({});
@@ -116,13 +178,22 @@ function DashboardContent({ user }: { user: AuthenticatedUser }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="workspace-frame">
+      <DashboardWorkspaceNavigation user={user} />
+      <div className="workspace-main">
+      <div className="dashboard-shell space-y-6">
       <section className="rounded-xl border bg-white p-5 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Executive & operations</p>
-        <h1 className="mt-1 text-3xl font-bold">Dashboard</h1>
+        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          {user.accountType === "seller" ? "Seller workspace" : "Marketplace control center"}
+        </p>
+        <h1 className="mt-1 text-3xl font-bold">
+          <span className="sr-only">Dashboard</span>
+          <span aria-hidden="true">
+            {user.accountType === "seller" ? `Good morning, ${user.displayName}.` : "Platform overview"}
+          </span>
+        </h1>
         <p className="mt-2 max-w-3xl text-sm text-slate-600">
-          Permission-filtered marketplace KPIs and operational summaries. Orders, payments, stock,
-          refunds, commissions and payouts remain owned by their source modules.
+          Permission-aware marketplace KPIs across orders, payments, sellers, inventory, returns, commissions and payouts.
         </p>
       </section>
 
@@ -222,6 +293,8 @@ function DashboardContent({ user }: { user: AuthenticatedUser }) {
           available within your server-derived scope.
         </p>
       ) : null}
+      </div>
+      </div>
     </div>
   );
 }

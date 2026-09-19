@@ -410,7 +410,7 @@ async function verifyCatalogRoutes() {
     '"/api/v1/catalog/attributes"',
     '"/api/v1/admin/catalog/attributes"',
     '"/api/v1/admin/catalog/categories/{id}/attributes"',
-    "z.toJSONSchema(schema)",
+    "z.toJSONSchema(schema",
     "categoryIdParamsSchema",
     "createCategoryBodySchema",
     "updateCategoryBodySchema",
@@ -554,7 +554,7 @@ async function verifyCatalogBackendTests() {
   ]);
 
   const packageJson = JSON.parse(
-    await read("marketplace-backend/package.json"),
+    (await read("marketplace-backend/package.json")).replace(/^\uFEFF/, ""),
   );
   assertCondition(
     packageJson.scripts?.["test:module5:specs"] === "vitest run tests/module5",
@@ -703,7 +703,9 @@ async function verifyCatalogFrontendFeature() {
     "renders a clear permission state",
   ]);
 
-  const packageJson = JSON.parse(await read("marketplace-frontend/package.json"));
+  const packageJson = JSON.parse(
+    (await read("marketplace-frontend/package.json")).replace(/^\uFEFF/, ""),
+  );
   assertCondition(
     packageJson.scripts?.["test:module5"] ===
       "vitest run tests/module5-catalog-taxonomy.test.tsx",
@@ -744,7 +746,9 @@ async function verifyCatalogE2eAndReleaseGate() {
     "marketplace-frontend-module5-release",
   ]);
 
-  const frontendPackageJson = JSON.parse(await read("marketplace-frontend/package.json"));
+  const frontendPackageJson = JSON.parse(
+    (await read("marketplace-frontend/package.json")).replace(/^\uFEFF/, ""),
+  );
   assertCondition(
     frontendPackageJson.scripts?.["test:e2e:module5"] ===
       "playwright test e2e/module5.spec.ts",

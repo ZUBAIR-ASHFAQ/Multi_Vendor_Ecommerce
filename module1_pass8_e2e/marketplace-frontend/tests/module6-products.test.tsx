@@ -5,6 +5,7 @@ import { App } from "@/app/app";
 import { createTestRouter } from "@/app/router/router";
 import { getPostLoginPath } from "@/features/auth/auth.navigation";
 import type { AuthenticatedUser } from "@/features/auth/types/auth.types";
+import type { ProductDetail } from "@/features/products/types/products.types";
 import { setAccessToken } from "@/lib/auth-session";
 import { createQueryClient } from "@/lib/query-client";
 import { env } from "@/lib/env";
@@ -44,6 +45,28 @@ function useSeller(permissions: string[]): void {
   );
 }
 
+/** Registers a deterministic platform reviewer returned by /auth/me. */
+function useAdmin(): void {
+  setAccessToken("module6-admin-token");
+  server.use(
+    http.get(`${env.VITE_API_BASE_URL}/auth/me`, () =>
+      HttpResponse.json({
+        success: true,
+        data: {
+          id: userId,
+          email: "admin@example.com",
+          displayName: "Platform Admin",
+          accountType: "platform_admin",
+          status: "active",
+          roles: [],
+          permissions: ["admin.products.review"],
+          scopes: { sellerIds: [], storeIds: [] },
+        } satisfies AuthenticatedUser,
+      }),
+    ),
+  );
+}
+
 /** Returns the active Module 5 reads required by Product forms. */
 function useTaxonomy(): void {
   server.use(
@@ -79,7 +102,7 @@ function useTaxonomy(): void {
 }
 
 /** Returns one deterministic seller-private Product aggregate. */
-function productDetail(overrides: Record<string, unknown> = {}) {
+function productDetail(overrides: Partial<ProductDetail> = {}): ProductDetail {
   return {
     id: productId,
     sellerId,
@@ -91,6 +114,9 @@ function productDetail(overrides: Record<string, unknown> = {}) {
     description: "A Product used by Module 6 frontend tests.",
     status: "active",
     publicationStatus: "draft",
+    moderationReason: null,
+    reviewedBy: null,
+    reviewedAt: null,
     publishedAt: null,
     createdAt: "2026-09-06T10:00:00.000Z",
     updatedAt: "2026-09-06T10:00:00.000Z",
@@ -266,8 +292,50 @@ describe("Module 6 Product Management UI", () => {
     await user.click(screen.getByRole("button", { name: "Add variant" }));
 
     expect(await screen.findByText("SKU DEMO-1 · active")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Publish / submit" }));
+    await user.click(screen.getByRole("button", { name: "Submit for review" }));
     expect(await screen.findByText("published")).toBeInTheDocument();
+  });
+
+  it("lets an admin inspect and reject a pending Product with a required reason", async () => {
+    useAdmin();
+    let rejectionBody: unknown;
+    const pendingProduct = productDetail({ publicationStatus: "pending_approval" });
+    server.use(
+      http.get(`${env.VITE_API_BASE_URL}/admin/products`, () =>
+        HttpResponse.json({
+          success: true,
+          data: [pendingProduct],
+          meta: { page: 1, pageSize: 20, totalItems: 1, totalPages: 1 },
+        }),
+      ),
+      http.get(`${env.VITE_API_BASE_URL}/admin/products/${productId}`, () =>
+        HttpResponse.json({ success: true, data: pendingProduct }),
+      ),
+      http.post(`${env.VITE_API_BASE_URL}/admin/products/${productId}/reject`, async ({ request }) => {
+        rejectionBody = await request.json();
+        return HttpResponse.json({
+          success: true,
+          data: productDetail({
+            publicationStatus: "rejected",
+            moderationReason: "Add a clear front image.",
+            reviewedBy: userId,
+            reviewedAt: "2026-09-06T12:00:00.000Z",
+          }),
+        });
+      }),
+    );
+
+    await renderRoute("/admin/products");
+    const user = userEvent.setup();
+    expect(await screen.findByRole("heading", { name: "Product approvals" })).toBeInTheDocument();
+    await user.click(await screen.findByRole("link", { name: "Review" }));
+    expect(await screen.findByRole("heading", { name: "Moderation decision" })).toBeInTheDocument();
+    const rejectButton = screen.getByRole("button", { name: "Reject and return to seller" });
+    expect(rejectButton).toBeDisabled();
+    await user.type(screen.getByLabelText("Rejection reason"), "Add a clear front image.");
+    await user.click(rejectButton);
+    await waitFor(() => expect(rejectionBody).toEqual({ reason: "Add a clear front image." }));
+    expect(await screen.findByText(/This product is no longer awaiting a moderation decision/)).toBeInTheDocument();
   });
 
   it("uploads Product media through the signed Module 21 workflow", async () => {

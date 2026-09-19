@@ -388,7 +388,8 @@ describe("Module 5 Catalog Taxonomy UI", () => {
     );
 
     await renderRoute("/seller/catalog-taxonomy");
-    expect(await screen.findByRole("heading", { name: "Seller taxonomy selector" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Approved catalog reference" })).toBeInTheDocument();
+    expect(screen.getByText(/created by marketplace administrators/i)).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Electronics" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Acme" })).toBeInTheDocument();
     expect(screen.getByText("Choose a category to see its allowed attributes.")).toBeInTheDocument();

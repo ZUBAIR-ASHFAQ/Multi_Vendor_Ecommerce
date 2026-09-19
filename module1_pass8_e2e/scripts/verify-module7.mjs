@@ -331,7 +331,10 @@ async function verifyLiveImplementedOpenApi() {
     ["/api/v1/seller/products/{id}/media", { post: null }],
     ["/api/v1/seller/products/{id}/publish", { post: null }],
     ["/api/v1/seller/products/{id}/unpublish", { post: null }],
+    ["/api/v1/admin/products", { get: null }],
+    ["/api/v1/admin/products/{id}", { get: null }],
     ["/api/v1/admin/products/{id}/approve", { post: null }],
+    ["/api/v1/admin/products/{id}/reject", { post: null }],
   ]);
 
   const module7Paths = new Map([

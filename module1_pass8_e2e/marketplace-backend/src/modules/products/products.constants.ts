@@ -14,6 +14,7 @@ export const PRODUCT_PUBLICATION_STATUS = {
   DRAFT: "draft",
   PENDING_APPROVAL: "pending_approval",
   PUBLISHED: "published",
+  REJECTED: "rejected",
   UNPUBLISHED: "unpublished",
 } as const;
 
@@ -21,6 +22,7 @@ export const PRODUCT_PUBLICATION_STATUS_VALUES = [
   PRODUCT_PUBLICATION_STATUS.DRAFT,
   PRODUCT_PUBLICATION_STATUS.PENDING_APPROVAL,
   PRODUCT_PUBLICATION_STATUS.PUBLISHED,
+  PRODUCT_PUBLICATION_STATUS.REJECTED,
   PRODUCT_PUBLICATION_STATUS.UNPUBLISHED,
 ] as const;
 
@@ -70,7 +72,7 @@ export const PRODUCT_PERMISSION_CATALOG = [
   {
     code: PRODUCT_PERMISSION.ADMIN_REVIEW,
     domain: "products",
-    description: "Approve product listings when marketplace moderation is enabled.",
+    description: "Review, approve, or reject product listings before marketplace publication.",
   },
 ] as const;
 
@@ -91,6 +93,7 @@ export const PRODUCT_OUTBOX_EVENT = {
   UPDATED: "product.updated",
   PRICE_CHANGED: "product.price_changed",
   PUBLISHED: "product.published",
+  REJECTED: "product.rejected",
   UNPUBLISHED: "product.unpublished",
   MEDIA_CHANGED: "product.media_changed",
 } as const;
@@ -113,6 +116,7 @@ export const PRODUCT_AUDIT_ACTION = {
   PUBLISHED: "product.published",
   UNPUBLISHED: "product.unpublished",
   APPROVED: "product.approved",
+  REJECTED: "product.rejected",
 } as const;
 
 /** Database-aligned text and pagination limits shared by Module 6 contracts. */
@@ -125,6 +129,7 @@ export const PRODUCT_LIMITS = {
   MEDIA_TYPE_MAX_LENGTH: 40,
   ALT_TEXT_MAX_LENGTH: 500,
   SEARCH_MAX_LENGTH: 200,
+  MODERATION_REASON_MAX_LENGTH: 2_000,
 } as const;
 
 /** Allow-listed public product sort keys. */

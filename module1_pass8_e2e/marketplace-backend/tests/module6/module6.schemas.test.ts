@@ -1,7 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
+import { PRODUCT_PUBLICATION_STATUS } from "../../src/modules/products/products.constants.js";
 import { productsOpenApiPaths } from "../../src/modules/products/products.routes.js";
 import {
+  adminProductListQuerySchema,
   createProductBodySchema,
   createProductVariantBodySchema,
   emptyProductCommandBodySchema,
@@ -11,6 +13,7 @@ import {
   productPriceSchema,
   productSlugSchema,
   productWeightSchema,
+  rejectProductBodySchema,
   updateProductBodySchema,
   updateProductVariantBodySchema,
 } from "../../src/modules/products/products.schema.js";
@@ -92,6 +95,18 @@ describe("Module 6 Zod and OpenAPI contracts", () => {
     expect(emptyProductCommandBodySchema.parse(undefined)).toEqual({});
   });
 
+  it("defaults the admin queue to pending submissions and requires a rejection reason", () => {
+    expect(adminProductListQuerySchema.parse({})).toMatchObject({
+      publicationStatus: PRODUCT_PUBLICATION_STATUS.PENDING_APPROVAL,
+      sort: "updatedAt",
+      direction: "asc",
+    });
+    expect(rejectProductBodySchema.parse({ reason: "  Add a clear front image.  " })).toEqual({
+      reason: "Add a clear front image.",
+    });
+    expect(() => rejectProductBodySchema.parse({ reason: "   " })).toThrow();
+  });
+
   it("documents the complete Module 6 HTTP contract with standard error responses", () => {
     const expected: Record<string, string[]> = {
       "/api/v1/products": ["get"],
@@ -103,7 +118,10 @@ describe("Module 6 Zod and OpenAPI contracts", () => {
       "/api/v1/seller/products/{id}/media": ["post"],
       "/api/v1/seller/products/{id}/publish": ["post"],
       "/api/v1/seller/products/{id}/unpublish": ["post"],
+      "/api/v1/admin/products": ["get"],
+      "/api/v1/admin/products/{id}": ["get"],
       "/api/v1/admin/products/{id}/approve": ["post"],
+      "/api/v1/admin/products/{id}/reject": ["post"],
     };
 
     for (const [path, methods] of Object.entries(expected)) {

@@ -5,6 +5,7 @@ export type ProductPublicationStatus =
   | "draft"
   | "pending_approval"
   | "published"
+  | "rejected"
   | "unpublished";
 export type ProductVariantStatus = "active" | "inactive";
 export type ProductMediaStatus = "active" | "inactive";
@@ -23,6 +24,9 @@ export interface Product {
   description: string;
   status: ProductStatus;
   publicationStatus: ProductPublicationStatus;
+  moderationReason: string | null;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -132,6 +136,22 @@ export interface SellerProductListParams {
   direction?: ProductSortDirection;
 }
 
+export interface AdminProductListParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+  sellerId?: string;
+  storeId?: string;
+  publicationStatus?: ProductPublicationStatus;
+  sort?: SellerProductSort;
+  direction?: ProductSortDirection;
+}
+
+export interface PaginatedAdminProducts {
+  items: Product[];
+  meta: PaginationMeta;
+}
+
 export interface PaginatedPublicProducts {
   items: PublicProduct[];
   meta: PaginationMeta;
@@ -196,4 +216,8 @@ export interface UploadProductMediaInput {
   variantId?: string | null;
   altText?: string | null;
   sortOrder?: number;
+}
+
+export interface RejectProductInput {
+  reason: string;
 }

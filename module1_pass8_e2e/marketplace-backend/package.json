@@ -170,7 +170,7 @@
                     "test:module1:specs":  "vitest run tests/module1",
                     "test:module1":  "node scripts/run-module1-tests.mjs",
                     "test:module1:release-data":  "node scripts/verify-module1-release-data.mjs",
-                    "dev:infra":  "docker compose -f docker-compose.dev.yml up -d --wait",
+                    "dev:infra":  "docker compose -f docker-compose.dev.yml up -d --wait \u0026\u0026 node scripts/prepare-development-storage.mjs",
                     "dev:infra:down":  "docker compose -f docker-compose.dev.yml down",
                     "dev:setup":  "npm run dev:infra \u0026\u0026 npm run db:migrate \u0026\u0026 npm run db:seed:administration",
                     "marketplace:start":  "powershell -NoProfile -ExecutionPolicy Bypass -File ../START_MARKETPLACE.ps1"

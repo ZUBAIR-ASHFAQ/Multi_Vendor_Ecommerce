@@ -203,7 +203,7 @@ export function ProductForm({
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Step 2</p>
           <h2 className="text-lg font-bold">Taxonomy</h2>
-          <p className="text-sm text-slate-600">Choose one active category and optional brand. The backend revalidates every value.</p>
+          <p className="text-sm text-slate-600">Choose an admin-approved category and optional brand. The backend revalidates every value.</p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">

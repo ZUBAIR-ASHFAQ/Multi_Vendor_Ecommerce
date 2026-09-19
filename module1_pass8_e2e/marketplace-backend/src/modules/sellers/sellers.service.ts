@@ -77,6 +77,12 @@ export interface SellerAdministrationIntegration {
 
   /** Returns whether one normalized store currency is currently enabled by Administration settings. */
   isSupportedCurrency(currency: string): Promise<boolean>;
+
+  /** Returns the current seller-facing currency allow-list without exposing the Administration settings API. */
+  getSupportedCurrencies?(): Promise<string[]>;
+
+  /** Returns the current marketplace default currency used to initialize new store forms. */
+  getDefaultCurrency?(): Promise<string>;
 }
 
 /** Validates one proposed store logo through Module 21 instead of reading file tables directly. */
@@ -416,14 +422,18 @@ export class SellersService {
       context,
       SELLER_PERMISSION.PROFILE_READ,
     );
-    const [stores, staffSummary] = await Promise.all([
+    const [stores, staffSummary, supportedCurrencies, defaultCurrency] = await Promise.all([
       this.repository.listStoresBySellerId(seller.id),
       this.repository.getSellerStaffSummary(seller.id),
+      this.administration?.getSupportedCurrencies?.() ?? Promise.resolve([]),
+      this.administration?.getDefaultCurrency?.() ?? Promise.resolve(""),
     ]);
     return {
       seller: this.toSellerResponse(seller),
       stores: stores.map((store) => this.toStoreResponse(store)),
       staffSummary: this.toStaffSummaryResponse(staffSummary),
+      supportedCurrencies,
+      defaultCurrency,
     };
   }
 
@@ -571,7 +581,10 @@ export class SellersService {
     );
     this.assertSellerActive(seller);
 
-    if (input.defaultCurrency !== undefined) {
+    if (
+      input.defaultCurrency !== undefined &&
+      input.defaultCurrency !== existing.defaultCurrency
+    ) {
       await this.assertSupportedCurrency(input.defaultCurrency);
     }
     if (input.logoFileId !== undefined) {

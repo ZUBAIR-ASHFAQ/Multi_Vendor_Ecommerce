@@ -10,7 +10,7 @@ export function DashboardKpiCards({ summary }: { summary: DashboardSummary }) {
         <h2 id="dashboard-kpi-title" className="text-xl font-semibold">Executive KPIs</h2>
         <Link to="/reports/sales" className="text-sm font-medium underline">Open sales report</Link>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="dashboard-kpi-grid grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border bg-white p-4 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Orders</p>
           <p className="mt-2 text-2xl font-bold">{summary.orderCount}</p>

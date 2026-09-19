@@ -1,6 +1,8 @@
 import { createRoute } from "@tanstack/react-router";
 import { PublicProductDetailPage } from "@/features/products/pages/public-product-detail.page";
 import { PublicProductsPage } from "@/features/products/pages/public-products.page";
+import { AdminProductReviewPage } from "@/features/products/pages/admin-product-review.page";
+import { AdminProductsPage } from "@/features/products/pages/admin-products.page";
 import { SellerProductCreatePage } from "@/features/products/pages/seller-product-create.page";
 import { SellerProductEditPage } from "@/features/products/pages/seller-product-edit.page";
 import { SellerProductsPage } from "@/features/products/pages/seller-products.page";
@@ -34,4 +36,16 @@ export const sellerProductEditRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/seller/products/$productId",
   component: SellerProductEditPage,
+});
+
+export const adminProductsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin/products",
+  component: AdminProductsPage,
+});
+
+export const adminProductReviewRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin/products/$productId",
+  component: AdminProductReviewPage,
 });
