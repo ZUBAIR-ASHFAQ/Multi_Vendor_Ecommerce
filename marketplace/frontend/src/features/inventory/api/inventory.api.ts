@@ -2,6 +2,7 @@ import { apiClient } from "@/lib/api-client";
 import type { ApiResponse, PaginationMeta } from "@/types/api";
 import type {
   InventoryItem,
+  SellerInventoryListItem,
   SellerInventoryListParams,
   StockMovement,
   StockMovementListParams,
@@ -35,7 +36,7 @@ async function page<T>(
 export const inventoryApi = {
   /** Lists Inventory inside the authenticated seller/store scope. */
   listSellerInventory: (params: SellerInventoryListParams) =>
-    page<InventoryItem>(apiClient.get("/seller/inventory", { params: queryParams(params) })),
+    page<SellerInventoryListItem>(apiClient.get("/seller/inventory", { params: queryParams(params) })),
 
   /** Lists immutable stock movements for one seller-owned Product variant. */
   listStockMovements: (variantId: string, params: StockMovementListParams) =>

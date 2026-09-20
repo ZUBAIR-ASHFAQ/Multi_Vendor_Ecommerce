@@ -299,6 +299,12 @@ describe("Module 17 safe response contracts", () => {
         wallets: [validWalletResponse()],
         entries: [],
         payoutAccounts: [account],
+        payoutSummaries: [{
+          currency: "USD",
+          lifetimePaidAmount: "25.0000",
+          inProgressAmount: "5.0000",
+          inProgressCount: 1,
+        }],
       }).payoutAccounts[0]?.id,
     ).toBe(ACCOUNT_ID);
   });

@@ -5,7 +5,7 @@ import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
 import { RequireSellerPermission, SellerLayout } from "@/features/sellers/components/seller-layout";
 import { InventoryPagination } from "../components/inventory-pagination";
-import { useStockMovementsQuery } from "../hooks/use-inventory";
+import { useSellerInventoryQuery, useStockMovementsQuery } from "../hooks/use-inventory";
 import type { StockMovementListParams } from "../schemas/inventory.schemas";
 
 const INVENTORY_READ_PERMISSION = "inventory.read";
@@ -23,17 +23,29 @@ function formatDelta(value: number): string {
 /** Renders one seller-owned variant's immutable stock movement history. */
 function SellerInventoryMovementsContent({ variantId }: { variantId: string }) {
   const [params, setParams] = useState<StockMovementListParams>({ page: 1, pageSize: 20 });
+  const inventory = useSellerInventoryQuery({ page: 1, pageSize: 1, variantId });
   const movements = useStockMovementsQuery(variantId, params);
+  const contextItem = inventory.data?.items[0];
 
   return (
     <div className="space-y-5">
       <section className="rounded-xl border bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">Stock movement history</h1>
-            <p className="mt-1 break-all text-sm text-slate-500">Variant {variantId}</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Inventory ledger</p>
+            <h1 className="mt-1 text-2xl font-bold">Stock movement history</h1>
+            <p className="mt-1 text-sm text-slate-500">
+              {contextItem
+                ? `${contextItem.productName} · ${contextItem.variantTitle} · SKU ${contextItem.variantSku}`
+                : `Variant ${variantId}`}
+            </p>
           </div>
-          <Button asChild variant="outline"><Link to="/seller/inventory">Back to Inventory</Link></Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline"><Link to="/seller/inventory">Back to Inventory</Link></Button>
+            {contextItem ? (
+              <Button asChild variant="ghost"><Link to="/seller/products/$productId" params={{ productId: contextItem.productId }}>Open Product</Link></Button>
+            ) : null}
+          </div>
         </div>
       </section>
 

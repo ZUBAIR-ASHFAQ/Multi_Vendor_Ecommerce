@@ -60,6 +60,18 @@ describe("Module 9 repository persistence boundaries", () => {
 
     const listed = await repository.listPlatformPromotions({ page: 1, pageSize: 20 });
     expect(listed.items.map((promotion) => promotion.id)).toEqual([platformPromotion.id]);
+    const sellerListed = await repository.listSellerPromotions(
+      [seller.sellerId],
+      { page: 1, pageSize: 20 },
+    );
+    expect(sellerListed.items.map((promotion) => promotion.id)).toEqual([sellerPromotion.id]);
+    await expect(
+      repository.listSellerPromotions([seller.sellerId], {
+        page: 1,
+        pageSize: 20,
+        status: PROMOTION_STATUS.ACTIVE,
+      }),
+    ).resolves.toMatchObject({ items: [], totalItems: 0 });
     await expect(
       repository.findPlatformPromotionByIdForUpdate(sellerPromotion.id),
     ).resolves.toBeNull();

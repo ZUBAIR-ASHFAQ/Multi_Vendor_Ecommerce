@@ -63,6 +63,10 @@ function cartResponse() {
         variantId,
         productName: "Checkout Product",
         productSlug: "checkout-product",
+        storeId,
+        storeSlug: "cedar-goods",
+        storeName: "Cedar Goods",
+        thumbnailFileId: null,
         variantTitle: "Default",
         sku: "CHECKOUT-1",
         currentUnitPrice: "100.0000",
@@ -227,10 +231,10 @@ async function renderRoute(path: string): Promise<void> {
 /** Selects the required Shipping Core method and asks the server to calculate a quote. */
 async function calculateQuoteFromForm(): Promise<void> {
   const user = userEvent.setup();
-  const shippingSelect = await screen.findByLabelText("Shipping method for store 55555555");
+  const shippingSelect = await screen.findByLabelText("Shipping method for Cedar Goods");
   await user.selectOptions(shippingSelect, shippingMethodId);
   await user.type(screen.getByLabelText("Checkout coupon code"), "save10");
-  await user.click(screen.getByRole("button", { name: "Calculate authoritative quote" }));
+  await user.click(screen.getByRole("button", { name: "Review order" }));
 }
 
 describe("Module 10 Checkout UI", () => {
@@ -281,7 +285,7 @@ describe("Module 10 Checkout UI", () => {
     expect(confirmBody).toEqual({ stateHash });
     expect(idempotencyKey).toMatch(/^[0-9a-f-]{36}$/i);
     expect(await screen.findByRole("region", { name: "Checkout attempt status" })).toHaveTextContent("confirmed");
-    expect(screen.getByText(/does not mark an order paid/i)).toBeInTheDocument();
+    expect(screen.getByText(/Your order has been created/i)).toBeInTheDocument();
   });
 
   it("shows a quote-change warning with the safe request ID when confirmation detects a stale price", async () => {
@@ -312,8 +316,8 @@ describe("Module 10 Checkout UI", () => {
     await user.click(await screen.findByRole("button", { name: "Confirm & pay" }));
 
     const warning = await screen.findByText("Checkout details changed");
-    expect(warning.closest('[role="alert"]')).toHaveTextContent("Recalculate the quote");
-    expect(warning.closest('[role="alert"]')).toHaveTextContent("Request ID: req-checkout-price-changed");
+    expect(warning.closest('[role="alert"]')).toHaveTextContent("review the latest totals");
+    expect(warning.closest('[role="alert"]')).toHaveTextContent("Technical reference: req-checkout-price-changed");
   });
 
   it("shows an expired-quote warning and disables confirmation until the customer recalculates", async () => {
@@ -332,7 +336,7 @@ describe("Module 10 Checkout UI", () => {
     await renderRoute("/checkout");
     await calculateQuoteFromForm();
 
-    expect(await screen.findByText("This quote has expired. Recalculate before confirming.")).toBeInTheDocument();
+    expect(await screen.findByText("This review has expired. Review your order again before placing it.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Confirm & pay" })).toBeDisabled();
   });
 

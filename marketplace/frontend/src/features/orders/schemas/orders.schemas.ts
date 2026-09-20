@@ -107,6 +107,7 @@ export const sellerOrderListItemSchema = z.object({
   storeId: uuid,
   orderId: uuid,
   orderNo,
+  currency,
   subtotal: money,
   discountTotal: money,
   taxTotal: money,

@@ -1,6 +1,13 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { ErrorState } from "@/components/feedback/error-state";
+import {
+  WORKSPACE_NAV_ACTIVE_CLASS,
+  WORKSPACE_NAV_LINK_CLASS,
+  WorkspaceNavGroup,
+  WorkspaceShell,
+  WorkspaceSidebar,
+} from "@/components/workspace/workspace-shell";
 import { AuthenticatedPanel } from "@/features/auth/components/authenticated-panel";
 import type { AuthenticatedUser } from "@/features/auth/types/auth.types";
 import { REPORTS_PERMISSION } from "../reports.constants";
@@ -28,25 +35,36 @@ function ReportsNavigation({ user }: { user: AuthenticatedUser }) {
   ];
 
   return (
-    <section className="rounded-xl border bg-white p-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Reports & Analytics</p>
-      <p className="mt-1 font-semibold">{user.displayName}</p>
-      <p className="text-xs text-slate-500">Permission-safe operational and financial reporting</p>
-      <nav className="mt-4 flex flex-wrap gap-2" aria-label="Reports navigation">
+    <WorkspaceSidebar
+      ariaLabel="Reports navigation"
+      kicker="Reports & Analytics"
+      title={user.displayName}
+      subtitle="Permission-safe operational and financial reporting"
+      footer={(
+        <>
+          <strong>Live source data</strong>
+          <p>Reports retain the existing server-side scoping, export ownership, and permission checks.</p>
+          <div className="workspace-account-actions">
+            <Link to="/account" className={WORKSPACE_NAV_LINK_CLASS}>Account <span>›</span></Link>
+          </div>
+        </>
+      )}
+    >
+      <WorkspaceNavGroup label="Reports">
         {links
           .filter((link) => !link.permission || user.permissions.includes(link.permission))
           .map((link) => (
             <Link
               key={link.to}
               to={link.to}
-              className="rounded-md border px-3 py-2 text-sm hover:bg-slate-50"
-              activeProps={{ className: "bg-slate-900 text-white hover:bg-slate-900" }}
+              className={WORKSPACE_NAV_LINK_CLASS}
+              activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}
             >
-              {link.label}
+              {link.label} <span>›</span>
             </Link>
           ))}
-      </nav>
-    </section>
+      </WorkspaceNavGroup>
+    </WorkspaceSidebar>
   );
 }
 
@@ -64,12 +82,7 @@ export function ReportsLayout({ children }: { children: (user: AuthenticatedUser
           );
         }
 
-        return (
-          <div className="space-y-6">
-            <ReportsNavigation user={user} />
-            {children(user)}
-          </div>
-        );
+        return <WorkspaceShell sidebar={<ReportsNavigation user={user} />}>{children(user)}</WorkspaceShell>;
       }}
     </AuthenticatedPanel>
   );

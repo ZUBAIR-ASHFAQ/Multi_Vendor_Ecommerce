@@ -90,6 +90,20 @@ describe("Module 9 repository/service/API integration", () => {
       status: PROMOTION_STATUS.DRAFT,
     });
 
+    const sellerAList = await request(app)
+      .get("/api/v1/seller/promotions?page=1&pageSize=20")
+      .set(bearer(sellerA.ownerToken))
+      .expect(200);
+    expect(sellerAList.body.data).toEqual([
+      expect.objectContaining({ id: owned.id, sellerId: sellerA.sellerId }),
+    ]);
+
+    const sellerBList = await request(app)
+      .get("/api/v1/seller/promotions?page=1&pageSize=20")
+      .set(bearer(sellerB.ownerToken))
+      .expect(200);
+    expect(sellerBList.body.data).toEqual([]);
+
     const crossSeller = await request(app)
       .post("/api/v1/seller/promotions")
       .set(bearer(sellerA.ownerToken))

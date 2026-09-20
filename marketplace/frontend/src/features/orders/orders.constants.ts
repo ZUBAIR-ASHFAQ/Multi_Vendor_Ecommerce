@@ -21,6 +21,8 @@ export const ORDER_STATUS_LABEL: Record<string, string> = {
   cancelled: "Cancelled",
   pending_acceptance: "Pending acceptance",
   unfulfilled: "Unfulfilled",
+  partially_fulfilled: "Partially fulfilled",
+  fulfilled: "Fulfilled",
   captured: "Captured",
   pending: "Pending",
   active: "Active",

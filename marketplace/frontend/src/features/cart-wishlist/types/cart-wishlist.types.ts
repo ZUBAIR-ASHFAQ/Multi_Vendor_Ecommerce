@@ -5,6 +5,10 @@ export interface CartItem {
   variantId: string;
   productName: string | null;
   productSlug: string | null;
+  storeId: string | null;
+  storeSlug: string | null;
+  storeName: string | null;
+  thumbnailFileId: string | null;
   variantTitle: string | null;
   sku: string | null;
   currentUnitPrice: string | null;
@@ -34,6 +38,10 @@ export interface WishlistItem {
   variantId: string | null;
   productName: string | null;
   productSlug: string | null;
+  storeId: string | null;
+  storeSlug: string | null;
+  storeName: string | null;
+  thumbnailFileId: string | null;
   variantTitle: string | null;
   currentUnitPrice: string | null;
   currency: string | null;

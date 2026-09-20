@@ -8,7 +8,7 @@ function attributeToken(attributeId: string, value: string): string {
   return `${attributeId}=${value}`;
 }
 
-/** Renders category, brand, attribute, price, and availability facets returned by Search. */
+/** Renders category, brand, and attribute facets returned by Search. */
 export function SearchFacetsPanel({
   facets,
   search,
@@ -21,67 +21,63 @@ export function SearchFacetsPanel({
   const selectedAttributes = search.attribute ?? [];
 
   return (
-    <aside className="space-y-5 rounded-xl border bg-white p-5 shadow-sm" aria-label="Search facets">
-      <div>
-        <h2 className="font-semibold">Categories</h2>
-        <div className="mt-2 space-y-1">
-          {facets.categories.length === 0 ? <p className="text-xs text-slate-500">No category facets.</p> : null}
+    <div className="search-discovery-facets" aria-label="Search facets">
+      <section className="search-discovery-facet-group">
+        <h3>Categories</h3>
+        <div className="search-discovery-facet-options">
+          {facets.categories.length === 0 ? <p>No category facets.</p> : null}
           {facets.categories.map((facet) => (
             <button
               key={facet.categoryId}
               type="button"
               aria-pressed={search.categoryId === facet.categoryId}
-              className={[
-                "flex w-full items-center justify-between rounded px-2 py-1 text-left text-sm",
-                "hover:bg-slate-50 aria-pressed:bg-slate-100 aria-pressed:font-semibold",
-              ].join(" ")}
+              className="search-discovery-facet-button"
               onClick={() => onChange({
                 ...search,
                 page: 1,
                 categoryId: search.categoryId === facet.categoryId ? undefined : facet.categoryId,
               })}
             >
-              <span>{facet.label}</span><span className="text-slate-500">{facet.count}</span>
+              <span>{facet.label}</span>
+              <span>{facet.count}</span>
             </button>
           ))}
         </div>
-      </div>
+      </section>
 
-      <div>
-        <h2 className="font-semibold">Brands</h2>
-        <div className="mt-2 space-y-1">
-          {facets.brands.length === 0 ? <p className="text-xs text-slate-500">No brand facets.</p> : null}
+      <section className="search-discovery-facet-group">
+        <h3>Brands</h3>
+        <div className="search-discovery-facet-options">
+          {facets.brands.length === 0 ? <p>No brand facets.</p> : null}
           {facets.brands.map((facet) => (
             <button
               key={facet.brandId}
               type="button"
               aria-pressed={search.brandId === facet.brandId}
-              className={[
-                "flex w-full items-center justify-between rounded px-2 py-1 text-left text-sm",
-                "hover:bg-slate-50 aria-pressed:bg-slate-100 aria-pressed:font-semibold",
-              ].join(" ")}
+              className="search-discovery-facet-button"
               onClick={() => onChange({
                 ...search,
                 page: 1,
                 brandId: search.brandId === facet.brandId ? undefined : facet.brandId,
               })}
             >
-              <span>{facet.label}</span><span className="text-slate-500">{facet.count}</span>
+              <span>{facet.label}</span>
+              <span>{facet.count}</span>
             </button>
           ))}
         </div>
-      </div>
+      </section>
 
       {facets.attributes.map((facet) => (
-        <fieldset key={facet.attributeId}>
-          <legend className="font-semibold">{facet.label}</legend>
-          <div className="mt-2 space-y-2">
+        <fieldset key={facet.attributeId} className="search-discovery-facet-group">
+          <legend>{facet.label}</legend>
+          <div className="search-discovery-attribute-options">
             {facet.values.map((value) => {
               const token = attributeToken(facet.attributeId, value.value);
               const checked = selectedAttributes.includes(token);
               return (
-                <label key={token} className="flex items-center justify-between gap-2 text-sm">
-                  <span className="flex items-center gap-2">
+                <label key={token}>
+                  <span>
                     <input
                       type="checkbox"
                       checked={checked}
@@ -98,7 +94,7 @@ export function SearchFacetsPanel({
                     />
                     {value.label}
                   </span>
-                  <span className="text-slate-500">{value.count}</span>
+                  <span>{value.count}</span>
                 </label>
               );
             })}
@@ -106,12 +102,12 @@ export function SearchFacetsPanel({
         </fieldset>
       ))}
 
-      <div className="border-t pt-4 text-xs text-slate-600">
+      <div className="search-discovery-facet-summary">
         <p>
-          Availability: {facets.availability.inStock} in stock · {facets.availability.outOfStock} out of stock
+          <strong>{facets.availability.inStock}</strong> in stock · {facets.availability.outOfStock} out of stock
         </p>
-        {facets.price ? <p className="mt-1">Result price range: {facets.price.min}–{facets.price.max}</p> : null}
+        {facets.price ? <p>Current result range: {facets.price.min}–{facets.price.max}</p> : null}
       </div>
-    </aside>
+    </div>
   );
 }

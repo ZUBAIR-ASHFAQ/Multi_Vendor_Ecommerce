@@ -37,6 +37,10 @@ import {
   ProductsRepository,
   type ProductAttributeRecordInput,
   type ProductSellerScope,
+  type PublicProductDisplayContextRow,
+  type PublicProductListRow,
+  type PublicProductStorefrontRow,
+  type SellerProductListRow,
 } from "./products.repository.js";
 import type {
   AdminProductListQuery,
@@ -48,10 +52,13 @@ import type {
   ProductPriceHistoryResponse,
   ProductResponse,
   ProductVariantResponse,
+  PublicProductCommerceDetailResponse,
   PublicProductDetailResponse,
+  PublicProductListItemResponse,
   PublicProductListQuery,
   PublicProductResponse,
   RejectProductInput,
+  SellerProductListItemResponse,
   SellerProductListQuery,
   UpdateProductInput,
   UpdateProductVariantInput,
@@ -104,17 +111,20 @@ export interface ProductsServiceDependencies {
 
 /** Paginated public Product list returned before the HTTP envelope is applied. */
 export interface PaginatedPublicProductsResult {
-  items: PublicProductResponse[];
+  items: PublicProductListItemResponse[];
   meta: PaginationMeta;
 }
 
 /** Paginated seller Product list returned before the HTTP envelope is applied. */
 export interface PaginatedSellerProductsResult {
-  items: ProductResponse[];
+  items: SellerProductListItemResponse[];
   meta: PaginationMeta;
 }
 
-export type PaginatedAdminProductsResult = PaginatedSellerProductsResult;
+export interface PaginatedAdminProductsResult {
+  items: ProductResponse[];
+  meta: PaginationMeta;
+}
 
 /** Current public Product/variant facts Checkout may trust when rebuilding a Cart line. */
 export interface CheckoutProductVariant {
@@ -201,22 +211,30 @@ export class ProductsService {
   async listPublicProducts(query: PublicProductListQuery): Promise<PaginatedPublicProductsResult> {
     const result = await this.repository.listPublicProducts(query);
     return {
-      items: result.items.map((product) => this.toPublicProductResponse(product)),
+      items: result.items.map((row) => this.toPublicProductListItemResponse(row)),
       meta: paginationMeta(query, result.totalItems),
     };
   }
 
-  /** Returns one public Product detail with only active variants/media and no seller-private history. */
+  /** Returns one public Product detail with active commerce data plus safe storefront presentation context. */
   async getPublicProduct(slug: string): Promise<PublicProductDetailResponse> {
-    const product = await this.repository.findPublicProductBySlug(slug);
-    if (!product) throw this.productNotFound();
-    return this.loadPublicProductDetail(product);
+    const storefront = await this.repository.findPublicProductStorefrontBySlug(slug);
+    if (!storefront) throw this.productNotFound();
+    const commerce = await this.loadPublicProductCommerceDetail(storefront.product);
+    return this.toPublicProductDetail(storefront, commerce);
   }
 
-  /** Finds one currently public Product by ID for trusted downstream read-model synchronization. */
-  async findPublicProductById(productId: string): Promise<PublicProductDetailResponse | null> {
+  /** Finds one currently public Product by ID for trusted downstream commerce/read-model synchronization. */
+  async findPublicProductById(productId: string): Promise<PublicProductCommerceDetailResponse | null> {
     const product = await this.repository.findPublicProductById(productId);
-    return product ? this.loadPublicProductDetail(product) : null;
+    return product ? this.loadPublicProductCommerceDetail(product) : null;
+  }
+
+  /** Returns safe Store/card presentation context only while the Product remains publicly storefront-eligible. */
+  async findPublicProductDisplayContextById(
+    productId: string,
+  ): Promise<PublicProductDisplayContextRow | null> {
+    return this.repository.findPublicProductDisplayContextById(productId);
   }
 
   /** Resolves a variant to its owning Product ID without exposing seller-private Product fields. */
@@ -311,7 +329,7 @@ export class ProductsService {
     const result = await this.repository.listSellerProducts(scope, query);
 
     return {
-      items: result.items.map((product) => this.toProductResponse(product)),
+      items: result.items.map((row) => this.toSellerProductListItemResponse(row)),
       meta: paginationMeta(query, result.totalItems),
     };
   }
@@ -1237,8 +1255,8 @@ export class ProductsService {
     );
   }
 
-  /** Loads the public Product aggregate used by storefront reads and trusted Search synchronization. */
-  private async loadPublicProductDetail(product: ProductRow): Promise<PublicProductDetailResponse> {
+  /** Loads the lean public Product aggregate reused by trusted commerce and Search integrations. */
+  private async loadPublicProductCommerceDetail(product: ProductRow): Promise<PublicProductCommerceDetailResponse> {
     const [variants, media, attributes] = await Promise.all([
       this.repository.listVariantsByProductId(product.id, PRODUCT_STATUS.ACTIVE),
       this.repository.listMediaByProductId(product.id, PRODUCT_STATUS.ACTIVE),
@@ -1249,7 +1267,7 @@ export class ProductsService {
       (value) => value.variantId === null || activeVariantIds.has(value.variantId),
     );
 
-    return this.toPublicProductDetail(product, variants, publicAttributes, media);
+    return this.toPublicProductCommerceDetail(product, variants, publicAttributes, media);
   }
 
   /** Loads one complete seller-safe Product aggregate using the supplied repository/transaction. */
@@ -1300,6 +1318,36 @@ export class ProductsService {
       publishedAt: product.publishedAt?.toISOString() ?? null,
       createdAt: product.createdAt.toISOString(),
       updatedAt: product.updatedAt.toISOString(),
+    };
+  }
+
+  /** Maps one seller list projection to a management-card response without loading full Product aggregates. */
+  private toSellerProductListItemResponse(
+    row: SellerProductListRow,
+  ): SellerProductListItemResponse {
+    return {
+      ...this.toProductResponse(row.product),
+      storeName: row.storeName,
+      storeSlug: row.storeSlug,
+      storeCurrency: row.storeCurrency,
+      variantCount: row.variantCount,
+      minPrice: row.minPrice,
+      maxPrice: row.maxPrice,
+      priceCurrency: row.priceCurrency,
+      thumbnailFileId: row.thumbnailFileId,
+    };
+  }
+
+  /** Maps one public list projection to the storefront-card response without exposing private Product fields. */
+  private toPublicProductListItemResponse(
+    row: PublicProductListRow,
+  ): PublicProductListItemResponse {
+    return {
+      ...this.toPublicProductResponse(row.product),
+      minPrice: row.minPrice,
+      maxPrice: row.maxPrice,
+      currency: row.currency,
+      thumbnailFileId: row.thumbnailFileId,
     };
   }
 
@@ -1366,13 +1414,13 @@ export class ProductsService {
     };
   }
 
-  /** Builds one public detail response without internal status fields or price-history metadata. */
-  private toPublicProductDetail(
+  /** Builds the lean public commerce response without storefront-only seller/taxonomy presentation fields. */
+  private toPublicProductCommerceDetail(
     product: ProductRow,
     variants: ProductVariantRow[],
     attributes: ProductAttributeValueRow[],
     media: ProductMediaRow[],
-  ): PublicProductDetailResponse {
+  ): PublicProductCommerceDetailResponse {
     return {
       ...this.toPublicProductResponse(product),
       variants: variants.map((variant) => {
@@ -1412,6 +1460,38 @@ export class ProductsService {
           createdAt: safe.createdAt,
         };
       }),
+    };
+  }
+
+  /** Adds the safe Store/Seller/category/brand projection required only by the public HTTP Product detail. */
+  private toPublicProductDetail(
+    storefront: PublicProductStorefrontRow,
+    commerce: PublicProductCommerceDetailResponse,
+  ): PublicProductDetailResponse {
+    return {
+      ...commerce,
+      store: {
+        id: storefront.storeId,
+        slug: storefront.storeSlug,
+        name: storefront.storeName,
+        logoFileId: storefront.storeLogoFileId,
+        seller: {
+          id: storefront.sellerId,
+          displayName: storefront.sellerDisplayName,
+        },
+      },
+      category: {
+        id: storefront.categoryId,
+        slug: storefront.categorySlug,
+        name: storefront.categoryName,
+      },
+      brand: storefront.brandId && storefront.brandSlug && storefront.brandName
+        ? {
+            id: storefront.brandId,
+            slug: storefront.brandSlug,
+            name: storefront.brandName,
+          }
+        : null,
     };
   }
 

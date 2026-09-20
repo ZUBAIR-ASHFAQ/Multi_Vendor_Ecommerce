@@ -1,11 +1,18 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  WORKSPACE_NAV_ACTIVE_CLASS,
+  WORKSPACE_NAV_LINK_CLASS,
+  WorkspaceNavGroup,
+  WorkspaceShell,
+  WorkspaceSidebar,
+} from "@/components/workspace/workspace-shell";
 import { AuthenticatedPanel } from "@/features/auth/components/authenticated-panel";
 import { useLogoutMutation } from "@/features/auth/hooks/use-auth";
 import type { AuthenticatedUser } from "@/features/auth/types/auth.types";
-import { COMMISSIONS_PERMISSION } from "@/features/commissions/commissions.constants";
 import { CATALOG_PERMISSION } from "@/features/catalog-taxonomy/catalog-taxonomy.constants";
+import { COMMISSIONS_PERMISSION } from "@/features/commissions/commissions.constants";
 import { CUSTOMER_PERMISSION } from "@/features/customers/customers.constants";
 import { DOCUMENT_AUDIT_PERMISSION } from "@/features/documents-audit/documents-audit.constants";
 import { NOTIFICATIONS_PERMISSION } from "@/features/notifications/notifications.constants";
@@ -18,9 +25,6 @@ import { REVIEWS_PERMISSION } from "@/features/reviews/reviews.constants";
 import { WALLET_PAYOUT_PERMISSION } from "@/features/seller-wallet-payouts/seller-wallet-payouts.constants";
 import { SELLER_PERMISSION } from "@/features/sellers/sellers.constants";
 import { ADMIN_PERMISSION, hasPermission } from "../administration.constants";
-
-const navClass = "workspace-nav-link";
-const activeClass = "workspace-nav-link workspace-nav-link-active";
 
 /** Returns true when an admin actor can use any Reports & Analytics surface. */
 function canOpenReports(user: AuthenticatedUser): boolean {
@@ -37,79 +41,120 @@ function AdminNavigation({ user }: { user: AuthenticatedUser }) {
   const navigate = useNavigate();
   const logout = useLogoutMutation();
 
+  const canUseCommerce = [
+    ORDERS_PERMISSION.ADMIN_READ,
+    PAYMENTS_PERMISSION.ADMIN_READ,
+    "admin.returns.manage",
+    REVIEWS_PERMISSION.ADMIN_MODERATE,
+  ].some((permission) => permitted(user, permission));
+  const canUseMarketplace = [
+    SELLER_PERMISSION.ADMIN_REVIEW,
+    SELLER_PERMISSION.ADMIN_SUSPEND,
+    CUSTOMER_PERMISSION.ADMIN_CUSTOMERS_READ,
+    PRODUCT_PERMISSION.ADMIN_REVIEW,
+    PROMOTION_PERMISSION.ADMIN_MANAGE,
+  ].some((permission) => permitted(user, permission));
+  const canUseCatalog = [
+    CATALOG_PERMISSION.MANAGE_CATEGORIES,
+    CATALOG_PERMISSION.MANAGE_BRANDS,
+    CATALOG_PERMISSION.MANAGE_ATTRIBUTES,
+  ].some((permission) => permitted(user, permission));
+  const canUseFinance = permitted(user, COMMISSIONS_PERMISSION.ADMIN_READ)
+    || permitted(user, WALLET_PAYOUT_PERMISSION.ADMIN_PAYOUTS_READ);
+  const canUseOperations = canOpenReports(user)
+    || permitted(user, DOCUMENT_AUDIT_PERMISSION.DOCUMENTS_READ)
+    || permitted(user, DOCUMENT_AUDIT_PERMISSION.AUDIT_READ)
+    || permitted(user, NOTIFICATIONS_PERMISSION.ADMIN_READ);
+  const canUseAccess = [
+    ADMIN_PERMISSION.USERS_READ,
+    ADMIN_PERMISSION.ROLES_READ,
+    ADMIN_PERMISSION.SETTINGS_MANAGE,
+  ].some((permission) => permitted(user, permission));
+
   return (
-    <aside className="workspace-sidebar" aria-label="Administration navigation">
-      <div className="workspace-sidebar-header">
-        <p className="workspace-sidebar-kicker">Marketplace control center</p>
-        <h2 className="workspace-sidebar-title">{user.displayName}</h2>
-        <p className="workspace-sidebar-subtitle">{user.email} · {user.accountType}</p>
-      </div>
+    <WorkspaceSidebar
+      ariaLabel="Administration navigation"
+      kicker="Marketplace control center"
+      title={user.displayName}
+      subtitle={<>{user.email} · {user.accountType}</>}
+      footer={(
+        <>
+          <strong>● Platform healthy</strong>
+          <p>Operational navigation stays permission-aware and backed by your current API authorization model.</p>
+          <div className="workspace-account-actions">
+            <Button variant="outline" size="sm" asChild><Link to="/account">Account</Link></Button>
+            <Button variant="outline" size="sm" disabled={logout.isPending} onClick={() => { void logout.mutateAsync().then(() => navigate({ to: "/login" })); }}>Sign out</Button>
+          </div>
+        </>
+      )}
+    >
+      {user.permissions.includes("dashboard.read") ? (
+        <WorkspaceNavGroup label="Overview">
+          <Link to="/dashboard" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Dashboard <span>⌂</span></Link>
+        </WorkspaceNavGroup>
+      ) : null}
 
-      <div className="workspace-nav-group">
-        <p className="workspace-nav-label">Control center</p>
-        <nav className="workspace-nav-list">
-          {user.permissions.includes("dashboard.read") ? <Link to="/dashboard" className={navClass} activeProps={{ className: activeClass }}>Dashboard <span>⌂</span></Link> : null}
-          {permitted(user, ORDERS_PERMISSION.ADMIN_READ) ? <Link to="/admin/orders" className={navClass} activeProps={{ className: activeClass }}>Orders <span>›</span></Link> : null}
-          {permitted(user, SELLER_PERMISSION.ADMIN_REVIEW) ? <Link to="/admin/seller-applications" className={navClass} activeProps={{ className: activeClass }}>Seller applications <span>›</span></Link> : null}
-          {permitted(user, CUSTOMER_PERMISSION.ADMIN_CUSTOMERS_READ) ? <Link to="/admin/customers" className={navClass} activeProps={{ className: activeClass }}>Customers <span>›</span></Link> : null}
-          {permitted(user, SELLER_PERMISSION.ADMIN_SUSPEND) ? <Link to="/admin/sellers/suspend" className={navClass} activeProps={{ className: activeClass }}>Seller controls <span>›</span></Link> : null}
-        </nav>
-      </div>
+      {canUseCommerce ? (
+        <WorkspaceNavGroup label="Commerce">
+          {permitted(user, ORDERS_PERMISSION.ADMIN_READ) ? <Link to="/admin/orders" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Orders <span>›</span></Link> : null}
+          {permitted(user, PAYMENTS_PERMISSION.ADMIN_READ) ? <Link to="/admin/payments" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Payments <span>›</span></Link> : null}
+          {permitted(user, "admin.returns.manage") ? <Link to="/admin/returns" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Returns & refunds <span>›</span></Link> : null}
+          {permitted(user, REVIEWS_PERMISSION.ADMIN_MODERATE) ? <Link to="/admin/reviews" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Reviews <span>›</span></Link> : null}
+        </WorkspaceNavGroup>
+      ) : null}
 
-      <div className="workspace-nav-group">
-        <p className="workspace-nav-label">Commerce</p>
-        <nav className="workspace-nav-list">
-          {permitted(user, PAYMENTS_PERMISSION.ADMIN_READ) ? <Link to="/admin/payments" className={navClass} activeProps={{ className: activeClass }}>Payments <span>›</span></Link> : null}
-          {permitted(user, "admin.returns.manage") ? <Link to="/admin/returns" className={navClass} activeProps={{ className: activeClass }}>Returns & refunds <span>›</span></Link> : null}
-          {permitted(user, WALLET_PAYOUT_PERMISSION.ADMIN_PAYOUTS_READ) ? <Link to="/admin/payouts" className={navClass} activeProps={{ className: activeClass }}>Payouts <span>›</span></Link> : null}
-          {permitted(user, COMMISSIONS_PERMISSION.ADMIN_READ) ? <Link to="/admin/commissions/entries" className={navClass} activeProps={{ className: activeClass }}>Commission ledger <span>›</span></Link> : null}
-          {permitted(user, COMMISSIONS_PERMISSION.ADMIN_READ) ? <Link to="/admin/commissions/rules" className={navClass} activeProps={{ className: activeClass }}>Commission rules <span>›</span></Link> : null}
-        </nav>
-      </div>
+      {canUseMarketplace ? (
+        <WorkspaceNavGroup label="Marketplace">
+          {permitted(user, SELLER_PERMISSION.ADMIN_REVIEW) ? <Link to="/admin/seller-applications" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Seller applications <span>›</span></Link> : null}
+          {permitted(user, SELLER_PERMISSION.ADMIN_SUSPEND) ? <Link to="/admin/sellers/suspend" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Seller controls <span>›</span></Link> : null}
+          {permitted(user, CUSTOMER_PERMISSION.ADMIN_CUSTOMERS_READ) ? <Link to="/admin/customers" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Customers <span>›</span></Link> : null}
+          {permitted(user, PRODUCT_PERMISSION.ADMIN_REVIEW) ? <Link to="/admin/products" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Product approvals <span>›</span></Link> : null}
+          {permitted(user, PROMOTION_PERMISSION.ADMIN_MANAGE) ? <Link to="/admin/promotions" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Promotions <span>›</span></Link> : null}
+        </WorkspaceNavGroup>
+      ) : null}
 
-      <div className="workspace-nav-group">
-        <p className="workspace-nav-label">Catalog</p>
-        <nav className="workspace-nav-list">
-          {permitted(user, PRODUCT_PERMISSION.ADMIN_REVIEW) ? <Link to="/admin/products" className={navClass} activeProps={{ className: activeClass }}>Product approvals <span>â€º</span></Link> : null}
-          {permitted(user, CATALOG_PERMISSION.MANAGE_CATEGORIES) ? <Link to="/admin/catalog/categories" className={navClass} activeProps={{ className: activeClass }}>Categories & subcategories <span>›</span></Link> : null}
-          {permitted(user, CATALOG_PERMISSION.MANAGE_BRANDS) ? <Link to="/admin/catalog/brands" className={navClass} activeProps={{ className: activeClass }}>Brands <span>›</span></Link> : null}
-          {permitted(user, CATALOG_PERMISSION.MANAGE_ATTRIBUTES) ? <Link to="/admin/catalog/attributes" className={navClass} activeProps={{ className: activeClass }}>Attributes <span>›</span></Link> : null}
-          {permitted(user, CATALOG_PERMISSION.MANAGE_CATEGORIES) ? <Link to="/admin/catalog/category-attributes" className={navClass} activeProps={{ className: activeClass }}>Category attribute mapping <span>›</span></Link> : null}
-          {permitted(user, PROMOTION_PERMISSION.ADMIN_MANAGE) ? <Link to="/admin/promotions" className={navClass} activeProps={{ className: activeClass }}>Promotions <span>›</span></Link> : null}
-          {permitted(user, REVIEWS_PERMISSION.ADMIN_MODERATE) ? <Link to="/admin/reviews" className={navClass} activeProps={{ className: activeClass }}>Reviews <span>›</span></Link> : null}
-        </nav>
-      </div>
+      {canUseCatalog ? (
+        <WorkspaceNavGroup label="Catalog">
+          {permitted(user, CATALOG_PERMISSION.MANAGE_CATEGORIES) ? <Link to="/admin/catalog/categories" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Categories & subcategories <span>›</span></Link> : null}
+          {permitted(user, CATALOG_PERMISSION.MANAGE_BRANDS) ? <Link to="/admin/catalog/brands" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Brands <span>›</span></Link> : null}
+          {permitted(user, CATALOG_PERMISSION.MANAGE_ATTRIBUTES) ? <Link to="/admin/catalog/attributes" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Attributes <span>›</span></Link> : null}
+          {permitted(user, CATALOG_PERMISSION.MANAGE_CATEGORIES) ? <Link to="/admin/catalog/category-attributes" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Category attribute mapping <span>›</span></Link> : null}
+        </WorkspaceNavGroup>
+      ) : null}
 
-      <div className="workspace-nav-group">
-        <p className="workspace-nav-label">Platform</p>
-        <nav className="workspace-nav-list">
-          {permitted(user, ADMIN_PERMISSION.USERS_READ) ? <Link to="/admin/users" className={navClass} activeProps={{ className: activeClass }}>Users <span>›</span></Link> : null}
-          {permitted(user, ADMIN_PERMISSION.ROLES_READ) ? <Link to="/admin/roles" className={navClass} activeProps={{ className: activeClass }}>Roles <span>›</span></Link> : null}
-          {canOpenReports(user) ? <Link to="/reports" className={navClass} activeProps={{ className: activeClass }}>Reports <span>›</span></Link> : null}
-          {permitted(user, DOCUMENT_AUDIT_PERMISSION.DOCUMENTS_READ) ? <Link to="/documents" className={navClass} activeProps={{ className: activeClass }}>Documents <span>›</span></Link> : null}
-          {permitted(user, DOCUMENT_AUDIT_PERMISSION.AUDIT_READ) ? <Link to="/audit" className={navClass} activeProps={{ className: activeClass }}>Audit <span>›</span></Link> : null}
-          {permitted(user, NOTIFICATIONS_PERMISSION.ADMIN_READ) ? <Link to="/admin/notification-deliveries" className={navClass} activeProps={{ className: activeClass }}>Notification failures <span>›</span></Link> : null}
-          {permitted(user, ADMIN_PERMISSION.SETTINGS_MANAGE) ? <Link to="/admin/settings" className={navClass} activeProps={{ className: activeClass }}>Settings <span>›</span></Link> : null}
-        </nav>
-      </div>
+      {canUseFinance ? (
+        <WorkspaceNavGroup label="Finance">
+          {permitted(user, COMMISSIONS_PERMISSION.ADMIN_READ) ? <Link to="/admin/commissions/rules" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Commission rules <span>›</span></Link> : null}
+          {permitted(user, COMMISSIONS_PERMISSION.ADMIN_READ) ? <Link to="/admin/commissions/entries" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Commission ledger <span>›</span></Link> : null}
+          {permitted(user, WALLET_PAYOUT_PERMISSION.ADMIN_PAYOUTS_READ) ? <Link to="/admin/payouts" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Payouts <span>›</span></Link> : null}
+        </WorkspaceNavGroup>
+      ) : null}
 
-      <div className="workspace-sidebar-footer">
-        <strong>● Platform healthy</strong>
-        <p>Operational navigation stays permission-aware and backed by your current API authorization model.</p>
-        <div className="workspace-account-actions">
-          <Button variant="outline" size="sm" asChild><Link to="/account">Account</Link></Button>
-          <Button variant="outline" size="sm" disabled={logout.isPending} onClick={() => { void logout.mutateAsync().then(() => navigate({ to: "/login" })); }}>Sign out</Button>
-        </div>
-      </div>
-    </aside>
+      {canUseOperations ? (
+        <WorkspaceNavGroup label="Operations">
+          {permitted(user, NOTIFICATIONS_PERMISSION.ADMIN_READ) ? <Link to="/admin/notification-deliveries" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Notification failures <span>›</span></Link> : null}
+          {canOpenReports(user) ? <Link to="/reports" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Reports <span>›</span></Link> : null}
+          {permitted(user, DOCUMENT_AUDIT_PERMISSION.DOCUMENTS_READ) ? <Link to="/documents" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Documents <span>›</span></Link> : null}
+          {permitted(user, DOCUMENT_AUDIT_PERMISSION.AUDIT_READ) ? <Link to="/audit" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Audit <span>›</span></Link> : null}
+        </WorkspaceNavGroup>
+      ) : null}
+
+      {canUseAccess ? (
+        <WorkspaceNavGroup label="Access">
+          {permitted(user, ADMIN_PERMISSION.USERS_READ) ? <Link to="/admin/users" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Users <span>›</span></Link> : null}
+          {permitted(user, ADMIN_PERMISSION.ROLES_READ) ? <Link to="/admin/roles" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Roles <span>›</span></Link> : null}
+          {permitted(user, ADMIN_PERMISSION.SETTINGS_MANAGE) ? <Link to="/admin/settings" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Settings <span>›</span></Link> : null}
+        </WorkspaceNavGroup>
+      ) : null}
+    </WorkspaceSidebar>
   );
-}
-
-function Layout({ user, children }: { user: AuthenticatedUser; children: ReactNode }) {
-  return <div className="workspace-frame"><AdminNavigation user={user} /><div className="workspace-main">{children}</div></div>;
 }
 
 /** Protects an administration page and supplies the current authenticated actor. */
 export function AdminLayout({ children }: { children: (user: AuthenticatedUser) => ReactNode }) {
-  return <AuthenticatedPanel>{(user) => <Layout user={user}>{children(user)}</Layout>}</AuthenticatedPanel>;
+  return (
+    <AuthenticatedPanel>
+      {(user) => <WorkspaceShell sidebar={<AdminNavigation user={user} />}>{children(user)}</WorkspaceShell>}
+    </AuthenticatedPanel>
+  );
 }

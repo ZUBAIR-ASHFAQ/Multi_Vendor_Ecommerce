@@ -230,6 +230,14 @@ describe("Module 9 Promotions & Coupons UI", () => {
     useActor(actor("seller", ["seller.promotions.manage"]));
     let createBody: Record<string, unknown> | null = null;
     server.use(
+      http.get(`${env.VITE_API_BASE_URL}/seller/promotions`, () =>
+        HttpResponse.json({
+          success: true,
+          data: [],
+          meta: { page: 1, pageSize: 20, totalItems: 0, totalPages: 0 },
+          requestId: "req-seller-promotion-list",
+        }),
+      ),
       http.post(`${env.VITE_API_BASE_URL}/seller/promotions`, async ({ request }) => {
         createBody = (await request.json()) as Record<string, unknown>;
         return HttpResponse.json({

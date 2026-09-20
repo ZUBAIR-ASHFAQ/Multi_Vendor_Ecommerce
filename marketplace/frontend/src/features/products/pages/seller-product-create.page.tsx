@@ -83,12 +83,15 @@ function SellerProductCreateContent({
   }
 
   return (
-    <section className="rounded-xl border bg-white p-5 shadow-sm">
-      <h1 className="text-2xl font-bold">Create Product</h1>
-      <p className="mt-1 text-sm text-slate-600">
-        Create the draft first. Variants, media, pricing history, and publication controls become available on the next screen.
-      </p>
-      <div className="mt-6">
+    <div className="space-y-5">
+      <section className="rounded-xl border bg-white p-5 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Catalog</p>
+        <h1 className="mt-1 text-2xl font-bold">Create Product</h1>
+        <p className="mt-1 text-sm text-slate-600">
+          Start with the listing information and organization. The Product remains a draft until variants, media, inventory, and publication are ready.
+        </p>
+      </section>
+      <section className="rounded-xl border bg-white p-5 shadow-sm">
         <ProductForm
           stores={stores}
           submitLabel="Create draft Product"
@@ -96,7 +99,7 @@ function SellerProductCreateContent({
           error={create.error}
           onSubmit={createProduct}
         />
-      </div>
-    </section>
+      </section>
+    </div>
   );
 }

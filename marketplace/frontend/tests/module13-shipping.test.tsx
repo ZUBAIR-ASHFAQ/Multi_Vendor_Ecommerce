@@ -84,6 +84,7 @@ function sellerOrder() {
     storeId,
     orderId,
     orderNo,
+    currency: "USD",
     subtotal: "100.0000",
     discountTotal: "0.0000",
     taxTotal: "0.0000",

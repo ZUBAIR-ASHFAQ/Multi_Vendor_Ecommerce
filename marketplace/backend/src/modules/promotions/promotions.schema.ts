@@ -205,6 +205,13 @@ export const promotionIdParamsSchema = z
 /** Bounded admin list query; no undocumented Module 9 filters are accepted yet. */
 export const adminPromotionListQuerySchema = paginationQuerySchema.strict();
 
+/** Seller-owned promotion list query; ownership remains derived from authenticated seller permissions. */
+export const sellerPromotionListQuerySchema = paginationQuerySchema
+  .extend({
+    status: promotionStatusSchema.optional(),
+  })
+  .strict();
+
 /** Request body for PATCH /api/v1/admin/promotions/:id; status/ownership/funding remain command/server owned. */
 export const updatePromotionBodySchema = z
   .object({
@@ -301,6 +308,7 @@ export type CreateSellerPromotionInput = z.infer<
 >;
 export type UpdatePromotionInput = z.infer<typeof updatePromotionBodySchema>;
 export type AdminPromotionListQuery = z.infer<typeof adminPromotionListQuerySchema>;
+export type SellerPromotionListQuery = z.infer<typeof sellerPromotionListQuerySchema>;
 export type ValidatePromotionQuery = z.infer<typeof validatePromotionQuerySchema>;
 export type PromotionScopeInput = z.infer<typeof promotionScopeInputSchema>;
 export type UpdateCouponInput = z.infer<typeof updateCouponInputSchema>;

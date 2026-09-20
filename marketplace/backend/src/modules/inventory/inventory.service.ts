@@ -29,12 +29,14 @@ import {
 import {
   InventoryRepository,
   type InventorySellerScope,
+  type SellerInventoryListRow,
 } from "./inventory.repository.js";
 import type {
   AdjustStockInput,
   CommitStockReservationInput,
   InventoryItemResponse,
   ReleaseStockInput,
+  SellerInventoryListItemResponse,
   ReserveStockInput,
   SellerInventoryListQuery,
   ShipStockInput,
@@ -69,7 +71,7 @@ export interface InventoryServiceDependencies {
 
 /** Paginated seller Inventory result returned before the HTTP envelope is applied. */
 export interface PaginatedInventoryResult {
-  items: InventoryItemResponse[];
+  items: SellerInventoryListItemResponse[];
   meta: PaginationMeta;
 }
 
@@ -164,7 +166,7 @@ export class InventoryService {
     const result = await this.repository.listSellerInventory(scope, query);
 
     return {
-      items: result.items.map((item) => this.toInventoryResponse(item)),
+      items: result.items.map((item) => this.toSellerInventoryListItemResponse(item)),
       meta: paginationMeta(query, result.totalItems),
     };
   }
@@ -1209,6 +1211,24 @@ export class InventoryService {
       movement.sourceType === sourceType &&
       movement.sourceId === sourceId;
     if (!matches) throw this.duplicateStockSource();
+  }
+
+  /** Converts one Inventory list projection into the seller management response contract. */
+  private toSellerInventoryListItemResponse(
+    row: SellerInventoryListRow,
+  ): SellerInventoryListItemResponse {
+    return {
+      ...this.toInventoryResponse(row.inventory),
+      productId: row.productId,
+      productName: row.productName,
+      productSlug: row.productSlug,
+      variantSku: row.variantSku,
+      variantTitle: row.variantTitle,
+      variantStatus: row.variantStatus as SellerInventoryListItemResponse["variantStatus"],
+      variantPrice: row.variantPrice,
+      variantCurrency: row.variantCurrency,
+      storeName: row.storeName,
+    };
   }
 
   /** Converts one persisted Inventory row into the seller/admin-safe response contract. */

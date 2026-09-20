@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
+import { Button } from "@/components/ui/button";
 import {
   RequireSellerPermission,
   SellerLayout,
@@ -37,9 +38,14 @@ function SellerReturnCard({ value }: { value: ReturnRequest }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="font-semibold">{value.returnNo}</h2>
-          <p className="text-xs text-slate-500">Seller Order {value.sellerOrderId}</p>
-          <p className="text-xs text-slate-500">Customer {value.customerUserId}</p>
-          <p className="mt-1 text-sm">Reason: {RETURN_REASON_LABEL[value.reasonCode]}</p>
+          <p className="mt-1 text-xs text-slate-500">Seller Order {value.sellerOrderId}</p>
+          <p className="mt-1 text-xs text-slate-500">
+            Requested {new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value.requestedAt))}
+          </p>
+          <p className="mt-2 text-sm">Reason: {RETURN_REASON_LABEL[value.reasonCode]}</p>
+          <p className="mt-1 text-sm text-slate-600">
+            {value.items.reduce((total, item) => total + item.quantity, 0)} item(s) across {value.items.length} return line(s)
+          </p>
         </div>
         <ReturnStatus value={value.status} />
       </div>
@@ -109,9 +115,10 @@ function SellerReturnsContent() {
       <section className="rounded-xl border bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">Seller Return queue</h1>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Post-purchase operations</p>
+            <h1 className="mt-1 text-2xl font-bold">Seller Return queue</h1>
             <p className="mt-1 text-sm text-slate-600">
-              Approve/reject requests and record physical inspection. Seller/store scope is enforced by the API.
+              Triage new requests first, then record physical receipt and inspection for approved Returns.
             </p>
           </div>
           <label className="text-sm font-medium">
@@ -130,6 +137,27 @@ function SellerReturnsContent() {
               {RETURN_STATUS_VALUES.map((value) => <option key={value} value={value}>{RETURN_STATUS_LABEL[value]}</option>)}
             </select>
           </label>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2" aria-label="Seller Return queue filters">
+          <Button
+            type="button"
+            size="sm"
+            variant={params.status === undefined ? "default" : "outline"}
+            onClick={() => setParams((current) => ({ ...current, page: 1, status: undefined }))}
+          >
+            All
+          </Button>
+          {RETURN_STATUS_VALUES.map((value) => (
+            <Button
+              key={value}
+              type="button"
+              size="sm"
+              variant={params.status === value ? "default" : "outline"}
+              onClick={() => setParams((current) => ({ ...current, page: 1, status: value }))}
+            >
+              {value === "requested" ? "Needs decision" : RETURN_STATUS_LABEL[value]}
+            </Button>
+          ))}
         </div>
       </section>
 

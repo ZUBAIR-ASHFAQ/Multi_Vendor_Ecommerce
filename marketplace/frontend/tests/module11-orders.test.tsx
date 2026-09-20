@@ -164,6 +164,7 @@ function sellerOrder(overrides: Record<string, unknown> = {}) {
     storeId,
     orderId,
     orderNo,
+    currency: "USD",
     subtotal: "100.0000",
     discountTotal: "10.0000",
     taxTotal: "9.0000",

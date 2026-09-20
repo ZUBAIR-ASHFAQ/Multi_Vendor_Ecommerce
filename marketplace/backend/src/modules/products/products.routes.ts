@@ -5,6 +5,7 @@ import { requirePermission } from "../../common/middleware/authorization.middlew
 import { PRODUCT_PERMISSION } from "./products.constants.js";
 import { ProductsController } from "./products.controller.js";
 import {
+  adminProductListDataSchema,
   adminProductListQuerySchema,
   createProductBodySchema,
   createProductVariantBodySchema,
@@ -537,7 +538,7 @@ export const productsOpenApiPaths = {
           description: "Cross-seller Product moderation queue returned.",
           content: {
             "application/json": {
-              schema: paginatedSuccess(openApiSchema(sellerProductListDataSchema)),
+              schema: paginatedSuccess(openApiSchema(adminProductListDataSchema)),
             },
           },
         },

@@ -1,5 +1,5 @@
 import { http, HttpResponse } from "msw";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { App } from "@/app/app";
 import { createTestRouter } from "@/app/router/router";
@@ -62,6 +62,65 @@ describe("Module 2 administration UI", () => {
 
     expect(await screen.findByText("Test User")).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Create user" })).not.toBeInTheDocument();
+    const navigation = screen.getByLabelText("Administration navigation");
+    expect(within(navigation).getByText("Access")).toBeInTheDocument();
+    expect(within(navigation).getByRole("link", { name: /Users/ })).toBeInTheDocument();
+    expect(within(navigation).queryByText("Commerce")).not.toBeInTheDocument();
+  });
+
+  it("groups the complete admin operating system by business domain without bypassing permissions", async () => {
+    setAccessToken("token");
+    const permissions = [
+      "dashboard.read",
+      "admin.orders.read",
+      "admin.payments.read",
+      "admin.returns.manage",
+      "admin.reviews.moderate",
+      "admin.sellers.review",
+      "admin.sellers.suspend",
+      "admin.customers.read",
+      "admin.products.review",
+      "admin.promotions.manage",
+      "catalog.manage_categories",
+      "catalog.manage_brands",
+      "catalog.manage_attributes",
+      "admin.commissions.read",
+      "admin.payouts.read",
+      "admin.notifications.read",
+      "reports.sales.read",
+      "documents.read",
+      "audit.read",
+      "admin.users.read",
+      "admin.roles.read",
+      "admin.settings.manage",
+    ];
+
+    server.use(
+      http.get(`${env.VITE_API_BASE_URL}/auth/me`, () =>
+        HttpResponse.json({ success: true, data: actor(permissions) }),
+      ),
+      http.get(`${env.VITE_API_BASE_URL}/admin/users`, () =>
+        HttpResponse.json({
+          success: true,
+          data: [],
+          meta: { page: 1, pageSize: 20, totalItems: 0, totalPages: 0 },
+        }),
+      ),
+    );
+
+    const router = createTestRouter(["/admin/users"]);
+    await router.load();
+    render(<App router={router} queryClient={createQueryClient()} />);
+
+    expect(await screen.findByText("No users found.")).toBeInTheDocument();
+    const navigation = screen.getByLabelText("Administration navigation");
+    for (const group of ["Overview", "Commerce", "Marketplace", "Catalog", "Finance", "Operations", "Access"]) {
+      expect(within(navigation).getByText(group)).toBeInTheDocument();
+    }
+    expect(within(navigation).getByRole("link", { name: /Reviews/ })).toBeInTheDocument();
+    expect(within(navigation).getByRole("link", { name: /Product approvals/ })).toBeInTheDocument();
+    expect(within(navigation).getByRole("link", { name: /Commission rules/ })).toBeInTheDocument();
+    expect(within(navigation).getByRole("link", { name: /Notification failures/ })).toBeInTheDocument();
   });
 
 

@@ -2,15 +2,19 @@ import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { ErrorState } from "@/components/feedback/error-state";
 import { Button } from "@/components/ui/button";
+import {
+  WORKSPACE_NAV_ACTIVE_CLASS,
+  WORKSPACE_NAV_LINK_CLASS,
+  WorkspaceNavGroup,
+  WorkspaceShell,
+  WorkspaceSidebar,
+} from "@/components/workspace/workspace-shell";
 import { AuthenticatedPanel } from "@/features/auth/components/authenticated-panel";
 import type { AuthenticatedUser } from "@/features/auth/types/auth.types";
 import { COMMISSIONS_PERMISSION } from "@/features/commissions/commissions.constants";
 import { REPORTS_PERMISSION } from "@/features/reports/reports.constants";
 import { WALLET_PAYOUT_PERMISSION } from "@/features/seller-wallet-payouts/seller-wallet-payouts.constants";
 import { hasSellerPermission, SELLER_PERMISSION } from "../sellers.constants";
-
-const navClass = "workspace-nav-link";
-const activeClass = "workspace-nav-link workspace-nav-link-active";
 
 /** Renders seller self-service navigation from the server-derived permission set. */
 function SellerNavigation({ user }: { user: AuthenticatedUser }) {
@@ -28,57 +32,47 @@ function SellerNavigation({ user }: { user: AuthenticatedUser }) {
   const canReadReports = user.permissions.includes(REPORTS_PERMISSION.SELLER_READ);
 
   return (
-    <aside className="workspace-sidebar" aria-label="Seller workspace navigation">
-      <div className="workspace-sidebar-header">
-        <p className="workspace-sidebar-kicker">Seller workspace</p>
-        <h2 className="workspace-sidebar-title">{user.displayName}</h2>
-        <p className="workspace-sidebar-subtitle">{user.email}</p>
-      </div>
+    <WorkspaceSidebar
+      ariaLabel="Seller workspace navigation"
+      kicker="Seller workspace"
+      title={user.displayName}
+      subtitle={user.email}
+      footer={(
+        <>
+          <strong>● Platform healthy</strong>
+          <p>Orders, payments, inventory and payouts remain connected to their existing source modules.</p>
+          <div className="workspace-account-actions">
+            <Button asChild variant="outline" size="sm"><Link to="/account">Account</Link></Button>
+          </div>
+        </>
+      )}
+    >
+      <WorkspaceNavGroup label="Overview">
+        {user.permissions.includes("dashboard.read") ? <Link to="/dashboard" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Dashboard <span>⌂</span></Link> : null}
+        {canReadOrders ? <Link to="/seller/orders" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Orders <span>›</span></Link> : null}
+        {canReadProducts ? <Link to="/seller/products" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Products <span>›</span></Link> : null}
+        {canReadInventory ? <Link to="/seller/inventory" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Inventory <span>›</span></Link> : null}
+      </WorkspaceNavGroup>
 
-      <div className="workspace-nav-group">
-        <p className="workspace-nav-label">Overview</p>
-        <nav className="workspace-nav-list">
-          {user.permissions.includes("dashboard.read") ? <Link to="/dashboard" className={navClass} activeProps={{ className: activeClass }}>Dashboard <span>⌂</span></Link> : null}
-          {canReadOrders ? <Link to="/seller/orders" className={navClass} activeProps={{ className: activeClass }}>Orders <span>›</span></Link> : null}
-          {canReadProducts ? <Link to="/seller/products" className={navClass} activeProps={{ className: activeClass }}>Products <span>›</span></Link> : null}
-          {canReadInventory ? <Link to="/seller/inventory" className={navClass} activeProps={{ className: activeClass }}>Inventory <span>›</span></Link> : null}
-        </nav>
-      </div>
+      <WorkspaceNavGroup label="Growth & fulfillment">
+        {canManagePromotions ? <Link to="/seller/promotions" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Offers & promotions <span>›</span></Link> : null}
+        {canReadShipments ? <Link to="/seller/shipments" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Shipping <span>›</span></Link> : null}
+        {canManageReturns ? <Link to="/seller/returns" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Returns <span>›</span></Link> : null}
+      </WorkspaceNavGroup>
 
-      <div className="workspace-nav-group">
-        <p className="workspace-nav-label">Growth & fulfillment</p>
-        <nav className="workspace-nav-list">
-          {canManagePromotions ? <Link to="/seller/promotions" className={navClass} activeProps={{ className: activeClass }}>Offers & promotions <span>›</span></Link> : null}
-          {canReadShipments ? <Link to="/seller/shipments" className={navClass} activeProps={{ className: activeClass }}>Shipping <span>›</span></Link> : null}
-          {canManageReturns ? <Link to="/seller/returns" className={navClass} activeProps={{ className: activeClass }}>Returns <span>›</span></Link> : null}
-        </nav>
-      </div>
+      <WorkspaceNavGroup label="Finance">
+        {canReadWallet ? <Link to="/seller/wallet" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Wallet <span>›</span></Link> : null}
+        {canReadWallet ? <Link to="/seller/payouts" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Payouts <span>›</span></Link> : null}
+        {canReadCommissions ? <Link to="/seller/commissions" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Commissions <span>›</span></Link> : null}
+        {canReadReports ? <Link to="/reports" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Reports <span>›</span></Link> : null}
+      </WorkspaceNavGroup>
 
-      <div className="workspace-nav-group">
-        <p className="workspace-nav-label">Finance</p>
-        <nav className="workspace-nav-list">
-          {canReadWallet ? <Link to="/seller/wallet" className={navClass} activeProps={{ className: activeClass }}>Wallet <span>›</span></Link> : null}
-          {canReadWallet ? <Link to="/seller/payouts" className={navClass} activeProps={{ className: activeClass }}>Payouts <span>›</span></Link> : null}
-          {canReadCommissions ? <Link to="/seller/commissions" className={navClass} activeProps={{ className: activeClass }}>Commissions <span>›</span></Link> : null}
-          {canReadReports ? <Link to="/reports" className={navClass} activeProps={{ className: activeClass }}>Reports <span>›</span></Link> : null}
-        </nav>
-      </div>
-
-      <div className="workspace-nav-group">
-        <p className="workspace-nav-label">Workspace</p>
-        <nav className="workspace-nav-list">
-          {canManageStores ? <Link to="/seller/stores" className={navClass} activeProps={{ className: activeClass }}>Stores <span>›</span></Link> : null}
-          {canManageStaff ? <Link to="/seller/staff" className={navClass} activeProps={{ className: activeClass }}>Staff access <span>›</span></Link> : null}
-          {canReadProfile ? <Link to="/seller/profile" className={navClass} activeProps={{ className: activeClass }}>Seller profile <span>›</span></Link> : null}
-        </nav>
-      </div>
-
-      <div className="workspace-sidebar-footer">
-        <strong>● Platform healthy</strong>
-        <p>Orders, payments, inventory and payouts remain connected to their existing source modules.</p>
-        <div className="workspace-account-actions"><Button asChild variant="outline" size="sm"><Link to="/account">Account</Link></Button></div>
-      </div>
-    </aside>
+      <WorkspaceNavGroup label="Workspace">
+        {canManageStores ? <Link to="/seller/stores" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Stores <span>›</span></Link> : null}
+        {canManageStaff ? <Link to="/seller/staff" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Staff access <span>›</span></Link> : null}
+        {canReadProfile ? <Link to="/seller/profile" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Seller profile <span>›</span></Link> : null}
+      </WorkspaceNavGroup>
+    </WorkspaceSidebar>
   );
 }
 
@@ -90,7 +84,7 @@ export function SellerLayout({ children }: { children: (user: AuthenticatedUser)
         if (user.accountType !== "seller") {
           return <ErrorState title="Seller account required" message="This page is available after a seller application has been approved and the account has seller access." />;
         }
-        return <div className="workspace-frame"><SellerNavigation user={user} /><div className="workspace-main">{children(user)}</div></div>;
+        return <WorkspaceShell sidebar={<SellerNavigation user={user} />}>{children(user)}</WorkspaceShell>;
       }}
     </AuthenticatedPanel>
   );

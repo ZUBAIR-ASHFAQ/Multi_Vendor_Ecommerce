@@ -1,29 +1,39 @@
+import { StatCard } from "@/components/ui/stat-card";
+import { formatMoney } from "@/lib/money";
 import type { SellerCommissionSummary as Summary } from "../schemas/commissions.schemas";
 
 /** Renders currency-separated seller earnings totals without mixing unrelated currencies. */
 export function SellerCommissionSummary({ summaries }: { summaries: Summary[] }) {
   if (summaries.length === 0) {
-    return <p className="text-sm text-slate-500">No settled Commission totals are available yet.</p>;
+    return (
+      <p className="rounded-xl border bg-white p-5 text-sm text-slate-500 shadow-sm">
+        No Commission totals match the current statement filters.
+      </p>
+    );
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="space-y-4">
       {summaries.map((summary) => (
-        <section key={summary.currency} className="rounded-xl border bg-white p-5 shadow-sm">
+        <section key={summary.currency} className="space-y-3" aria-label={`${summary.currency} commission statement summary`}>
           <div className="flex items-center justify-between gap-2">
-            <h2 className="text-lg font-bold">{summary.currency} statement</h2>
-            <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold">{summary.currency}</span>
-          </div>
-          <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-            <div><dt className="font-semibold">Gross</dt><dd>{summary.grossAmount}</dd></div>
-            <div><dt className="font-semibold">Seller-funded discounts</dt><dd>{summary.sellerFundedDiscountAmount}</dd></div>
-            <div><dt className="font-semibold">Marketplace Commission</dt><dd>{summary.commissionAmount}</dd></div>
-            <div><dt className="font-semibold">Refund adjustments</dt><dd>{summary.refundAdjustmentAmount}</dd></div>
-            <div className="sm:col-span-2">
-              <dt className="font-semibold">Seller net</dt>
-              <dd className="text-lg font-bold">{summary.sellerNetAmount}</dd>
+            <div>
+              <h2 className="text-lg font-semibold">{summary.currency} earnings summary</h2>
+              <p className="text-xs text-slate-500">Server-calculated totals across the full filtered statement, not only this page.</p>
             </div>
-          </dl>
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold">{summary.currency}</span>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <StatCard label="Gross sales" value={formatMoney(summary.grossAmount, summary.currency)} />
+            <StatCard label="Seller discounts" value={formatMoney(summary.sellerFundedDiscountAmount, summary.currency)} />
+            <StatCard label="Marketplace fees" value={formatMoney(summary.commissionAmount, summary.currency)} />
+            <StatCard label="Refund adjustments" value={formatMoney(summary.refundAdjustmentAmount, summary.currency)} />
+            <StatCard
+              label="Seller net"
+              value={formatMoney(summary.sellerNetAmount, summary.currency)}
+              meta="Net amount after seller-funded discounts, marketplace fees, and refund adjustments."
+            />
+          </div>
         </section>
       ))}
     </div>

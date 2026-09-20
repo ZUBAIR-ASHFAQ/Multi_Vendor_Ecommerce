@@ -48,6 +48,15 @@ function inventoryItem(overrides: Record<string, unknown> = {}) {
     sellerId,
     storeId,
     variantId,
+    productId: "77777777-7777-4777-8777-777777777777",
+    productName: "Demo Inventory Product",
+    productSlug: "demo-inventory-product",
+    variantSku: "INV-001",
+    variantTitle: "Default",
+    variantStatus: "active",
+    variantPrice: "29.99",
+    variantCurrency: "USD",
+    storeName: "Demo Store",
     onHandQty: 10,
     reservedQty: 2,
     availableQty: 8,
@@ -141,8 +150,8 @@ describe("Module 7 Inventory & Stock UI", () => {
   });
 
 
-  it("initializes a new Product variant through the direct Inventory management route", async () => {
-    useSeller(["inventory.read", "inventory.adjust"]);
+  it("initializes a new Product variant through the direct Inventory management route without requiring read permission", async () => {
+    useSeller(["inventory.adjust"]);
     let adjustmentBody: unknown;
     server.use(
       http.post(`${env.VITE_API_BASE_URL}/seller/inventory/${variantId}/adjust`, async ({ request }) => {
@@ -167,6 +176,13 @@ describe("Module 7 Inventory & Stock UI", () => {
   it("renders immutable movement history for one seller-owned variant", async () => {
     useSeller(["inventory.read"]);
     server.use(
+      http.get(`${env.VITE_API_BASE_URL}/seller/inventory`, () =>
+        HttpResponse.json({
+          success: true,
+          data: [inventoryItem()],
+          meta: { page: 1, pageSize: 1, totalItems: 1, totalPages: 1 },
+        }),
+      ),
       http.get(`${env.VITE_API_BASE_URL}/seller/inventory/${variantId}/movements`, () =>
         HttpResponse.json({
           success: true,

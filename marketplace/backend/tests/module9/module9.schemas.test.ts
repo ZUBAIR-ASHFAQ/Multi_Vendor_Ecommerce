@@ -30,11 +30,11 @@ function validPromotionInput(): Record<string, unknown> {
 }
 
 describe("Module 9 contract schemas", () => {
-  it("documents exactly the seven approved promotion operations with bearer authentication", () => {
+  it("documents the approved promotion operations with bearer authentication", () => {
     const expected = {
       "/api/v1/admin/promotions": ["get", "post"],
       "/api/v1/admin/promotions/{id}": ["patch"],
-      "/api/v1/seller/promotions": ["post"],
+      "/api/v1/seller/promotions": ["get", "post"],
       "/api/v1/promotions/validate": ["get"],
       "/api/v1/admin/promotions/{id}/activate": ["post"],
       "/api/v1/admin/promotions/{id}/deactivate": ["post"],

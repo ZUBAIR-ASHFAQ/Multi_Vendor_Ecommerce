@@ -41,20 +41,20 @@ export function PaymentElementForm({ orderId, onProcessing }: PaymentElementForm
   }
 
   return (
-    <form className="space-y-4" onSubmit={(event) => void submitPayment(event)}>
-      <div className="rounded-lg border p-4">
+    <form className="checkout-payment-element-form" onSubmit={(event) => void submitPayment(event)}>
+      <div className="checkout-payment-element-fields">
         <PaymentElement />
       </div>
       {message ? (
-        <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p role="alert" className="checkout-state-message checkout-state-message-error">
           {message}
         </p>
       ) : null}
-      <Button type="submit" disabled={!stripe || !elements || isSubmitting}>
+      <Button type="submit" className="w-full" disabled={!stripe || !elements || isSubmitting}>
         {isSubmitting ? "Confirming payment..." : "Pay securely"}
       </Button>
-      <p className="text-xs text-slate-500">
-        Card details are handled by Stripe. Marketplace servers never receive card PAN or CVC values.
+      <p className="checkout-payment-privacy">
+        Card details are handled by Stripe and are never stored by the marketplace.
       </p>
     </form>
   );

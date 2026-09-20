@@ -419,6 +419,7 @@ export const sellerOrderListItemSchema = z
     storeId: uuidSchema,
     orderId: uuidSchema,
     orderNo: orderNumberSchema,
+    currency: orderCurrencySchema,
     subtotal: orderMoneySchema,
     discountTotal: orderMoneySchema,
     taxTotal: orderMoneySchema,

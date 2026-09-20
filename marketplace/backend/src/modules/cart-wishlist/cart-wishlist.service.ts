@@ -15,7 +15,7 @@ import type { RequestContext } from "../../common/types/request-context.js";
 import { AdministrationService } from "../administration/administration.service.js";
 import { InventoryService } from "../inventory/inventory.service.js";
 import { ProductsService } from "../products/products.service.js";
-import type { PublicProductDetailResponse } from "../products/products.schema.js";
+import type { PublicProductCommerceDetailResponse } from "../products/products.schema.js";
 import {
   CART_WISHLIST_ERROR_CODE,
   CART_WISHLIST_LIMITS,
@@ -45,7 +45,15 @@ export interface CartWishlistProductIntegration {
   findProductIdByVariantId(variantId: string): Promise<string | null>;
 
   /** Returns a public Product aggregate only while the Product is storefront-eligible. */
-  findPublicProductById(productId: string): Promise<PublicProductDetailResponse | null>;
+  findPublicProductById(productId: string): Promise<PublicProductCommerceDetailResponse | null>;
+
+  /** Returns safe public Store/card presentation data for one storefront-eligible Product. */
+  findPublicProductDisplayContextById(productId: string): Promise<{
+    storeId: string;
+    storeSlug: string;
+    storeName: string;
+    thumbnailFileId: string | null;
+  } | null>;
 }
 
 /** Read-only Inventory boundary used only to show current availability in Cart/Wishlist previews. */
@@ -72,8 +80,14 @@ export interface CartWishlistServiceDependencies {
 /** Current public Product and optional public variant used to build one Cart display line. */
 interface PublicVariantSnapshot {
   productId: string;
-  product: PublicProductDetailResponse | null;
-  variant: PublicProductDetailResponse["variants"][number] | null;
+  product: PublicProductCommerceDetailResponse | null;
+  variant: PublicProductCommerceDetailResponse["variants"][number] | null;
+  display: {
+    storeId: string;
+    storeSlug: string;
+    storeName: string;
+    thumbnailFileId: string | null;
+  } | null;
 }
 
 /** Creates one stable Module 8 application error. */
@@ -515,6 +529,10 @@ export class CartWishlistService {
       variantId: row.variantId,
       productName: snapshot.product?.name ?? null,
       productSlug: snapshot.product?.slug ?? null,
+      storeId: snapshot.display?.storeId ?? null,
+      storeSlug: snapshot.display?.storeSlug ?? null,
+      storeName: snapshot.display?.storeName ?? null,
+      thumbnailFileId: snapshot.display?.thumbnailFileId ?? null,
       variantTitle: variant?.title ?? null,
       sku: variant?.sku ?? null,
       currentUnitPrice: variant?.price ?? null,
@@ -561,12 +579,17 @@ export class CartWishlistService {
       if (!variant) return this.unavailableWishlistItem(row, product);
 
       const inStock = await this.inventory.hasAvailableStockForVariants([variant.id]);
+      const display = await this.products.findPublicProductDisplayContextById(row.productId);
       return {
         id: row.id,
         productId: row.productId,
         variantId: row.variantId,
         productName: product.name,
         productSlug: product.slug,
+        storeId: display?.storeId ?? null,
+        storeSlug: display?.storeSlug ?? null,
+        storeName: display?.storeName ?? null,
+        thumbnailFileId: display?.thumbnailFileId ?? null,
         variantTitle: variant.title,
         currentUnitPrice: variant.price,
         currency: variant.currency,
@@ -577,7 +600,10 @@ export class CartWishlistService {
     }
 
     const variantIds = product.variants.map((variant) => variant.id);
-    const inStock = await this.inventory.hasAvailableStockForVariants(variantIds);
+    const [inStock, display] = await Promise.all([
+      this.inventory.hasAvailableStockForVariants(variantIds),
+      this.products.findPublicProductDisplayContextById(row.productId),
+    ]);
     const singleVariant = product.variants.length === 1 ? product.variants[0] : null;
 
     return {
@@ -586,6 +612,10 @@ export class CartWishlistService {
       variantId: null,
       productName: product.name,
       productSlug: product.slug,
+      storeId: display?.storeId ?? null,
+      storeSlug: display?.storeSlug ?? null,
+      storeName: display?.storeName ?? null,
+      thumbnailFileId: display?.thumbnailFileId ?? null,
       variantTitle: null,
       currentUnitPrice: singleVariant?.price ?? null,
       currency: singleVariant?.currency ?? null,
@@ -598,7 +628,7 @@ export class CartWishlistService {
   /** Returns a saved wishlist item safely when its Product or variant is no longer public. */
   private unavailableWishlistItem(
     row: WishlistItemRow,
-    product: PublicProductDetailResponse | null = null,
+    product: PublicProductCommerceDetailResponse | null = null,
   ): WishlistItemResponse {
     return {
       id: row.id,
@@ -606,6 +636,10 @@ export class CartWishlistService {
       variantId: row.variantId,
       productName: product?.name ?? null,
       productSlug: product?.slug ?? null,
+      storeId: null,
+      storeSlug: null,
+      storeName: null,
+      thumbnailFileId: null,
       variantTitle: null,
       currentUnitPrice: null,
       currency: null,
@@ -625,7 +659,8 @@ export class CartWishlistService {
     const product = await this.products.findPublicProductById(productId);
     const variant = product?.variants.find((candidate) => candidate.id === variantId) ?? null;
     if (!product || !variant) throw this.cartProductUnavailable();
-    return { productId, product, variant };
+    const display = await this.products.findPublicProductDisplayContextById(productId);
+    return { productId, product, variant, display };
   }
 
   /** Resolves one persisted variant to its current public Product/variant state. */
@@ -633,9 +668,12 @@ export class CartWishlistService {
     const productId = await this.products.findProductIdByVariantId(variantId);
     if (!productId) throw this.internalStateError();
 
-    const product = await this.products.findPublicProductById(productId);
+    const [product, display] = await Promise.all([
+      this.products.findPublicProductById(productId),
+      this.products.findPublicProductDisplayContextById(productId),
+    ]);
     const variant = product?.variants.find((candidate) => candidate.id === variantId) ?? null;
-    return { productId, product, variant };
+    return { productId, product, variant, display };
   }
 
   /** Appends the required cart.item_removed event using the same transaction as the delete. */

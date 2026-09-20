@@ -2,6 +2,7 @@ import { Link, useParams } from "@tanstack/react-router";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
 import { Button } from "@/components/ui/button";
+import { formatMoney } from "@/lib/money";
 import { useSellerOrderDetailQuery } from "@/features/orders/hooks/use-orders";
 import { ORDERS_PERMISSION } from "@/features/orders/orders.constants";
 import { RequireSellerPermission, SellerLayout } from "@/features/sellers/components/seller-layout";
@@ -146,15 +147,24 @@ function SellerOrderShippingContent({ sellerOrderId, canManage }: { sellerOrderI
 
   return (
     <div className="space-y-5">
-      <div>
-        <Link className="text-sm underline" to="/seller/orders/$sellerOrderId" params={{ sellerOrderId }}>
-          ← Seller Order
-        </Link>
-        <h1 className="mt-2 text-2xl font-bold">Fulfillment for {order.data.sellerOrderNo}</h1>
-        <p className="text-sm text-slate-500">Parent {order.data.orderNo}</p>
-      </div>
+      <section className="rounded-xl border bg-white p-5 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <Link className="text-sm underline underline-offset-4" to="/seller/orders/$sellerOrderId" params={{ sellerOrderId }}>
+              ← Seller Order
+            </Link>
+            <h1 className="mt-2 text-2xl font-bold">Fulfillment for {order.data.sellerOrderNo}</h1>
+            <p className="mt-1 text-sm text-slate-500">Parent {order.data.orderNo}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
+            <span className="text-slate-500">Order total</span><strong className="text-right">{formatMoney(order.data.grandTotal, order.data.currency)}</strong>
+            <span className="text-slate-500">Unallocated lines</span><strong className="text-right">{itemOptions.length}</strong>
+            <span className="text-slate-500">Shipments</span><strong className="text-right">{shipments.data.items.length}</strong>
+          </div>
+        </div>
+      </section>
 
-      {canCreate ? (
+      {canCreate && itemOptions.length > 0 ? (
         <CreateShipmentForm
           key={`${sellerOrderId}-${shipments.data.items.length}`}
           items={itemOptions}
@@ -166,8 +176,9 @@ function SellerOrderShippingContent({ sellerOrderId, canManage }: { sellerOrderI
         />
       ) : (
         <p className="rounded-xl border bg-slate-50 p-4 text-sm text-slate-600">
-          New Shipment creation becomes available only after provider-confirmed payment and Seller Order acceptance.
-          The API remains authoritative.
+          {itemOptions.length === 0 && canCreate
+            ? "Every remaining item is already allocated to a Shipment."
+            : "New Shipment creation becomes available only after provider-confirmed payment and Seller Order acceptance. The API remains authoritative."}
         </p>
       )}
 

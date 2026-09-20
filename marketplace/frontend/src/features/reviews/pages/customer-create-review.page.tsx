@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Link, useParams } from "@tanstack/react-router";
 import { ErrorState } from "@/components/feedback/error-state";
-import { AuthenticatedPanel } from "@/features/auth/components/authenticated-panel";
+import { PageHeader } from "@/components/ui/page-header";
+import { Surface } from "@/components/ui/surface";
+import { CustomerAccountLayout } from "@/features/customers/components/customer-account-shell";
 import { ReviewEditorForm } from "../forms/review-editor.form";
 import { useCreateReviewMutation, useUpdateOwnReviewMutation } from "../hooks/use-reviews";
 import { REVIEWS_PERMISSION, REVIEW_STATUS_LABEL } from "../reviews.constants";
@@ -22,25 +24,31 @@ function CustomerReviewEditor({
   const updateReview = useUpdateOwnReviewMutation();
 
   return (
-    <div className="mx-auto max-w-2xl space-y-5">
-      <div>
-        <Link className="text-sm underline" to="/orders/$orderId" params={{ orderId }}>← Back to Order</Link>
-        <h1 className="mt-2 text-2xl font-bold">Review your purchase</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Order Item {orderItemId}. The server confirms ownership and full delivery before accepting the Review.
-        </p>
-      </div>
+    <div className="mx-auto max-w-3xl space-y-6">
+      <PageHeader
+        eyebrow={<Link className="hover:underline" to="/orders/$orderId" params={{ orderId }}>← Back to Order</Link>}
+        title="Review your purchase"
+        description="Share useful feedback about your delivered purchase. The server verifies Order ownership and delivery before accepting the Review."
+      />
+
+      <Surface variant="muted" padding="sm" className="flex items-start gap-3">
+        <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-positive-soft text-sm font-bold text-positive" aria-hidden="true">✓</span>
+        <div>
+          <p className="font-semibold text-foreground">Verified-purchase Review</p>
+          <p className="mt-1 text-sm leading-6 text-foreground-muted">Only the Order Item identifier is submitted with your authored rating and text. Product, seller, store and moderation status remain server-owned.</p>
+        </div>
+      </Surface>
 
       {createdReview ? (
-        <div className="rounded-xl border bg-emerald-50 p-4 text-sm text-emerald-900">
+        <div className="rounded-card border border-positive/20 bg-positive-soft p-4 text-sm text-positive">
           Review saved. Current status: <strong>{REVIEW_STATUS_LABEL[createdReview.status]}</strong>.
         </div>
       ) : null}
 
       {createdReview && !canUpdate ? (
-        <p className="rounded-xl border bg-slate-50 p-4 text-sm text-slate-600">
-          Your Review was saved. Your current permissions do not allow editing it.
-        </p>
+        <Surface variant="muted" padding="sm">
+          <p className="text-sm text-foreground-muted">Your Review was saved. Your current permissions do not allow editing it.</p>
+        </Surface>
       ) : (
         <ReviewEditorForm
           key={createdReview?.updatedAt ?? "create-review"}
@@ -49,18 +57,11 @@ function CustomerReviewEditor({
           isPending={createdReview ? updateReview.isPending : createReview.isPending}
           error={createdReview ? updateReview.error : createReview.error}
           onCreate={(input) =>
-            createReview
-              .mutateAsync(input)
-              .then(setCreatedReview)
-              .then(() => undefined)
+            createReview.mutateAsync(input).then(setCreatedReview).then(() => undefined)
           }
           onUpdate={
             createdReview
-              ? (input) =>
-                  updateReview
-                    .mutateAsync({ reviewId: createdReview.id, input })
-                    .then(setCreatedReview)
-                    .then(() => undefined)
+              ? (input) => updateReview.mutateAsync({ reviewId: createdReview.id, input }).then(setCreatedReview).then(() => undefined)
               : undefined
           }
         />
@@ -74,7 +75,7 @@ export function CustomerCreateReviewPage() {
   const { orderId, orderItemId } = useParams({ strict: false });
 
   return (
-    <AuthenticatedPanel>
+    <CustomerAccountLayout>
       {(user) =>
         user.permissions.includes(REVIEWS_PERMISSION.CREATE_VERIFIED) ? (
           <CustomerReviewEditor
@@ -86,6 +87,6 @@ export function CustomerCreateReviewPage() {
           <ErrorState title="Access denied" message="Your account cannot create verified-purchase Reviews." />
         )
       }
-    </AuthenticatedPanel>
+    </CustomerAccountLayout>
   );
 }

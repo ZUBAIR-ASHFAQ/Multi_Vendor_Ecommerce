@@ -11,6 +11,8 @@ import {
   productAttributeInputSchema,
   productAttributesInputSchema,
   productPriceSchema,
+  publicProductDetailResponseSchema,
+  publicProductListItemResponseSchema,
   productSlugSchema,
   productWeightSchema,
   rejectProductBodySchema,
@@ -105,6 +107,62 @@ describe("Module 6 Zod and OpenAPI contracts", () => {
       reason: "Add a clear front image.",
     });
     expect(() => rejectProductBodySchema.parse({ reason: "   " })).toThrow();
+  });
+
+
+  it("keeps public Product detail storefront context safe and free of seller-private lifecycle fields", () => {
+    const value = publicProductDetailResponseSchema.parse({
+      id: randomUUID(),
+      storeId: randomUUID(),
+      categoryId: randomUUID(),
+      brandId: randomUUID(),
+      slug: "public-detail",
+      name: "Public Detail",
+      description: "Public product detail",
+      publishedAt: "2026-09-20T08:00:00.000Z",
+      createdAt: "2026-09-20T08:00:00.000Z",
+      updatedAt: "2026-09-20T08:00:00.000Z",
+      store: {
+        id: randomUUID(),
+        slug: "seller-store",
+        name: "Seller Store",
+        logoFileId: null,
+        seller: { id: randomUUID(), displayName: "Seller Display" },
+      },
+      category: { id: randomUUID(), slug: "electronics", name: "Electronics" },
+      brand: { id: randomUUID(), slug: "acme", name: "Acme" },
+      variants: [],
+      attributes: [],
+      media: [],
+    });
+
+    expect(value.store.name).toBe("Seller Store");
+    expect(value.category.name).toBe("Electronics");
+    expect(value.brand?.name).toBe("Acme");
+    expect(() => publicProductDetailResponseSchema.parse({ ...value, sellerId: randomUUID() })).toThrow();
+  });
+
+  it("keeps the public Product-list card contract additive and free of seller-private fields", () => {
+    const value = publicProductListItemResponseSchema.parse({
+      id: randomUUID(),
+      storeId: randomUUID(),
+      categoryId: randomUUID(),
+      brandId: null,
+      slug: "public-card",
+      name: "Public Card",
+      description: "Public product card",
+      publishedAt: "2026-09-20T08:00:00.000Z",
+      createdAt: "2026-09-20T08:00:00.000Z",
+      updatedAt: "2026-09-20T08:00:00.000Z",
+      minPrice: "19.99",
+      maxPrice: "29.99",
+      currency: "USD",
+      thumbnailFileId: randomUUID(),
+    });
+
+    expect(value.minPrice).toBe("19.99");
+    expect(value.thumbnailFileId).toBeTruthy();
+    expect(() => publicProductListItemResponseSchema.parse({ ...value, sellerId: randomUUID() })).toThrow();
   });
 
   it("documents the complete Module 6 HTTP contract with standard error responses", () => {

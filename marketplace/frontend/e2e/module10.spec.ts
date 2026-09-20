@@ -369,7 +369,7 @@ async function browserLogin(page: Page, email: string, password: string): Promis
 
 /** Selects the seeded platform Shipping Core option for every server-derived store group. */
 async function chooseShippingMethods(page: Page): Promise<void> {
-  const selects = page.getByLabel(/Shipping method for store/);
+  const selects = page.getByLabel(/Shipping method for/);
   await expect(selects.first()).toBeVisible();
   const count = await selects.count();
   expect(count).toBeGreaterThan(0);
@@ -434,7 +434,7 @@ test.describe("Module 10 Checkout E2E", () => {
         response.request().method() === "POST" &&
         response.status() === 201,
     );
-    await page.getByRole("button", { name: "Calculate authoritative quote" }).click();
+    await page.getByRole("button", { name: "Review order" }).click();
     const quoteResponse = await quoteResponsePromise;
     const quoteRequestBody = quoteResponse.request().postDataJSON() as Record<string, unknown>;
     const quote = ((await quoteResponse.json()) as ApiEnvelope<CheckoutQuote>).data;
@@ -514,7 +514,7 @@ test.describe("Module 10 Checkout E2E", () => {
         response.request().method() === "POST" &&
         response.status() === 201,
     );
-    await page.getByRole("button", { name: "Calculate authoritative quote" }).click();
+    await page.getByRole("button", { name: "Review order" }).click();
     const quoteResponse = await quoteResponsePromise;
     const quote = ((await quoteResponse.json()) as ApiEnvelope<CheckoutQuote>).data;
     expect(quote.subtotal).toBe("200.0000");
@@ -534,7 +534,7 @@ test.describe("Module 10 Checkout E2E", () => {
 
     const warning = page.getByRole("alert").filter({ hasText: "Checkout details changed" });
     await expect(warning).toBeVisible();
-    await expect(warning).toContainText("Recalculate the quote and review the new totals");
+    await expect(warning).toContainText("Please review the latest totals before placing your order");
     await expect(warning).toContainText("Request ID:");
   });
 });

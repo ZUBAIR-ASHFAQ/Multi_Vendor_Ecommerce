@@ -135,6 +135,18 @@ export const adminPromotionListParamsSchema = z.object({
   pageSize: pageSizeSchema,
 });
 
+/** Bounded seller promotion list query with an optional server-owned lifecycle filter. */
+export const sellerPromotionListParamsSchema = z.object({
+  page: pageSchema,
+  pageSize: pageSizeSchema,
+  status: z.enum([
+    PROMOTION_STATUS.DRAFT,
+    PROMOTION_STATUS.SCHEDULED,
+    PROMOTION_STATUS.ACTIVE,
+    PROMOTION_STATUS.INACTIVE,
+  ]).optional(),
+});
+
 /** Private promotion representation returned by management APIs. */
 export const promotionSchema = z.object({
   id: uuidSchema,
@@ -190,5 +202,6 @@ export type PromotionFormValues = z.infer<typeof promotionFormSchema>;
 export type CreatePromotionInput = z.infer<typeof createPromotionInputSchema>;
 export type UpdatePromotionInput = z.infer<typeof updatePromotionInputSchema>;
 export type AdminPromotionListParams = z.infer<typeof adminPromotionListParamsSchema>;
+export type SellerPromotionListParams = z.infer<typeof sellerPromotionListParamsSchema>;
 export type Promotion = z.infer<typeof promotionSchema>;
 export type PromotionValidation = z.infer<typeof promotionValidationSchema>;

@@ -16,8 +16,8 @@ export function SearchAutocomplete({
   }
 
   return (
-    <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-md border bg-white shadow-lg">
-      <p className="border-b px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+    <div className="search-autocomplete absolute z-20 mt-1 w-full overflow-hidden rounded-md border bg-white shadow-lg">
+      <p className="search-autocomplete-heading border-b px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
         Suggestions
       </p>
       <ul>
@@ -25,7 +25,7 @@ export function SearchAutocomplete({
           <li key={suggestion}>
             <button
               type="button"
-              className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 focus:bg-slate-50"
+              className="search-autocomplete-option w-full px-3 py-2 text-left text-sm hover:bg-slate-50 focus:bg-slate-50"
               onClick={() => onSelect(suggestion)}
             >
               {suggestion}

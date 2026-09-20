@@ -9,6 +9,7 @@ import {
 import {
   documentsAuditOpenApiPaths,
 } from "../../modules/documents-audit/documents-audit.routes.js";
+import { publicMediaOpenApiPaths } from "../../modules/public-media/public-media.routes.js";
 import { customersOpenApiPaths } from "../../modules/customers/customers.routes.js";
 import { sellersOpenApiPaths } from "../../modules/sellers/sellers.routes.js";
 import {
@@ -49,6 +50,7 @@ export const openApiDocument = {
     { name: "Authentication", description: "Platform authentication and session lifecycle." },
     { name: "Administration", description: "Platform users, roles and permission assignments." },
     { name: "Documents", description: "Permission-checked signed file upload, linking and download." },
+    { name: "Public Media", description: "Short-lived delivery URLs for media attached to currently public marketplace resources." },
     { name: "Audit", description: "Append-only, permission-filtered audit read surface." },
     { name: "Customers", description: "Customer profiles, saved addresses, and privileged customer reads." },
     { name: "Sellers", description: "Seller onboarding, seller/store management, and public store reads." },
@@ -230,6 +232,7 @@ export const openApiDocument = {
     ...authOpenApiPaths,
     ...administrationOpenApiPaths,
     ...documentsAuditOpenApiPaths,
+    ...publicMediaOpenApiPaths,
     ...customersOpenApiPaths,
     ...sellersOpenApiPaths,
     ...catalogTaxonomyOpenApiPaths,

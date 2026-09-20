@@ -89,6 +89,9 @@ describe("Module 2 authentication UI", () => {
 
     expect(await screen.findByRole("heading", { name: "Customer" })).toBeInTheDocument();
     expect(screen.getByText("Customer", { selector: "span" })).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "Customer account navigation" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Overview" })).toHaveAttribute("href", "/account");
+    expect(screen.queryByRole("link", { name: "Orders" })).not.toBeInTheDocument();
   });
 
   it("shows a safe account error and retries the authenticated actor request", async () => {
@@ -128,6 +131,7 @@ describe("Module 2 authentication UI", () => {
     await user.click(screen.getByRole("button", { name: "Try again" }));
 
     expect(await screen.findByRole("heading", { name: "Admin" })).toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Customer account navigation" })).not.toBeInTheDocument();
     expect(requestCount).toBe(2);
   });
 

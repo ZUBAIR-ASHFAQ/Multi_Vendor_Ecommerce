@@ -43,6 +43,7 @@ import type {
   PromotionResponse,
   PromotionScopeInput,
   PromotionValidationResponse,
+  SellerPromotionListQuery,
   UpdateCouponInput,
   UpdatePromotionInput,
   ValidatePromotionQuery,
@@ -415,6 +416,37 @@ export class PromotionsService {
   ): Promise<PaginatedPromotionsResult> {
     assertPermission(context, PROMOTION_PERMISSION.ADMIN_MANAGE);
     const result = await this.repository.listPlatformPromotions(query);
+    const promotionIds = result.items.map((item) => item.id);
+    const scopes = await this.repository.listScopesByPromotionIds(promotionIds);
+    const coupons = await this.repository.listCouponsByPromotionIds(promotionIds);
+    const scopesByPromotion = this.groupScopesByPromotion(scopes);
+    const couponsByPromotion = this.groupCouponsByPromotion(coupons);
+
+    return {
+      items: result.items.map((promotion) =>
+        this.toPromotionResponse(
+          promotion,
+          scopesByPromotion.get(promotion.id) ?? [],
+          couponsByPromotion.get(promotion.id) ?? [],
+        ),
+      ),
+      meta: paginationMeta(query, result.totalItems),
+    };
+  }
+
+  /** Lists only seller-owned promotions inside seller scopes where promotion management is effective. */
+  async listSellerPromotions(
+    context: RequestContext,
+    query: SellerPromotionListQuery,
+  ): Promise<PaginatedPromotionsResult> {
+    if (context.actorType !== ACTOR_TYPE.SELLER) throw this.promotionScopeForbidden();
+    const sellerIds = [...context.sellerIds].filter(
+      (sellerId) =>
+        context.sellerPermissions.get(sellerId)?.has(PROMOTION_PERMISSION.SELLER_MANAGE) === true,
+    );
+    if (sellerIds.length === 0) throw this.promotionScopeForbidden();
+
+    const result = await this.repository.listSellerPromotions(sellerIds, query);
     const promotionIds = result.items.map((item) => item.id);
     const scopes = await this.repository.listScopesByPromotionIds(promotionIds);
     const coupons = await this.repository.listCouponsByPromotionIds(promotionIds);

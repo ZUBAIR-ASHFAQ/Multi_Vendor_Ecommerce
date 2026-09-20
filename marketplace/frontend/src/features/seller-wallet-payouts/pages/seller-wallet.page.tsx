@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
 import { Button } from "@/components/ui/button";
+import { StatusPill } from "@/components/ui/status-pill";
 import {
   RequireSellerPermission,
   SellerLayout,
@@ -60,11 +61,17 @@ function SellerWalletContent({ canManageAccounts }: { canManageAccounts: boolean
               seller scope is enforced by the API.
             </p>
           </div>
-          <Button asChild variant="outline"><Link to="/seller/payouts">Payout history</Link></Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline"><Link to="/seller/commissions">Commission statement</Link></Button>
+            <Button asChild><Link to="/seller/payouts">Manage payouts</Link></Button>
+          </div>
         </div>
       </section>
 
-      <WalletSummary wallets={wallet.data.wallet.wallets} />
+      <WalletSummary
+        wallets={wallet.data.wallet.wallets}
+        payoutSummaries={wallet.data.wallet.payoutSummaries}
+      />
 
       <section className="space-y-4 rounded-xl border bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-end justify-between gap-3">
@@ -121,8 +128,13 @@ function SellerWalletContent({ canManageAccounts }: { canManageAccounts: boolean
       </section>
 
       <section className="rounded-xl border bg-white p-5 shadow-sm">
-        <h2 className="font-semibold">Payout accounts</h2>
-        <p className="mt-1 text-xs text-slate-500">Only provider type, safe masked details, status, and verification time are displayed.</p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="font-semibold">Payout methods</h2>
+            <p className="mt-1 text-xs text-slate-500">Only provider type, safe masked details, status, and verification time are displayed.</p>
+          </div>
+          <Button asChild variant="outline" size="sm"><Link to="/seller/payouts">Request payout</Link></Button>
+        </div>
         {wallet.data.wallet.payoutAccounts.length === 0 ? (
           <p className="mt-4 rounded-lg bg-slate-50 p-4 text-sm text-slate-500">No payout accounts are configured.</p>
         ) : (
@@ -131,7 +143,7 @@ function SellerWalletContent({ canManageAccounts }: { canManageAccounts: boolean
               <li key={account.id} className="rounded-lg border p-4 text-sm">
                 <div className="flex items-center justify-between gap-3">
                   <span className="font-semibold">{account.providerType}</span>
-                  <span className="rounded-full bg-slate-100 px-2 py-1 text-xs capitalize">{account.status}</span>
+                  <StatusPill tone={account.status === "active" ? "positive" : "neutral"}>{account.status === "active" ? "Active" : "Disabled"}</StatusPill>
                 </div>
                 <p className="mt-2">{account.maskedDetails}</p>
                 <p className="mt-1 text-xs text-slate-500">

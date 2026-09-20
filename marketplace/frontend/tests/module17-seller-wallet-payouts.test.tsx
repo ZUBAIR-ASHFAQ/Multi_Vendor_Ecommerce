@@ -77,6 +77,12 @@ function walletResponse() {
       status: "active",
       verifiedAt: now,
     }],
+    payoutSummaries: [{
+      currency: "USD",
+      lifetimePaidAmount: "40.0000",
+      inProgressAmount: "10.5000",
+      inProgressCount: 1,
+    }],
   };
 }
 
@@ -133,7 +139,8 @@ describe("Module 17 Seller Wallet & Payouts React feature", () => {
 
     await renderRoute("/seller/wallet");
     expect(await screen.findByRole("heading", { name: "Seller wallet" })).toBeInTheDocument();
-    expect(screen.getByText("75.0000 USD")).toBeInTheDocument();
+    expect(screen.getByText("$75.00")).toBeInTheDocument();
+    expect(screen.getByText("$40.00")).toBeInTheDocument();
     expect(screen.getByText("Commission credit")).toBeInTheDocument();
     expect(screen.getByText("Account •••• 4242")).toBeInTheDocument();
     expect(screen.queryByText(/provider_account_ref/i)).not.toBeInTheDocument();
@@ -191,6 +198,35 @@ describe("Module 17 Seller Wallet & Payouts React feature", () => {
     expect(requestBody).not.toHaveProperty("sellerId");
     expect(requestBody).not.toHaveProperty("status");
     expect(requestBody).not.toHaveProperty("availableBalance");
+  });
+
+  it("shows authoritative payout aggregates to a read-only seller without exposing the request command", async () => {
+    useActor(actor("seller", ["seller.wallet.read"]));
+    server.use(
+      http.get(`${env.VITE_API_BASE_URL}/seller/wallet`, () =>
+        HttpResponse.json({
+          success: true,
+          data: walletResponse(),
+          meta: { page: 1, pageSize: 1, totalItems: 1, totalPages: 1 },
+          requestId: "req-wallet-payout-summary",
+        }),
+      ),
+      http.get(`${env.VITE_API_BASE_URL}/seller/payouts`, () =>
+        HttpResponse.json({
+          success: true,
+          data: [payout("processing")],
+          meta: { page: 1, pageSize: 20, totalItems: 1, totalPages: 1 },
+          requestId: "req-payout-summary-list",
+        }),
+      ),
+    );
+
+    await renderRoute("/seller/payouts");
+    expect(await screen.findByRole("heading", { name: "Seller payouts" })).toBeInTheDocument();
+    expect(screen.getByText("$40.00")).toBeInTheDocument();
+    expect(screen.getAllByText("$10.50").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText("The provider operation is in progress or awaiting reconciliation.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Request Payout" })).not.toBeInTheDocument();
   });
 
   it("sends finance approve with an empty command body and retry-safe key while showing reconciliation detail", async () => {

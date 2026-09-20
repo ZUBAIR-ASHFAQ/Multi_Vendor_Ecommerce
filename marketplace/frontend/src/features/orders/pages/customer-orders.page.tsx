@@ -2,7 +2,10 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
-import { AuthenticatedPanel } from "@/features/auth/components/authenticated-panel";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
+import { Surface } from "@/components/ui/surface";
+import { CustomerAccountLayout } from "@/features/customers/components/customer-account-shell";
 import { ApiClientError } from "@/lib/api-error";
 import { OrderPagination } from "../components/order-pagination";
 import { OrderStatus } from "../components/order-status";
@@ -18,7 +21,16 @@ function displayMoney(currency: string, value: string): string {
   }).format(Number(value));
 }
 
-/** Renders the authenticated customer's parent Order history. */
+/** Chooses the customer-facing timestamp without inventing a placed date. */
+function orderDate(placedAt: string | null, createdAt: string): string {
+  return new Date(placedAt ?? createdAt).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+/** Renders the authenticated customer's parent Order history as scannable customer cards. */
 function CustomerOrdersContent() {
   const [params, setParams] = useState<CustomerOrdersParams>({
     page: 1,
@@ -36,122 +48,134 @@ function CustomerOrdersContent() {
     return (
       <ErrorState
         title="Orders could not be loaded"
-        message={
-          orders.error instanceof Error
-            ? orders.error.message
-            : "Please try again."
-        }
-        requestId={
-          orders.error instanceof ApiClientError
-            ? orders.error.requestId
-            : undefined
-        }
+        message={orders.error instanceof Error ? orders.error.message : "Please try again."}
+        requestId={orders.error instanceof ApiClientError ? orders.error.requestId : undefined}
         onRetry={() => void orders.refetch()}
       />
     );
   }
 
   return (
-    <section className="rounded-xl border bg-white p-5 shadow-sm">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Your Orders</h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Customer Orders are separate from each seller&apos;s fulfillment unit.
-          </p>
-          <Link className="mt-2 inline-block text-sm underline" to="/returns">View your Returns</Link>
-        </div>
-        <label className="text-sm font-medium">
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Purchases"
+        title="Your Orders"
+        description="See payment and fulfillment progress, open an Order for item-level details, and track eligible shipments or Returns."
+        actions={(
+          <Link className="rounded-control border border-border bg-surface px-4 py-2 text-sm font-semibold text-foreground hover:bg-surface-muted" to="/returns">
+            View Returns
+          </Link>
+        )}
+      />
+
+      <Surface className="flex flex-wrap items-center justify-between gap-3" padding="sm">
+        <p className="text-sm text-foreground-muted">
+          {orders.data.meta.totalItems} {orders.data.meta.totalItems === 1 ? "Order" : "Orders"}
+        </p>
+        <label className="flex items-center gap-2 text-sm font-medium text-foreground">
           Status
           <select
             aria-label="Customer Order status filter"
-            className="ml-2 rounded-md border px-3 py-2"
+            className="rounded-control border border-border bg-surface px-3 py-2 text-sm"
             value={params.orderStatus ?? ""}
             onChange={(event) => {
               const value = event.target.value;
               setParams((current) => ({
                 ...current,
                 page: 1,
-                orderStatus: value
-                  ? (value as CustomerOrdersParams["orderStatus"])
-                  : undefined,
+                orderStatus: value ? (value as CustomerOrdersParams["orderStatus"]) : undefined,
               }));
             }}
           >
-            <option value="">All</option>
+            <option value="">All statuses</option>
             <option value="pending_payment">Pending payment</option>
             <option value="confirmed">Confirmed</option>
             <option value="processing">Processing</option>
             <option value="cancelled">Cancelled</option>
           </select>
         </label>
-      </div>
+      </Surface>
 
-      <div className="mt-5 overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b text-slate-500">
-              <th className="py-2">Order</th>
-              <th>Status</th>
-              <th>Payment</th>
-              <th>Total</th>
-              <th>Created</th>
-              <th aria-label="Actions" />
-            </tr>
-          </thead>
-          <tbody>
-            {orders.data.items.map((order) => (
-              <tr key={order.id} className="border-b">
-                <td className="py-3 font-medium">{order.orderNo}</td>
-                <td><OrderStatus value={order.orderStatus} /></td>
-                <td><OrderStatus value={order.paymentStatus} /></td>
-                <td>{displayMoney(order.currency, order.grandTotal)}</td>
-                <td>{new Date(order.createdAt).toLocaleDateString()}</td>
-                <td className="text-right">
-                  <Link
-                    className="underline"
-                    to="/orders/$orderId"
-                    params={{ orderId: order.id }}
-                  >
-                    View
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {orders.data.items.length === 0 ? (
-          <p className="py-8 text-center text-slate-500">No Orders found.</p>
-        ) : null}
-      </div>
-
-      <div className="mt-4">
-        <OrderPagination
-          meta={orders.data.meta}
-          noun="Orders"
-          onPageChange={(page) =>
-            setParams((current) => ({ ...current, page }))
-          }
+      {orders.data.items.length === 0 ? (
+        <EmptyState
+          title="No Orders found"
+          description={params.orderStatus ? "No Orders match this status. Choose All statuses to see your complete history." : "Orders you place will appear here with payment and fulfillment progress."}
+          action={params.orderStatus ? (
+            <button
+              className="rounded-control border border-border px-4 py-2 text-sm font-semibold hover:bg-surface-muted"
+              type="button"
+              onClick={() => setParams((current) => ({ ...current, page: 1, orderStatus: undefined }))}
+            >
+              Clear status filter
+            </button>
+          ) : undefined}
         />
-      </div>
-    </section>
+      ) : (
+        <div className="space-y-4">
+          {orders.data.items.map((order) => (
+            <article key={order.id} className="overflow-hidden rounded-card border border-border bg-surface shadow-card">
+              <div className="flex flex-col gap-4 border-b border-border bg-surface-muted px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-foreground-muted">Order</p>
+                  <Link className="mt-1 inline-block font-semibold text-foreground hover:underline" to="/orders/$orderId" params={{ orderId: order.id }}>
+                    {order.orderNo}
+                  </Link>
+                  <p className="mt-1 text-xs text-foreground-muted">Placed {orderDate(order.placedAt, order.createdAt)}</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <OrderStatus value={order.orderStatus} />
+                  <OrderStatus value={order.paymentStatus} />
+                </div>
+              </div>
+
+              <div className="grid gap-5 px-5 py-5 sm:grid-cols-[1fr_auto] sm:items-center">
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-foreground-muted">Total</p>
+                    <p className="mt-1 text-lg font-semibold text-foreground">{displayMoney(order.currency, order.grandTotal)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-foreground-muted">Fulfillment</p>
+                    <div className="mt-1"><OrderStatus value={order.fulfillmentStatus} /></div>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-foreground-muted">Payment</p>
+                    <p className="mt-1 text-sm text-foreground-muted">{order.paymentStatus === "captured" ? "Payment received" : "Payment still required"}</p>
+                  </div>
+                </div>
+                <Link
+                  className="inline-flex min-h-10 items-center justify-center rounded-control bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-strong"
+                  to="/orders/$orderId"
+                  params={{ orderId: order.id }}
+                >
+                  View Order
+                </Link>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+
+      <OrderPagination
+        meta={orders.data.meta}
+        noun="Orders"
+        onPageChange={(page) => setParams((current) => ({ ...current, page }))}
+      />
+    </div>
   );
 }
 
 /** Protects the customer Order history with the server-derived own-order permission. */
 export function CustomerOrdersPage() {
   return (
-    <AuthenticatedPanel>
+    <CustomerAccountLayout>
       {(user) =>
         user.permissions.includes(ORDERS_PERMISSION.READ_OWN) ? (
           <CustomerOrdersContent />
         ) : (
-          <ErrorState
-            title="Access denied"
-            message="Your account does not have permission to read customer Orders."
-          />
+          <ErrorState title="Access denied" message="Your account does not have permission to read customer Orders." />
         )
       }
-    </AuthenticatedPanel>
+    </CustomerAccountLayout>
   );
 }

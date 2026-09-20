@@ -423,6 +423,7 @@ function verifyPromotionsFeature() {
     'apiClient.get("/admin/promotions"',
     'apiClient.post("/admin/promotions", input)',
     'apiClient.patch(`/admin/promotions/${promotionId}`, input)',
+    'apiClient.get("/seller/promotions"',
     'apiClient.post("/seller/promotions", input)',
     'apiClient.get("/promotions/validate"',
     'apiClient.post(`/admin/promotions/${promotionId}/activate`, {})',
@@ -444,7 +445,8 @@ function verifyPromotionsFeature() {
   requireText(adminPage, "Promotions & Coupons", "Module 9 platform promotion list/editor");
   requireText(adminPage, "onRetry={() => void promotions.refetch()}", "Module 9 list retry state");
   requireText(adminPage, "requestId={promotions.error instanceof ApiClientError", "Module 9 safe request-ID state");
-  requireText(sellerPage, "seller promotion list route. This page does not invent one.", "Module 9 no-invented seller list behavior");
+  requireText(sellerPage, "Lifecycle changes remain platform-controlled", "Module 9 seller lifecycle authority boundary");
+  requireText(sellerPage, "Campaigns", "Module 9 seller promotion history");
   requireText(routes, 'path: "/admin/promotions"', "Module 9 admin route");
   requireText(routes, 'path: "/seller/promotions"', "Module 9 seller route");
   requireText(cartPage, "<CouponField />", "Module 9 coupon field composition with current Cart");

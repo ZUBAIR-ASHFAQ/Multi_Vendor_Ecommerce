@@ -5,22 +5,25 @@ import { cn } from "@/lib/cn";
 
 const buttonVariants = cva(
   [
-    "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400",
+    "inline-flex items-center justify-center rounded-control text-sm font-medium transition-colors",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/35 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas",
     "disabled:pointer-events-none disabled:opacity-50",
   ].join(" "),
   {
     variants: {
       variant: {
-        default: "bg-slate-900 px-4 py-2 text-white hover:bg-slate-800",
+        default: "bg-primary px-4 py-2 text-primary-foreground hover:bg-primary-hover",
+        secondary: "bg-surface-muted px-4 py-2 text-foreground hover:bg-brand-cream",
         outline:
-          "border border-slate-300 bg-white px-4 py-2 text-slate-900 hover:bg-slate-50",
-        ghost: "px-3 py-2 text-slate-700 hover:bg-slate-100",
+          "border border-border-strong bg-surface px-4 py-2 text-foreground hover:bg-surface-muted",
+        ghost: "px-3 py-2 text-foreground-muted hover:bg-surface-muted hover:text-foreground",
+        destructive: "bg-negative px-4 py-2 text-white hover:bg-negative/90",
       },
       size: {
         default: "h-10",
         sm: "h-9",
         lg: "h-11",
+        icon: "h-10 w-10 px-0 py-0",
       },
     },
     defaultVariants: {
@@ -36,7 +39,7 @@ export interface ButtonProps
   asChild?: boolean;
 }
 
-/** Minimal shadcn-style button primitive backed by Radix Slot. */
+/** Shared application button. Existing default/outline/ghost contracts remain backward compatible. */
 export function Button({
   className,
   variant,

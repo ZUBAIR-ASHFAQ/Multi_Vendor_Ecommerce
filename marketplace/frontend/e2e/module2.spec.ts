@@ -216,8 +216,8 @@ test.describe("Module 2 Administration, Authentication & RBAC E2E", () => {
     await expect(page.getByRole("heading", { name: displayName })).toBeVisible();
     await expect(page.getByText("Customer", { exact: true })).toBeVisible();
     await expect(page.getByText("Customer Self Service", { exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: "My profile" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Address book" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Profile" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Addresses" })).toBeVisible();
   });
 
   test("admin updates allow-listed platform settings and refresh cookie restores the reloaded session", async ({ page }) => {

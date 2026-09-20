@@ -4,6 +4,7 @@ import { useForm } from "@tanstack/react-form";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
 import { Button } from "@/components/ui/button";
+import { usePublicMediaQuery } from "@/features/public-media/hooks/use-public-media";
 import { firstFieldError } from "@/features/auth/components/form-error";
 import { SEARCH_STORE_SORT_OPTIONS } from "../search-discovery.constants";
 import { SearchPagination } from "../components/search-pagination";
@@ -22,6 +23,8 @@ export function SearchStoresPage({
   onSearchChange: (next: SearchStoresRouteSearch) => void;
 }) {
   const stores = useStoreSearchQuery(search);
+  const logos = usePublicMediaQuery(stores.data?.data.map((store) => store.logoFileId) ?? []);
+  const logoById = new Map(logos.data?.items.map((item) => [item.fileId, item]) ?? []);
   const form = useForm({
     defaultValues: { q: search.q ?? "", sort: search.sort },
     validators: { onChange: searchStoresFormSchema },
@@ -111,16 +114,31 @@ export function SearchStoresPage({
             <p className="rounded-xl border bg-white p-5 text-sm text-slate-500 shadow-sm">No public stores match this search.</p>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {stores.data.data.map((store) => (
-                <article key={store.id} className="rounded-xl border bg-white p-5 shadow-sm">
-                  <h2 className="text-lg font-bold">{store.name}</h2>
-                  <p className="mt-1 text-sm text-slate-500">Sold by {store.seller.displayName}</p>
-                  <p className="mt-3 line-clamp-3 text-sm text-slate-600">{store.description ?? "No public description yet."}</p>
-                  <Button className="mt-4" size="sm" variant="outline" asChild>
-                    <Link to="/stores/$slug" params={{ slug: store.slug }}>View store</Link>
-                  </Button>
-                </article>
-              ))}
+              {stores.data.data.map((store) => {
+                const logo = store.logoFileId ? logoById.get(store.logoFileId) : undefined;
+                return (
+                  <article key={store.id} className="rounded-xl border bg-white p-5 shadow-sm">
+                    <div className="flex items-start gap-3">
+                      {logo?.mimeType.startsWith("image/") ? (
+                        <img
+                          src={logo.url}
+                          alt={`${store.name} logo`}
+                          className="h-12 w-12 shrink-0 rounded-lg border object-cover"
+                          loading="lazy"
+                        />
+                      ) : null}
+                      <div className="min-w-0">
+                        <h2 className="text-lg font-bold">{store.name}</h2>
+                        <p className="mt-1 text-sm text-slate-500">Sold by {store.seller.displayName}</p>
+                      </div>
+                    </div>
+                    <p className="mt-3 line-clamp-3 text-sm text-slate-600">{store.description ?? "No public description yet."}</p>
+                    <Button className="mt-4" size="sm" variant="outline" asChild>
+                      <Link to="/stores/$slug" params={{ slug: store.slug }}>View store</Link>
+                    </Button>
+                  </article>
+                );
+              })}
             </div>
           )}
           <SearchPagination meta={stores.data.meta} onPage={(page) => onSearchChange({ ...search, page })} />

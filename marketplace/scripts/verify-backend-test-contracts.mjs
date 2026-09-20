@@ -364,7 +364,7 @@ function verifyPromotionsTests() {
 
   requireText(
     schemas,
-    "documents exactly the seven approved promotion operations with bearer authentication",
+    "documents the approved promotion operations with bearer authentication",
     "Module 9 schema/OpenAPI tests",
   );
   requireText(
@@ -789,7 +789,7 @@ function verifyRepairRegressionGate() {
   );
   requireText(
     apiContracts,
-    "locks Module 9 Promotions and Coupons to exactly the seven approved operations",
+    "locks Module 9 Promotions and Coupons to the approved operations",
     "Module 9 exact API contract regression guard",
   );
   requireText(

@@ -424,7 +424,7 @@ async function browserLogin(page: Page, email: string, password: string): Promis
 
 /** Selects the deterministic platform Shipping Core option for every Checkout seller/store group. */
 async function chooseShippingMethods(page: Page): Promise<void> {
-  const selects = page.getByLabel(/Shipping method for store/);
+  const selects = page.getByLabel(/Shipping method for/);
   await expect(selects.first()).toBeVisible();
   const count = await selects.count();
   expect(count).toBeGreaterThan(0);
@@ -454,7 +454,7 @@ async function checkoutThroughBrowser(page: Page): Promise<{
       response.request().method() === "POST" &&
       response.status() === 201,
   );
-  await page.getByRole("button", { name: "Calculate authoritative quote" }).click();
+  await page.getByRole("button", { name: "Review order" }).click();
   const quoteResponse = await quoteResponsePromise;
   const quote = ((await quoteResponse.json()) as ApiEnvelope<CheckoutQuote>).data;
 

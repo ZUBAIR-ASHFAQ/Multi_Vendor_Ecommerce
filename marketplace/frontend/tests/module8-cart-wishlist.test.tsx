@@ -18,6 +18,7 @@ const productId = "66666666-6666-4666-8666-666666666666";
 const variantId = "77777777-7777-4777-8777-777777777777";
 const storeId = "88888888-8888-4888-8888-888888888888";
 const categoryId = "99999999-9999-4999-8999-999999999999";
+const thumbnailFileId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const now = "2026-09-09T00:00:00.000Z";
 
 afterEach(() => clearAccessToken());
@@ -43,6 +44,23 @@ function useCustomerActor(): void {
     http.get(`${env.VITE_API_BASE_URL}/auth/me`, () =>
       HttpResponse.json({ success: true, data: customerActor(), requestId: "req-auth" }),
     ),
+    http.post(`${env.VITE_API_BASE_URL}/media/public/resolve`, async ({ request }) => {
+      const body = await request.json() as { fileIds?: string[] };
+      return HttpResponse.json({
+        success: true,
+        data: {
+          items: (body.fileIds ?? [])
+            .filter((fileId) => fileId === thumbnailFileId)
+            .map((fileId) => ({
+              fileId,
+              url: "https://cdn.example.test/everyday-backpack.jpg",
+              mimeType: "image/jpeg",
+              expiresAt: "2026-09-09T00:10:00.000Z",
+            })),
+        },
+        requestId: "req-media",
+      });
+    }),
   );
 }
 
@@ -59,6 +77,10 @@ function cartResponse(quantity = 2) {
         variantId,
         productName: "Everyday Backpack",
         productSlug: "everyday-backpack",
+        storeId,
+        storeSlug: "northstar-goods",
+        storeName: "Northstar Goods",
+        thumbnailFileId,
         variantTitle: "Black",
         sku: "BAG-BLK",
         currentUnitPrice: "25.00",
@@ -102,6 +124,10 @@ function wishlistResponse() {
         variantId,
         productName: "Everyday Backpack",
         productSlug: "everyday-backpack",
+        storeId,
+        storeSlug: "northstar-goods",
+        storeName: "Northstar Goods",
+        thumbnailFileId,
         variantTitle: "Black",
         currentUnitPrice: "25.00",
         currency: "USD",
@@ -159,6 +185,22 @@ function publicProductResponse() {
     ],
     attributes: [],
     media: [],
+    store: {
+      id: storeId,
+      slug: "northstar-goods",
+      name: "Northstar Goods",
+      logoFileId: null,
+      seller: {
+        id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        displayName: "Northstar Seller",
+      },
+    },
+    category: {
+      id: categoryId,
+      slug: "bags",
+      name: "Bags",
+    },
+    brand: null,
   };
 }
 
@@ -175,9 +217,13 @@ describe("Module 8 Cart & Wishlist UI", () => {
     );
 
     await renderRoute("/cart");
-    expect(await screen.findByRole("heading", { name: "Your Cart" })).toBeInTheDocument();
-    expect(screen.getByText("Not a final checkout total")).toBeInTheDocument();
-    expect(screen.getByText("Inventory is not reserved until the later Checkout workflow.")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Review your items" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Northstar Goods" })).toHaveAttribute("href", "/stores/northstar-goods");
+    expect(await screen.findByRole("img", { name: "Everyday Backpack" })).toHaveAttribute(
+      "src",
+      "https://cdn.example.test/everyday-backpack.jpg",
+    );
+    expect(screen.getByText(/Inventory is not reserved yet/i)).toBeInTheDocument();
 
     const user = userEvent.setup();
     const quantity = screen.getByLabelText("Quantity");
@@ -186,7 +232,7 @@ describe("Module 8 Cart & Wishlist UI", () => {
     await user.click(screen.getByRole("button", { name: "Update quantity" }));
 
     await waitFor(() => expect(seenBody).toEqual({ quantity: 3 }));
-    expect(await screen.findByText("Line preview: $75.00")).toBeInTheDocument();
+    expect((await screen.findAllByText("$75.00")).length).toBeGreaterThan(0);
   });
 
   it("does not preload Cart data for a non-customer actor even if a stale permission is present", async () => {
@@ -378,7 +424,7 @@ describe("Module 8 Cart & Wishlist UI", () => {
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "Try again" }));
 
-    expect(await screen.findByRole("heading", { name: "Your Cart" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Review your items" })).toBeInTheDocument();
     expect(requestCount).toBe(2);
   });
 });

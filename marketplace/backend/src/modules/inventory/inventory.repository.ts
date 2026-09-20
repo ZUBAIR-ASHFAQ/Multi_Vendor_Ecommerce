@@ -4,9 +4,11 @@ import {
   count,
   desc,
   eq,
+  ilike,
   inArray,
   isNotNull,
   lte,
+  or,
   sql,
   type SQL,
 } from "drizzle-orm";
@@ -22,6 +24,8 @@ import {
   type StockMovementRow,
   type StockReservationRow,
 } from "../../database/schema/inventory.js";
+import { products, productVariants } from "../../database/schema/products.js";
+import { stores } from "../../database/schema/sellers.js";
 import type { DatabaseExecutor } from "../../database/types.js";
 import { toLimitOffset } from "../../common/utils/pagination.js";
 import { STOCK_RESERVATION_STATUS } from "./inventory.constants.js";
@@ -66,9 +70,23 @@ export interface CreateStockReservationRecordInput {
   sourceKey: string;
 }
 
+/** One seller Inventory list row with Product/variant/Store display context. */
+export interface SellerInventoryListRow {
+  inventory: InventoryItemRow;
+  productId: string;
+  productName: string;
+  productSlug: string;
+  variantSku: string;
+  variantTitle: string;
+  variantStatus: string;
+  variantPrice: string;
+  variantCurrency: string;
+  storeName: string;
+}
+
 /** Paginated seller-scoped Inventory rows returned by repository list reads. */
 export interface PaginatedInventoryRows {
-  items: InventoryItemRow[];
+  items: SellerInventoryListRow[];
   totalItems: number;
 }
 
@@ -127,15 +145,39 @@ export class InventoryRepository {
     query: SellerInventoryListQuery,
   ): Promise<PaginatedInventoryRows> {
     const { limit, offset } = toLimitOffset(query);
+    const search = query.q ? `%${query.q}%` : null;
     const where = combineConditions([
       inventorySellerScopeCondition(scope),
       query.storeId ? eq(inventoryItems.storeId, query.storeId) : undefined,
+      query.variantId ? eq(inventoryItems.variantId, query.variantId) : undefined,
+      search
+        ? or(
+            ilike(products.name, search),
+            ilike(products.slug, search),
+            ilike(productVariants.sku, search),
+            ilike(productVariants.title, search),
+          )
+        : undefined,
       lowStockCondition(query.lowStock),
     ]);
 
     const items = await this.executor
-      .select()
+      .select({
+        inventory: inventoryItems,
+        productId: products.id,
+        productName: products.name,
+        productSlug: products.slug,
+        variantSku: productVariants.sku,
+        variantTitle: productVariants.title,
+        variantStatus: productVariants.status,
+        variantPrice: productVariants.price,
+        variantCurrency: productVariants.currency,
+        storeName: stores.name,
+      })
       .from(inventoryItems)
+      .innerJoin(productVariants, eq(productVariants.id, inventoryItems.variantId))
+      .innerJoin(products, eq(products.id, productVariants.productId))
+      .innerJoin(stores, eq(stores.id, inventoryItems.storeId))
       .where(where)
       .orderBy(desc(inventoryItems.updatedAt), asc(inventoryItems.id))
       .limit(limit)
@@ -144,6 +186,9 @@ export class InventoryRepository {
     const [totalRow] = await this.executor
       .select({ totalItems: count() })
       .from(inventoryItems)
+      .innerJoin(productVariants, eq(productVariants.id, inventoryItems.variantId))
+      .innerJoin(products, eq(products.id, productVariants.productId))
+      .innerJoin(stores, eq(stores.id, inventoryItems.storeId))
       .where(where);
 
     return { items, totalItems: Number(totalRow?.totalItems ?? 0) };

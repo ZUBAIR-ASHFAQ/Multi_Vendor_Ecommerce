@@ -1,12 +1,18 @@
-import type { SellerWalletBalance } from "../schemas/seller-wallet-payouts.schemas";
+import { StatCard } from "@/components/ui/stat-card";
+import { formatMoney } from "@/lib/money";
+import type {
+  SellerPayoutSummary,
+  SellerWalletBalance,
+} from "../schemas/seller-wallet-payouts.schemas";
 
-/** Formats one exact decimal string for display without converting it to floating point. */
-function money(value: string, currency: string): string {
-  return `${value} ${currency}`;
-}
-
-/** Renders the four financially distinct Wallet buckets without combining them into one misleading balance. */
-export function WalletSummary({ wallets }: { wallets: SellerWalletBalance[] }) {
+/** Renders per-currency Wallet and Payout facts without combining unrelated currencies. */
+export function WalletSummary({
+  wallets,
+  payoutSummaries,
+}: {
+  wallets: SellerWalletBalance[];
+  payoutSummaries: SellerPayoutSummary[];
+}) {
   if (wallets.length === 0) {
     return (
       <section className="rounded-xl border bg-white p-5 shadow-sm">
@@ -16,34 +22,60 @@ export function WalletSummary({ wallets }: { wallets: SellerWalletBalance[] }) {
     );
   }
 
+  const payoutByCurrency = new Map(payoutSummaries.map((summary) => [summary.currency, summary]));
+
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-      {wallets.map((wallet) => (
-        <section key={`${wallet.sellerId}-${wallet.currency}`} className="rounded-xl border bg-white p-4 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="font-semibold">{wallet.currency} Wallet</h2>
-            <span className="text-xs text-slate-500">Updated {new Date(wallet.updatedAt).toLocaleString()}</span>
-          </div>
-          <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
-            <div className="rounded-lg bg-slate-50 p-3">
-              <dt className="text-slate-500">Pending</dt>
-              <dd className="mt-1 font-semibold">{money(wallet.pendingBalance, wallet.currency)}</dd>
+    <div className="space-y-4">
+      {wallets.map((wallet) => {
+        const payout = payoutByCurrency.get(wallet.currency);
+        return (
+          <section key={`${wallet.sellerId}-${wallet.currency}`} className="space-y-3" aria-label={`${wallet.currency} finance overview`}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 className="text-lg font-semibold">{wallet.currency} finance overview</h2>
+                <p className="text-xs text-slate-500">Updated {new Date(wallet.updatedAt).toLocaleString()}</p>
+              </div>
+              {payout?.inProgressCount ? (
+                <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
+                  {payout.inProgressCount} payout{payout.inProgressCount === 1 ? "" : "s"} in progress
+                </span>
+              ) : null}
             </div>
-            <div className="rounded-lg bg-emerald-50 p-3">
-              <dt className="text-emerald-700">Available</dt>
-              <dd className="mt-1 font-semibold text-emerald-950">{money(wallet.availableBalance, wallet.currency)}</dd>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <StatCard
+                label="Available"
+                value={formatMoney(wallet.availableBalance, wallet.currency)}
+                meta="Eligible to request, subject to payout validation."
+              />
+              <StatCard
+                label="Pending"
+                value={formatMoney(wallet.pendingBalance, wallet.currency)}
+                meta="Earnings still inside the settlement hold period."
+              />
+              <StatCard
+                label="Lifetime paid"
+                value={formatMoney(payout?.lifetimePaidAmount ?? "0.0000", wallet.currency)}
+                meta="Authoritative total from completed payouts."
+              />
+              <StatCard
+                label="Payouts in progress"
+                value={formatMoney(payout?.inProgressAmount ?? "0.0000", wallet.currency)}
+                meta={payout?.inProgressCount ? `${payout.inProgressCount} active payout request(s).` : "No active payout requests."}
+              />
+              <StatCard
+                label="Held"
+                value={formatMoney(wallet.heldBalance, wallet.currency)}
+                meta="Reserved funds, including approved payout reservations."
+              />
+              <StatCard
+                label="Negative"
+                value={formatMoney(wallet.negativeBalance, wallet.currency)}
+                meta="Recovery balance tracked separately from available funds."
+              />
             </div>
-            <div className="rounded-lg bg-amber-50 p-3">
-              <dt className="text-amber-700">Held</dt>
-              <dd className="mt-1 font-semibold text-amber-950">{money(wallet.heldBalance, wallet.currency)}</dd>
-            </div>
-            <div className="rounded-lg bg-rose-50 p-3">
-              <dt className="text-rose-700">Negative</dt>
-              <dd className="mt-1 font-semibold text-rose-950">{money(wallet.negativeBalance, wallet.currency)}</dd>
-            </div>
-          </dl>
-        </section>
-      ))}
+          </section>
+        );
+      })}
     </div>
   );
 }

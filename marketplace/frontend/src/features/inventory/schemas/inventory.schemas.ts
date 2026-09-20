@@ -14,7 +14,9 @@ export const inventoryNonNegativeQuantitySchema = z
 export const sellerInventoryListParamsSchema = z.object({
   page: pageSchema,
   pageSize: pageSizeSchema,
+  q: z.string().trim().min(1).max(200).optional(),
   storeId: z.union([uuidSchema, z.literal("")]).optional(),
+  variantId: uuidSchema.optional(),
   lowStock: z.boolean().optional(),
 });
 
@@ -59,6 +61,19 @@ export const inventoryItemSchema = z.object({
   updatedAt: isoDateTimeSchema,
 });
 
+/** Seller Inventory-list row with Product/variant/Store display context. */
+export const sellerInventoryListItemSchema = inventoryItemSchema.extend({
+  productId: uuidSchema,
+  productName: z.string().trim().min(1),
+  productSlug: z.string().trim().min(1),
+  variantSku: z.string().trim().min(1),
+  variantTitle: z.string().trim().min(1),
+  variantStatus: z.enum(["active", "inactive"]),
+  variantPrice: z.string().trim().regex(/^\d+(?:\.\d+)?$/),
+  variantCurrency: z.string().trim().regex(/^[A-Z]{3}$/),
+  storeName: z.string().trim().min(1),
+});
+
 /** Immutable stock movement row returned by the backend. */
 export const stockMovementSchema = z.object({
   id: uuidSchema,
@@ -74,4 +89,5 @@ export const stockMovementSchema = z.object({
 export type SellerInventoryListParams = z.infer<typeof sellerInventoryListParamsSchema>;
 export type StockMovementListParams = z.infer<typeof stockMovementListParamsSchema>;
 export type InventoryItem = z.infer<typeof inventoryItemSchema>;
+export type SellerInventoryListItem = z.infer<typeof sellerInventoryListItemSchema>;
 export type StockMovement = z.infer<typeof stockMovementSchema>;

@@ -1,7 +1,10 @@
 import { Link, useParams } from "@tanstack/react-router";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
-import { AuthenticatedPanel } from "@/features/auth/components/authenticated-panel";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
+import { Surface } from "@/components/ui/surface";
+import { CustomerAccountLayout } from "@/features/customers/components/customer-account-shell";
 import { ApiClientError } from "@/lib/api-error";
 import { ShipmentStatus } from "../components/shipment-status";
 import { ShipmentTimeline } from "../components/shipment-timeline";
@@ -34,42 +37,57 @@ function CustomerOrderShippingContent({
   }
 
   return (
-    <div className="space-y-5">
-      <div>
-        {adminRead ? (
-          <Link className="text-sm underline" to="/admin/orders">
-            ← Admin Orders
-          </Link>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow={adminRead ? (
+          <Link className="hover:underline" to="/admin/orders">← Admin Orders</Link>
         ) : canReadOrder ? (
-          <Link className="text-sm underline" to="/orders/$orderId" params={{ orderId }}>
-            ← Order detail
-          </Link>
-        ) : null}
-        <h1 className="mt-2 text-2xl font-bold">Shipment tracking</h1>
-        <p className="text-sm text-slate-500">Only shipped or delivered Shipments are visible here.</p>
-      </div>
+          <Link className="hover:underline" to="/orders/$orderId" params={{ orderId }}>← Order detail</Link>
+        ) : undefined}
+        title="Shipment tracking"
+        description="Carrier updates appear here after a seller marks a Shipment as shipped."
+      />
 
       {shipments.data.length === 0 ? (
-        <p className="rounded-xl border bg-white p-5 text-sm text-slate-600">
-          Tracking is not available yet. A Shipment appears here after the seller marks it shipped.
-        </p>
+        <EmptyState
+          title="Tracking is not available yet"
+          description="Your Order can still be processing. Shipment tracking appears here as soon as a seller dispatches an eligible package."
+          action={canReadOrder ? (
+            <Link className="rounded-control border border-border px-4 py-2 text-sm font-semibold hover:bg-surface-muted" to="/orders/$orderId" params={{ orderId }}>
+              Back to Order
+            </Link>
+          ) : undefined}
+        />
       ) : (
-        shipments.data.map((shipment) => (
-          <article key={shipment.id} className="space-y-4 rounded-xl border bg-white p-5 shadow-sm">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h2 className="font-semibold">{shipment.shipmentNo}</h2>
-                <p className="text-sm text-slate-600">{shipment.carrier} · {shipment.trackingNo}</p>
-                {shipment.serviceLevel ? <p className="text-xs text-slate-500">{shipment.serviceLevel}</p> : null}
+        <div className="space-y-5">
+          {shipments.data.map((shipment, index) => (
+            <article key={shipment.id} className="overflow-hidden rounded-card border border-border bg-surface shadow-card">
+              <div className="flex flex-col gap-4 border-b border-border bg-surface-muted px-5 py-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-foreground-muted">Package {index + 1}</p>
+                  <h2 className="mt-1 font-semibold text-foreground">{shipment.shipmentNo}</h2>
+                  <p className="mt-1 text-sm text-foreground-muted">{shipment.carrier} · {shipment.trackingNo}</p>
+                  {shipment.serviceLevel ? <p className="mt-1 text-xs text-foreground-muted">{shipment.serviceLevel}</p> : null}
+                </div>
+                <ShipmentStatus value={shipment.status} />
               </div>
-              <ShipmentStatus value={shipment.status} />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold">Tracking timeline</h3>
-              <div className="mt-2"><ShipmentTimeline entries={shipment.timeline} /></div>
-            </div>
-          </article>
-        ))
+
+              <div className="grid gap-6 px-5 py-5 lg:grid-cols-[220px_minmax(0,1fr)]">
+                <Surface variant="muted" padding="sm">
+                  <dl className="space-y-3 text-sm">
+                    <div><dt className="text-foreground-muted">Items in package</dt><dd className="mt-1 font-semibold">{shipment.items.reduce((sum, item) => sum + item.quantity, 0)}</dd></div>
+                    <div><dt className="text-foreground-muted">Shipped</dt><dd className="mt-1 font-medium">{new Date(shipment.shippedAt).toLocaleString()}</dd></div>
+                    {shipment.deliveredAt ? <div><dt className="text-foreground-muted">Delivered</dt><dd className="mt-1 font-medium">{new Date(shipment.deliveredAt).toLocaleString()}</dd></div> : null}
+                  </dl>
+                </Surface>
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Tracking timeline</h3>
+                  <div className="mt-3"><ShipmentTimeline entries={shipment.timeline} /></div>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
       )}
     </div>
   );
@@ -80,7 +98,7 @@ export function CustomerOrderShippingPage() {
   const { orderId } = useParams({ strict: false });
 
   return (
-    <AuthenticatedPanel>
+    <CustomerAccountLayout>
       {(user) =>
         user.permissions.includes(SHIPPING_PERMISSION.READ_OWN_ORDER) ||
         user.permissions.includes(SHIPPING_PERMISSION.ADMIN_READ) ? (
@@ -93,6 +111,6 @@ export function CustomerOrderShippingPage() {
           <ErrorState title="Access denied" message="Your account does not have permission to read Shipment tracking." />
         )
       }
-    </AuthenticatedPanel>
+    </CustomerAccountLayout>
   );
 }

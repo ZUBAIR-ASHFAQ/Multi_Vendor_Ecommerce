@@ -17,7 +17,10 @@ import {
 } from "../../database/schema/promotions.js";
 import type { DatabaseExecutor } from "../../database/types.js";
 import { PROMOTION_OWNER_TYPE } from "./promotions.constants.js";
-import type { AdminPromotionListQuery } from "./promotions.schema.js";
+import type {
+  AdminPromotionListQuery,
+  SellerPromotionListQuery,
+} from "./promotions.schema.js";
 
 /** Promotion fields already authorized and derived by the service before insertion. */
 export interface CreatePromotionRecordInput {
@@ -92,6 +95,39 @@ export class PromotionsRepository {
   ): Promise<PaginatedPromotionRows> {
     const { limit, offset } = toLimitOffset(query);
     const where = eq(promotions.ownerType, PROMOTION_OWNER_TYPE.PLATFORM);
+
+    const items = await this.executor
+      .select()
+      .from(promotions)
+      .where(where)
+      .orderBy(asc(promotions.startAt), asc(promotions.id))
+      .limit(limit)
+      .offset(offset);
+
+    const [totalRow] = await this.executor
+      .select({ totalItems: count() })
+      .from(promotions)
+      .where(where);
+
+    return {
+      items,
+      totalItems: Number(totalRow?.totalItems ?? 0),
+    };
+  }
+
+  /** Lists seller-owned promotions only for the server-derived seller IDs supplied by the service. */
+  async listSellerPromotions(
+    sellerIds: string[],
+    query: SellerPromotionListQuery,
+  ): Promise<PaginatedPromotionRows> {
+    if (sellerIds.length === 0) return { items: [], totalItems: 0 };
+
+    const { limit, offset } = toLimitOffset(query);
+    const where = and(
+      eq(promotions.ownerType, PROMOTION_OWNER_TYPE.SELLER),
+      inArray(promotions.sellerId, sellerIds),
+      query.status ? eq(promotions.status, query.status) : undefined,
+    );
 
     const items = await this.executor
       .select()

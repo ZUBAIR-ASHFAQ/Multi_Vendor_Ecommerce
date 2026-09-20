@@ -369,18 +369,71 @@ export const productDetailResponseSchema = productResponseSchema.extend({
   priceHistory: z.array(productPriceHistoryResponseSchema).optional(),
 });
 
-/** Public Product detail excludes private seller/lifecycle fields and immutable seller price-history metadata. */
-export const publicProductDetailResponseSchema = publicProductResponseSchema.extend({
+/** Lean public Product aggregate reused by trusted commerce/search integrations without storefront-only presentation data. */
+export const publicProductCommerceDetailResponseSchema = publicProductResponseSchema.extend({
   variants: z.array(publicProductVariantResponseSchema),
   attributes: z.array(productAttributeValueResponseSchema),
   media: z.array(publicProductMediaResponseSchema),
 });
 
+/** Public Store identity embedded in Product detail so the storefront can link the seller without a second lookup. */
+export const publicProductStoreResponseSchema = z
+  .object({
+    id: uuidSchema,
+    slug: z.string().trim().min(1),
+    name: z.string().trim().min(1),
+    logoFileId: uuidSchema.nullable(),
+    seller: z.object({
+      id: uuidSchema,
+      displayName: z.string().trim().min(1),
+    }).strict(),
+  })
+  .strict();
+
+/** Public category/brand identity embedded in Product detail for breadcrumbs and merchandising context. */
+export const publicProductTaxonomyResponseSchema = z
+  .object({
+    id: uuidSchema,
+    slug: z.string().trim().min(1),
+    name: z.string().trim().min(1),
+  })
+  .strict();
+
+/** Public HTTP Product detail adds only safe storefront presentation context to the lean commerce aggregate. */
+export const publicProductDetailResponseSchema = publicProductCommerceDetailResponseSchema.extend({
+  store: publicProductStoreResponseSchema,
+  category: publicProductTaxonomyResponseSchema,
+  brand: publicProductTaxonomyResponseSchema.nullable(),
+});
+
+/** Public storefront-card fields derived from active Product variants/media and the active Store. */
+export const publicProductListItemResponseSchema = publicProductResponseSchema.extend({
+  minPrice: productPriceSchema,
+  maxPrice: productPriceSchema,
+  currency: productCurrencySchema,
+  thumbnailFileId: uuidSchema.nullable(),
+});
+
 /** Public list response data; pagination metadata belongs in the standard envelope's meta field. */
-export const publicProductListDataSchema = z.array(publicProductResponseSchema);
+export const publicProductListDataSchema = z.array(publicProductListItemResponseSchema);
+
+/** Seller Product-list row enriched with display-only Store, variant, price, and thumbnail context. */
+export const sellerProductListItemResponseSchema = productResponseSchema.extend({
+  storeName: z.string().trim().min(1),
+  storeSlug: z.string().trim().min(1),
+  storeCurrency: productCurrencySchema,
+  variantCount: z.number().int().nonnegative(),
+  minPrice: productPriceSchema.nullable(),
+  maxPrice: productPriceSchema.nullable(),
+  priceCurrency: productCurrencySchema.nullable(),
+  thumbnailFileId: uuidSchema.nullable(),
+});
 
 /** Seller list response data; pagination metadata belongs in the standard envelope's meta field. */
-export const sellerProductListDataSchema = z.array(productResponseSchema);
+export const sellerProductListDataSchema = z.array(sellerProductListItemResponseSchema);
+
+/** Admin moderation list keeps the original Product response contract. */
+export const adminProductListDataSchema = z.array(productResponseSchema);
 
 export type PublicProductListQuery = z.infer<typeof publicProductListQuerySchema>;
 export type SellerProductListQuery = z.infer<typeof sellerProductListQuerySchema>;
@@ -394,7 +447,10 @@ export type RejectProductInput = z.infer<typeof rejectProductBodySchema>;
 export type ProductAttributeInput = z.infer<typeof productAttributeInputSchema>;
 export type ProductResponse = z.infer<typeof productResponseSchema>;
 export type PublicProductResponse = z.infer<typeof publicProductResponseSchema>;
+export type PublicProductListItemResponse = z.infer<typeof publicProductListItemResponseSchema>;
+export type SellerProductListItemResponse = z.infer<typeof sellerProductListItemResponseSchema>;
 export type ProductDetailResponse = z.infer<typeof productDetailResponseSchema>;
+export type PublicProductCommerceDetailResponse = z.infer<typeof publicProductCommerceDetailResponseSchema>;
 export type PublicProductDetailResponse = z.infer<typeof publicProductDetailResponseSchema>;
 export type ProductVariantResponse = z.infer<typeof productVariantResponseSchema>;
 export type ProductMediaResponse = z.infer<typeof productMediaResponseSchema>;

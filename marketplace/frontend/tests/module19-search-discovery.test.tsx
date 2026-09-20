@@ -15,7 +15,7 @@ const brandId = "55555555-5555-4555-8555-555555555555";
 const attributeId = "66666666-6666-4666-8666-666666666666";
 
 /** Returns a deterministic public Search response with all required facet families. */
-function searchResponse() {
+function searchResponse(thumbnailFileId: string | null = null) {
   return {
     success: true,
     data: {
@@ -35,7 +35,7 @@ function searchResponse() {
           ratingAvg: 0,
           ratingCount: 0,
           inStock: true,
-          thumbnailFileId: null,
+          thumbnailFileId,
           updatedAt: "2026-09-07T08:00:00.000Z",
         },
       ],
@@ -84,8 +84,9 @@ describe("Module 19 Search & Discovery UI", () => {
 
     await renderRoute("/search?q=headphones");
     expect(await screen.findByRole("heading", { name: "Wireless Headphones" })).toBeInTheDocument();
-    expect(screen.getByText("USD 79.99–99.99")).toBeInTheDocument();
-    expect(screen.getByText("No ratings yet")).toBeInTheDocument();
+    expect(screen.getByText("$79.99 – $99.99")).toBeInTheDocument();
+    expect(screen.getByLabelText("No ratings yet")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save Wireless Headphones to wishlist" })).toBeInTheDocument();
     expect(screen.getByText("In stock")).toBeInTheDocument();
 
     const user = userEvent.setup();
@@ -96,11 +97,38 @@ describe("Module 19 Search & Discovery UI", () => {
     await waitFor(() => expect(seenUrls.some((url) => url.searchParams.getAll("attribute").includes(`${attributeId}=Black`))).toBe(true));
 
     await user.selectOptions(screen.getByLabelText("Search result sort"), "price_asc");
-    await user.click(screen.getByRole("button", { name: "Search", exact: true }));
     await waitFor(() => expect(seenUrls.some((url) => url.searchParams.get("sort") === "price_asc")).toBe(true));
 
     await user.click(screen.getByRole("button", { name: "Next" }));
     await waitFor(() => expect(seenUrls.some((url) => url.searchParams.get("page") === "2")).toBe(true));
+  });
+
+
+  it("resolves public Search thumbnails in one media request and renders the returned image", async () => {
+    const thumbnailFileId = "77777777-7777-4777-8777-777777777777";
+    server.use(
+      http.get(`${env.VITE_API_BASE_URL}/search/products`, () =>
+        HttpResponse.json(searchResponse(thumbnailFileId)),
+      ),
+      http.post(`${env.VITE_API_BASE_URL}/media/public/resolve`, async ({ request }) => {
+        expect(await request.json()).toEqual({ fileIds: [thumbnailFileId] });
+        return HttpResponse.json({
+          success: true,
+          data: {
+            items: [{
+              fileId: thumbnailFileId,
+              url: "https://cdn.example.test/wireless-headphones.jpg",
+              mimeType: "image/jpeg",
+              expiresAt: "2026-09-20T12:30:00.000Z",
+            }],
+          },
+        });
+      }),
+    );
+
+    await renderRoute("/search?q=headphones");
+    const image = await screen.findByRole("img", { name: "Wireless Headphones" });
+    expect(image).toHaveAttribute("src", "https://cdn.example.test/wireless-headphones.jpg");
   });
 
   it("shows readable validation for an invalid maximum price and an inverted price range", async () => {

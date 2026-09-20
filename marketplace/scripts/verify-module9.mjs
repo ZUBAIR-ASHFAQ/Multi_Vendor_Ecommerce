@@ -388,7 +388,7 @@ async function verifyLiveImplementedOpenApi() {
   const module9Paths = new Map([
     ["/api/v1/admin/promotions", { get: "listAdminPromotions", post: "createAdminPromotion" }],
     ["/api/v1/admin/promotions/{id}", { patch: "updateAdminPromotion" }],
-    ["/api/v1/seller/promotions", { post: "createSellerPromotion" }],
+    ["/api/v1/seller/promotions", { get: "listSellerPromotions", post: "createSellerPromotion" }],
     ["/api/v1/promotions/validate", { get: "validatePromotionCoupon" }],
     ["/api/v1/admin/promotions/{id}/activate", { post: "activateAdminPromotion" }],
     ["/api/v1/admin/promotions/{id}/deactivate", { post: "deactivateAdminPromotion" }],

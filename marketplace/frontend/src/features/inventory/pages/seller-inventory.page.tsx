@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
 import { RequireSellerPermission, SellerLayout } from "@/features/sellers/components/seller-layout";
+import { formatMoney } from "@/lib/money";
 import { InventoryPagination } from "../components/inventory-pagination";
 import { InventoryStatus } from "../components/inventory-status";
 import { InventoryAdjustmentForm } from "../forms/inventory-adjustment-form";
@@ -14,7 +15,10 @@ import {
   useSellerInventoryQuery,
   useUpdateReorderLevelMutation,
 } from "../hooks/use-inventory";
-import type { InventoryItem, SellerInventoryListParams } from "../schemas/inventory.schemas";
+import type {
+  SellerInventoryListItem,
+  SellerInventoryListParams,
+} from "../schemas/inventory.schemas";
 
 const INVENTORY_PERMISSION = {
   READ: "inventory.read",
@@ -22,7 +26,7 @@ const INVENTORY_PERMISSION = {
   REORDER_MANAGE: "inventory.reorder.manage",
 } as const;
 
-/** Shortens UUIDs only for table readability while preserving the full value in the title attribute. */
+/** Shortens UUIDs only for fallbacks while preserving the complete value in title attributes. */
 function shortId(value: string): string {
   return `${value.slice(0, 8)}…`;
 }
@@ -33,7 +37,7 @@ function InventoryManager({
   canAdjust,
   canManageReorder,
 }: {
-  item: InventoryItem;
+  item: SellerInventoryListItem;
   canAdjust: boolean;
   canManageReorder: boolean;
 }) {
@@ -42,15 +46,16 @@ function InventoryManager({
 
   return (
     <section className="rounded-xl border bg-white p-5 shadow-sm">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold">Manage selected variant</h2>
-          <p className="mt-1 text-sm text-slate-500" title={item.variantId}>Variant {shortId(item.variantId)}</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Selected SKU</p>
+          <h2 className="mt-1 text-lg font-semibold">{item.productName} · {item.variantTitle}</h2>
+          <p className="mt-1 text-sm text-slate-500">SKU {item.variantSku} · {item.storeName}</p>
         </div>
         <div className="grid grid-cols-3 gap-3 text-center text-sm">
-          <div><strong className="block text-lg">{item.onHandQty}</strong><span className="text-slate-500">On hand</span></div>
-          <div><strong className="block text-lg">{item.reservedQty}</strong><span className="text-slate-500">Reserved</span></div>
-          <div><strong className="block text-lg">{item.availableQty}</strong><span className="text-slate-500">Available</span></div>
+          <div className="rounded-lg bg-slate-50 px-4 py-3"><strong className="block text-lg">{item.onHandQty}</strong><span className="text-slate-500">On hand</span></div>
+          <div className="rounded-lg bg-slate-50 px-4 py-3"><strong className="block text-lg">{item.reservedQty}</strong><span className="text-slate-500">Reserved</span></div>
+          <div className="rounded-lg bg-slate-50 px-4 py-3"><strong className="block text-lg">{item.availableQty}</strong><span className="text-slate-500">Available</span></div>
         </div>
       </div>
 
@@ -102,12 +107,13 @@ function SellerInventoryContent({
     [inventory.data?.items, selectedVariantId],
   );
   const filterForm = useForm({
-    defaultValues: { storeId: "", lowStock: false },
+    defaultValues: { q: "", storeId: "", lowStock: false },
     onSubmit: ({ value }) => {
       setSelectedVariantId(null);
       setParams({
         page: 1,
         pageSize: 20,
+        q: value.q.trim() || undefined,
         storeId: value.storeId || undefined,
         lowStock: value.lowStock || undefined,
       });
@@ -117,18 +123,37 @@ function SellerInventoryContent({
   return (
     <div className="space-y-5">
       <section className="rounded-xl border bg-white p-5 shadow-sm">
-        <h1 className="text-2xl font-bold">Inventory & Stock</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Track on-hand, reserved, and available quantity. Physical stock changes are recorded in the immutable movement ledger.
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Catalog operations</p>
+            <h1 className="mt-1 text-2xl font-bold">Inventory & Stock</h1>
+            <p className="mt-1 text-sm text-slate-600">
+              Track physical, reserved, and sellable stock by Product and SKU. Every physical adjustment remains recorded in the immutable movement ledger.
+            </p>
+          </div>
+        </div>
 
         <form
-          className="mt-5 flex flex-wrap items-end gap-3"
+          className="mt-5 grid gap-3 lg:grid-cols-[minmax(16rem,1fr)_auto_auto_auto_auto] lg:items-end"
           onSubmit={(event) => {
             event.preventDefault();
             void filterForm.handleSubmit();
           }}
         >
+          <filterForm.Field name="q">
+            {(field) => (
+              <label className="text-sm font-medium">
+                Search
+                <input
+                  aria-label="Inventory search"
+                  placeholder="Product, SKU, or variant"
+                  className="mt-1 block w-full rounded-md border px-3 py-2"
+                  value={field.state.value}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                />
+              </label>
+            )}
+          </filterForm.Field>
           <filterForm.Field name="storeId">
             {(field) => (
               <label className="text-sm font-medium">
@@ -190,10 +215,12 @@ function SellerInventoryContent({
             </p>
           ) : (
             <div className="overflow-x-auto rounded-xl border bg-white shadow-sm">
-              <table className="min-w-full text-left text-sm">
+              <table className="min-w-[1120px] w-full text-left text-sm">
                 <thead className="border-b bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
                   <tr>
-                    <th className="px-4 py-3">Variant</th>
+                    <th className="px-4 py-3">Product / SKU</th>
+                    <th className="px-4 py-3">Store</th>
+                    <th className="px-4 py-3">Price</th>
                     <th className="px-4 py-3">On hand</th>
                     <th className="px-4 py-3">Reserved</th>
                     <th className="px-4 py-3">Available</th>
@@ -204,8 +231,14 @@ function SellerInventoryContent({
                 </thead>
                 <tbody>
                   {inventory.data.items.map((item) => (
-                    <tr key={item.id} className="border-b last:border-0">
-                      <td className="px-4 py-3" title={item.variantId}>{shortId(item.variantId)}</td>
+                    <tr key={item.id} className="border-b align-middle last:border-0 hover:bg-slate-50/60">
+                      <td className="px-4 py-3">
+                        <strong className="block text-slate-950">{item.productName}</strong>
+                        <span className="block text-xs text-slate-500">{item.variantTitle} · SKU {item.variantSku}</span>
+                        <span className="block text-xs capitalize text-slate-400">{item.variantStatus}</span>
+                      </td>
+                      <td className="px-4 py-3">{item.storeName}</td>
+                      <td className="px-4 py-3 font-medium">{formatMoney(item.variantPrice, item.variantCurrency)}</td>
                       <td className="px-4 py-3 font-medium">{item.onHandQty}</td>
                       <td className="px-4 py-3">{item.reservedQty}</td>
                       <td className="px-4 py-3 font-semibold">{item.availableQty}</td>
@@ -217,12 +250,10 @@ function SellerInventoryContent({
                             Manage
                           </Button>
                           <Button size="sm" variant="outline" asChild>
-                            <Link
-                              to="/seller/inventory/$variantId/movements"
-                              params={{ variantId: item.variantId }}
-                            >
-                              Movements
-                            </Link>
+                            <Link to="/seller/inventory/$variantId/movements" params={{ variantId: item.variantId }}>Movements</Link>
+                          </Button>
+                          <Button size="sm" variant="ghost" asChild>
+                            <Link to="/seller/products/$productId" params={{ productId: item.productId }}>Product</Link>
                           </Button>
                         </div>
                       </td>

@@ -1,6 +1,8 @@
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
+import { Button } from "@/components/ui/button";
 import { RequireSellerPermission, SellerLayout } from "@/features/sellers/components/seller-layout";
 import { ApiClientError } from "@/lib/api-error";
 import { CommissionPagination } from "../components/commission-pagination";
@@ -24,11 +26,19 @@ function SellerCommissionStatementContent() {
   return (
     <div className="space-y-5">
       <section className="rounded-xl border bg-white p-5 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Marketplace Finance</p>
-        <h1 className="mt-1 text-2xl font-bold">Seller fee statement</h1>
-        <p className="mt-1 max-w-3xl text-sm text-slate-600">
-          Gross sales, seller-funded discounts, marketplace fees, refund adjustments, and seller net are shown separately.
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Marketplace Finance</p>
+            <h1 className="mt-1 text-2xl font-bold">Seller fee statement</h1>
+            <p className="mt-1 max-w-3xl text-sm text-slate-600">
+              Reconcile gross sales, seller-funded discounts, marketplace fees, refunds, and seller net from the immutable Commission ledger.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline"><Link to="/seller/wallet">Wallet & ledger</Link></Button>
+            <Button asChild variant="outline"><Link to="/seller/payouts">Payouts</Link></Button>
+          </div>
+        </div>
       </section>
 
       <SellerCommissionFilterForm

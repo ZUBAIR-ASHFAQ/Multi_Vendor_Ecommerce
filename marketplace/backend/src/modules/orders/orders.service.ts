@@ -2208,6 +2208,7 @@ export class OrdersService {
       storeId: row.sellerOrder.storeId,
       orderId: row.order.id,
       orderNo: row.order.orderNo,
+      currency: row.order.currency,
       subtotal: row.sellerOrder.subtotal,
       discountTotal: row.sellerOrder.discountTotal,
       taxTotal: row.sellerOrder.taxTotal,

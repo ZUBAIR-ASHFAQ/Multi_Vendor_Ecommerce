@@ -8,12 +8,13 @@ import {
   createSellerPromotionBodySchema,
   emptyPromotionCommandBodySchema,
   promotionIdParamsSchema,
+  sellerPromotionListQuerySchema,
   updatePromotionBodySchema,
   validatePromotionQuerySchema,
 } from "./promotions.schema.js";
 import { PromotionsService } from "./promotions.service.js";
 
-/** Thin HTTP adapter for the seven approved Module 9 Promotions & Coupons operations. */
+/** Thin HTTP adapter for the approved Module 9 Promotions & Coupons operations. */
 export class PromotionsController {
   /** Receives the Promotions service explicitly so HTTP handling stays easy to test. */
   constructor(private readonly promotionsService: PromotionsService) {}
@@ -97,6 +98,29 @@ export class PromotionsController {
       );
       response.status(201).json(
         successResponse(result, { requestId: getRequestId(response) }),
+      );
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /** Returns the paginated promotion list inside the authenticated seller scope. */
+  listSellerPromotions = async (
+    request: Request,
+    response: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const query = sellerPromotionListQuerySchema.parse(request.query);
+      const result = await this.promotionsService.listSellerPromotions(
+        getRequestContext(response),
+        query,
+      );
+      response.status(200).json(
+        successResponse(result.items, {
+          meta: result.meta,
+          requestId: getRequestId(response),
+        }),
       );
     } catch (error) {
       next(error);

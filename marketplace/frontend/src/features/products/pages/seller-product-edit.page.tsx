@@ -108,7 +108,7 @@ function PublicationPanel({ product }: { product: ProductDetail }) {
     product.publicationStatus === PRODUCT_PUBLICATION_STATUS.PENDING_APPROVAL;
 
   return (
-    <section className="rounded-xl border bg-white p-5 shadow-sm">
+    <section id="publication" className="scroll-mt-24 rounded-xl border bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-bold">Publication</h2>
@@ -211,6 +211,21 @@ function SellerProductEditContent({
         </div>
       </section>
 
+      <nav aria-label="Product editor sections" className="flex flex-wrap gap-2 rounded-xl border bg-white p-3 shadow-sm">
+        {[
+          ["#information", "Information"],
+          ["#variants", "Variants & pricing"],
+          ["#media", "Media"],
+          ["#inventory", "Inventory"],
+          ["#pricing-history", "Pricing history"],
+          ["#publication", "Publishing"],
+        ].map(([href, label]) => (
+          <a key={href} href={href} className="rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-950">
+            {label}
+          </a>
+        ))}
+      </nav>
+
       {product.data.publicationStatus === PRODUCT_PUBLICATION_STATUS.REJECTED ? (
         <section role="alert" className="rounded-xl border border-red-200 bg-red-50 p-5 shadow-sm">
           <h2 className="text-lg font-bold text-red-950">Changes requested by admin</h2>
@@ -224,8 +239,8 @@ function SellerProductEditContent({
       ) : null}
 
       {canUpdate ? (
-        <section className="rounded-xl border bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-bold">Edit Product</h2>
+        <section id="information" className="scroll-mt-24 rounded-xl border bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-bold">Product information</h2>
           <div className="mt-5">
             <ProductForm
               stores={storeOptions}
@@ -239,9 +254,9 @@ function SellerProductEditContent({
         </section>
       ) : null}
 
-      <section className="rounded-xl border bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-bold">Variants / SKUs</h2>
-        <p className="mt-1 text-sm text-slate-600">Inventory quantities are intentionally not edited here; Module 7 owns stock.</p>
+      <section id="variants" className="scroll-mt-24 rounded-xl border bg-white p-5 shadow-sm">
+        <h2 className="text-lg font-bold">Variants & pricing</h2>
+        <p className="mt-1 text-sm text-slate-600">Variant identity and pricing live here. Physical stock stays in the Inventory workspace so quantity history remains auditable.</p>
         {canUpdate ? (
           <div className="mt-5 rounded-lg border bg-slate-50 p-4">
             <h3 className="font-semibold">Add variant</h3>
@@ -291,10 +306,10 @@ function SellerProductEditContent({
         </div>
       </section>
 
-      <section className="rounded-xl border bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-bold">Media manager</h2>
+      <section id="media" className="scroll-mt-24 rounded-xl border bg-white p-5 shadow-sm">
+        <h2 className="text-lg font-bold">Media</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Media is uploaded through short-lived Module 21 signed URLs, then linked to this Product.
+          Upload customer-facing Product images securely, add useful alt text, and order them for storefront presentation.
         </p>
         {canUploadMedia ? (
           <div className="mt-5">
@@ -319,13 +334,27 @@ function SellerProductEditContent({
               .map((media) => (
                 <li key={media.id} className="rounded-md border p-3 text-sm">
                   <strong>{media.altText ?? "Product media"}</strong>
-                  <span className="block text-xs text-slate-500">{media.mediaType} · file {media.fileId} · sort {media.sortOrder}</span>
+                  <span className="block text-xs text-slate-500">{media.mediaType} · sort {media.sortOrder}{media.variantId ? " · variant media" : " · Product media"}</span>
                 </li>
               ))}
         </ul>
       </section>
 
-      <section className="rounded-xl border bg-white p-5 shadow-sm">
+      <section id="inventory" className="scroll-mt-24 rounded-xl border bg-white p-5 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-bold">Inventory</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              On-hand, reserved, available, reorder thresholds, and movement history are managed in the dedicated Inventory workspace.
+            </p>
+          </div>
+          {canManageInventory ? (
+            <Button variant="outline" asChild><Link to="/seller/inventory">Open Inventory</Link></Button>
+          ) : null}
+        </div>
+      </section>
+
+      <section id="pricing-history" className="scroll-mt-24 rounded-xl border bg-white p-5 shadow-sm">
         <h2 className="text-lg font-bold">Pricing history</h2>
         <p className="mt-1 text-sm text-slate-600">History is append-only. Product edits never rewrite old prices.</p>
         {product.data.priceHistory?.length ? (

@@ -3,7 +3,7 @@ export function checkoutQuoteIsExpired(expiresAt: string): boolean {
   return new Date(expiresAt).getTime() <= Date.now();
 }
 
-/** Displays the quote expiry boundary so the customer knows when recalculation is required. */
+/** Displays the quote review window without exposing implementation terminology to customers. */
 export function CheckoutExpiryWarning({ expiresAt }: { expiresAt: string }) {
   const expired = checkoutQuoteIsExpired(expiresAt);
   const formattedExpiry = new Intl.DateTimeFormat(undefined, {
@@ -14,15 +14,11 @@ export function CheckoutExpiryWarning({ expiresAt }: { expiresAt: string }) {
   return (
     <div
       role={expired ? "alert" : "status"}
-      className={`rounded-lg border p-3 text-sm ${
-        expired
-          ? "border-amber-200 bg-amber-50 text-amber-950"
-          : "border-slate-200 bg-slate-50 text-slate-700"
-      }`}
+      className={`checkout-state-message ${expired ? "checkout-state-message-warning" : "checkout-state-message-neutral"}`}
     >
       {expired
-        ? "This quote has expired. Recalculate before confirming."
-        : `Quote expires ${formattedExpiry}. Recalculate if price, stock, promotion, shipping, address, or tax changes.`}
+        ? "This review has expired. Review your order again before placing it."
+        : `Your reviewed totals are held until ${formattedExpiry}.`}
     </div>
   );
 }

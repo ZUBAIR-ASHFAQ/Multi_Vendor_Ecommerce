@@ -30,6 +30,7 @@ import {
   type ProductRow,
   type ProductVariantRow,
 } from "../../database/schema/products.js";
+import { brands, categories } from "../../database/schema/catalog.js";
 import { sellers, stores } from "../../database/schema/sellers.js";
 import type { DatabaseExecutor } from "../../database/types.js";
 import { toLimitOffset } from "../../common/utils/pagination.js";
@@ -134,7 +135,67 @@ export interface CreateProductPriceHistoryRecordInput {
   changedAt?: Date;
 }
 
-/** Paginated Product rows returned by repository list reads. */
+/** One public Product list row enriched only with Product-module/store display data needed by storefront cards. */
+export interface PublicProductListRow {
+  product: ProductRow;
+  minPrice: string;
+  maxPrice: string;
+  currency: string;
+  thumbnailFileId: string | null;
+}
+
+
+/** Public Product plus only the safe Store/Seller/taxonomy fields needed by the storefront detail endpoint. */
+export interface PublicProductStorefrontRow {
+  product: ProductRow;
+  storeId: string;
+  storeSlug: string;
+  storeName: string;
+  storeLogoFileId: string | null;
+  sellerId: string;
+  sellerDisplayName: string;
+  categoryId: string;
+  categorySlug: string;
+  categoryName: string;
+  brandId: string | null;
+  brandSlug: string | null;
+  brandName: string | null;
+}
+
+/** Safe Product display context reused by customer intent surfaces such as Cart and Wishlist. */
+export interface PublicProductDisplayContextRow {
+  storeId: string;
+  storeSlug: string;
+  storeName: string;
+  thumbnailFileId: string | null;
+}
+
+/** Seller Product list row enriched only with Product-owned display/read-model context. */
+export interface SellerProductListRow {
+  product: ProductRow;
+  storeName: string;
+  storeSlug: string;
+  storeCurrency: string;
+  variantCount: number;
+  minPrice: string | null;
+  maxPrice: string | null;
+  priceCurrency: string | null;
+  thumbnailFileId: string | null;
+}
+
+/** Paginated public Product rows returned by the public storefront list read. */
+export interface PaginatedPublicProductRows {
+  items: PublicProductListRow[];
+  totalItems: number;
+}
+
+/** Paginated seller Product rows returned by seller-scoped repository list reads. */
+export interface PaginatedSellerProductRows {
+  items: SellerProductListRow[];
+  totalItems: number;
+}
+
+/** Paginated Product rows returned by admin repository list reads. */
 export interface PaginatedProductRows {
   items: ProductRow[];
   totalItems: number;
@@ -209,7 +270,7 @@ export class ProductsRepository {
   constructor(private readonly executor: DatabaseExecutor = db) {}
 
   /** Lists only persisted public Product rows using bounded filters and deterministic ordering. */
-  async listPublicProducts(query: PublicProductListQuery): Promise<PaginatedProductRows> {
+  async listPublicProducts(query: PublicProductListQuery): Promise<PaginatedPublicProductRows> {
     const { limit, offset } = toLimitOffset(query);
     const where = combineConditions([
       eq(products.status, PRODUCT_STATUS.ACTIVE),
@@ -223,8 +284,35 @@ export class ProductsRepository {
       productTextSearch(query.q),
     ]);
 
+    const minPrice = sql<string>`(
+      select min(${productVariants.price})
+      from ${productVariants}
+      where ${productVariants.productId} = ${products.id}
+        and ${productVariants.status} = ${PRODUCT_STATUS.ACTIVE}
+    )`;
+    const maxPrice = sql<string>`(
+      select max(${productVariants.price})
+      from ${productVariants}
+      where ${productVariants.productId} = ${products.id}
+        and ${productVariants.status} = ${PRODUCT_STATUS.ACTIVE}
+    )`;
+    const thumbnailFileId = sql<string | null>`(
+      select ${productMedia.fileId}
+      from ${productMedia}
+      where ${productMedia.productId} = ${products.id}
+        and ${productMedia.status} = ${PRODUCT_STATUS.ACTIVE}
+      order by ${productMedia.sortOrder} asc, ${productMedia.id} asc
+      limit 1
+    )`;
+
     const items = await this.executor
-      .select({ product: products })
+      .select({
+        product: products,
+        minPrice,
+        maxPrice,
+        currency: stores.defaultCurrency,
+        thumbnailFileId,
+      })
       .from(products)
       .innerJoin(stores, eq(stores.id, products.storeId))
       .innerJoin(sellers, eq(sellers.id, products.sellerId))
@@ -241,7 +329,7 @@ export class ProductsRepository {
       .where(where);
 
     return {
-      items: items.map((row) => row.product),
+      items,
       totalItems: Number(totalRow?.totalItems ?? 0),
     };
   }
@@ -264,13 +352,29 @@ export class ProductsRepository {
     return row ?? null;
   }
 
-  /** Reads one persisted public Product candidate by slug without exposing private publication states. */
-  async findPublicProductBySlug(slug: string): Promise<ProductRow | null> {
+  /** Reads one public Product plus safe Store/Seller/taxonomy context for the public detail endpoint. */
+  async findPublicProductStorefrontBySlug(slug: string): Promise<PublicProductStorefrontRow | null> {
     const [row] = await this.executor
-      .select({ product: products })
+      .select({
+        product: products,
+        storeId: stores.id,
+        storeSlug: stores.slug,
+        storeName: stores.name,
+        storeLogoFileId: stores.logoFileId,
+        sellerId: sellers.id,
+        sellerDisplayName: sellers.displayName,
+        categoryId: categories.id,
+        categorySlug: categories.slug,
+        categoryName: categories.name,
+        brandId: brands.id,
+        brandSlug: brands.slug,
+        brandName: brands.name,
+      })
       .from(products)
       .innerJoin(stores, eq(stores.id, products.storeId))
       .innerJoin(sellers, eq(sellers.id, products.sellerId))
+      .innerJoin(categories, eq(categories.id, products.categoryId))
+      .leftJoin(brands, eq(brands.id, products.brandId))
       .where(
         and(
           eq(products.slug, slug),
@@ -283,7 +387,45 @@ export class ProductsRepository {
       )
       .limit(1);
 
-    return row?.product ?? null;
+    return row ?? null;
+  }
+
+  /** Reads safe Store identity and first active media only while the Product remains storefront-eligible. */
+  async findPublicProductDisplayContextById(
+    productId: string,
+  ): Promise<PublicProductDisplayContextRow | null> {
+    const thumbnailFileId = sql<string | null>`(
+      select ${productMedia.fileId}
+      from ${productMedia}
+      where ${productMedia.productId} = ${products.id}
+        and ${productMedia.status} = ${PRODUCT_STATUS.ACTIVE}
+      order by ${productMedia.sortOrder} asc, ${productMedia.id} asc
+      limit 1
+    )`;
+
+    const [row] = await this.executor
+      .select({
+        storeId: stores.id,
+        storeSlug: stores.slug,
+        storeName: stores.name,
+        thumbnailFileId,
+      })
+      .from(products)
+      .innerJoin(stores, eq(stores.id, products.storeId))
+      .innerJoin(sellers, eq(sellers.id, products.sellerId))
+      .where(
+        and(
+          eq(products.id, productId),
+          eq(products.status, PRODUCT_STATUS.ACTIVE),
+          eq(products.publicationStatus, PRODUCT_PUBLICATION_STATUS.PUBLISHED),
+          eq(stores.status, STORE_STATUS.ACTIVE),
+          eq(sellers.status, SELLER_STATUS.ACTIVE),
+          eq(sellers.approvalStatus, SELLER_APPROVAL_STATUS.APPROVED),
+        ),
+      )
+      .limit(1);
+
+    return row ?? null;
   }
 
   /** Reads one persisted public Product candidate by ID for trusted downstream read-model synchronization. */
@@ -312,7 +454,7 @@ export class ProductsRepository {
   async listSellerProducts(
     scope: ProductSellerScope,
     query: SellerProductListQuery,
-  ): Promise<PaginatedProductRows> {
+  ): Promise<PaginatedSellerProductRows> {
     const { limit, offset } = toLimitOffset(query);
     const where = combineConditions([
       productSellerScopeCondition(scope),
@@ -323,10 +465,49 @@ export class ProductsRepository {
         : undefined,
       productTextSearch(query.q),
     ]);
+    const variantCount = sql<number>`(
+      select count(*)::int
+      from ${productVariants}
+      where ${productVariants.productId} = ${products.id}
+    )`;
+    const minPrice = sql<string | null>`(
+      select min(${productVariants.price})
+      from ${productVariants}
+      where ${productVariants.productId} = ${products.id}
+    )`;
+    const maxPrice = sql<string | null>`(
+      select max(${productVariants.price})
+      from ${productVariants}
+      where ${productVariants.productId} = ${products.id}
+    )`;
+    const priceCurrency = sql<string | null>`(
+      select case when count(distinct ${productVariants.currency}) = 1 then min(${productVariants.currency}) else null end
+      from ${productVariants}
+      where ${productVariants.productId} = ${products.id}
+    )`;
+    const thumbnailFileId = sql<string | null>`(
+      select ${productMedia.fileId}
+      from ${productMedia}
+      where ${productMedia.productId} = ${products.id}
+        and ${productMedia.status} = ${PRODUCT_STATUS.ACTIVE}
+      order by ${productMedia.sortOrder} asc, ${productMedia.id} asc
+      limit 1
+    )`;
 
     const items = await this.executor
-      .select()
+      .select({
+        product: products,
+        storeName: stores.name,
+        storeSlug: stores.slug,
+        storeCurrency: stores.defaultCurrency,
+        variantCount,
+        minPrice,
+        maxPrice,
+        priceCurrency,
+        thumbnailFileId,
+      })
       .from(products)
+      .innerJoin(stores, eq(stores.id, products.storeId))
       .where(where)
       .orderBy(...sellerProductOrder(query))
       .limit(limit)

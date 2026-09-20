@@ -90,6 +90,7 @@ export function ProductForm({
 
   const categoryOptions = categories.data ? flattenCategoryTree(categories.data) : [];
   const activeBrands = brands.data?.filter((brand) => brand.status === "active") ?? [];
+  const productStore = product ? stores.find((store) => store.id === product.storeId) : undefined;
 
   return (
     <form
@@ -101,8 +102,9 @@ export function ProductForm({
     >
       <section className="space-y-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Step 1</p>
-          <h2 className="text-lg font-bold">Product basics</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Basic information</p>
+          <h2 className="text-lg font-bold">Listing details</h2>
+          <p className="text-sm text-slate-600">Name the Product clearly, use a stable URL slug, and write the customer-facing description.</p>
         </div>
 
         {!product ? (
@@ -134,9 +136,10 @@ export function ProductForm({
             }}
           </form.Field>
         ) : (
-          <p className="rounded-md bg-slate-50 p-3 text-sm text-slate-600">
-            Store ownership is fixed after creation. Product store ID: {product.storeId}
-          </p>
+          <div className="rounded-md bg-slate-50 p-3 text-sm text-slate-600">
+            <strong className="block text-slate-900">{productStore?.name ?? "Assigned store"}</strong>
+            <span>Store ownership is fixed after creation{productStore?.defaultCurrency ? ` · ${productStore.defaultCurrency}` : ""}.</span>
+          </div>
         )}
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -201,9 +204,9 @@ export function ProductForm({
 
       <section className="space-y-4 border-t pt-6">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Step 2</p>
-          <h2 className="text-lg font-bold">Taxonomy</h2>
-          <p className="text-sm text-slate-600">Choose an admin-approved category and optional brand. The backend revalidates every value.</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Organization</p>
+          <h2 className="text-lg font-bold">Category, brand & attributes</h2>
+          <p className="text-sm text-slate-600">Choose an admin-approved category and optional brand, then complete the mapped Product attributes. The server revalidates every value.</p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -278,10 +281,15 @@ export function ProductForm({
         </form.Field>
       </section>
 
-      <FormError error={error} />
-      <Button disabled={isPending || categories.isPending || brands.isPending || attributes.isPending}>
-        {isPending ? "Saving..." : submitLabel}
-      </Button>
+      <div className="sticky bottom-4 z-10 rounded-xl border bg-white/95 p-3 shadow-lg backdrop-blur">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs text-slate-500">Lifecycle state is controlled by the separate publication action.</p>
+          <Button disabled={isPending || categories.isPending || brands.isPending || attributes.isPending}>
+            {isPending ? "Saving..." : submitLabel}
+          </Button>
+        </div>
+        <FormError error={error} />
+      </div>
     </form>
   );
 }

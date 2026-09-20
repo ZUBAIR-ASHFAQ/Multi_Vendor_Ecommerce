@@ -368,6 +368,12 @@ describe("Module 6 repository/service/API integration", () => {
       price: "200.00",
       currency: "PKR",
     });
+    const thumbnailFileId = await createConfirmedProductMediaFile(seller.owner.id, "image/png");
+    await request(app)
+      .post(`/api/v1/seller/products/${product.id}/media`)
+      .set(bearer(seller.ownerToken))
+      .send({ fileId: thumbnailFileId, altText: "Published Product" })
+      .expect(201);
     const published = await request(app)
       .post(`/api/v1/seller/products/${product.id}/publish`)
       .set(bearer(seller.ownerToken))
@@ -375,10 +381,31 @@ describe("Module 6 repository/service/API integration", () => {
       .expect(200);
     expect(published.body.data.publicationStatus).toBe(PRODUCT_PUBLICATION_STATUS.PUBLISHED);
 
+    const publicList = await request(app).get("/api/v1/products").expect(200);
+    expect(publicList.body.data).toHaveLength(1);
+    expect(publicList.body.data[0]).toMatchObject({
+      id: product.id,
+      minPrice: "200.00",
+      maxPrice: "200.00",
+      currency: "PKR",
+      thumbnailFileId,
+    });
+    expect(publicList.body.data[0]).not.toHaveProperty("sellerId");
+
     const publicDetail = await request(app).get(`/api/v1/products/${product.slug}`).expect(200);
     expect(publicDetail.body.data).not.toHaveProperty("sellerId");
     expect(publicDetail.body.data).not.toHaveProperty("publicationStatus");
     expect(publicDetail.body.data.variants).toHaveLength(1);
+    expect(publicDetail.body.data.store).toMatchObject({
+      id: seller.storeId,
+      seller: { id: seller.sellerId },
+    });
+    expect(publicDetail.body.data.category).toMatchObject({
+      id: category.id,
+      slug: category.slug,
+      name: category.name,
+    });
+    expect(publicDetail.body.data.brand).toBeNull();
 
     await request(app)
       .post(`/api/v1/seller/products/${product.id}/unpublish`)

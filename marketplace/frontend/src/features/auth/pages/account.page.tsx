@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { AuthenticatedPanel } from "../components/authenticated-panel";
+import { CustomerAccountShell } from "@/features/customers/components/customer-account-shell";
 import { useLogoutMutation } from "../hooks/use-auth";
 import type { AuthenticatedUser } from "../types/auth.types";
 
@@ -124,5 +125,13 @@ function AccountContent({ user }: { user: AuthenticatedUser }) {
 
 /** Protects the account page and renders the current user's account/session summary. */
 export function AccountPage() {
-  return <AuthenticatedPanel>{(user) => <AccountContent user={user} />}</AuthenticatedPanel>;
+  return (
+    <AuthenticatedPanel>
+      {(user) => (
+        <CustomerAccountShell user={user}>
+          <AccountContent user={user} />
+        </CustomerAccountShell>
+      )}
+    </AuthenticatedPanel>
+  );
 }

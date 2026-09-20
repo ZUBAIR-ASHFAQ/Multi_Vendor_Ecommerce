@@ -78,6 +78,10 @@ function cartResponse(lines: Array<{ id: string; productId: string; variantId: s
       variantId: line.variantId,
       productName: "Promotion Product",
       productSlug: `promotion-${line.productId}`,
+      storeId: randomUUID(),
+      storeSlug: "promotion-store",
+      storeName: "Promotion Store",
+      thumbnailFileId: null,
       variantTitle: "Default",
       sku: `SKU-${line.variantId}`,
       currentUnitPrice: line.price,
@@ -93,6 +97,46 @@ function cartResponse(lines: Array<{ id: string; productId: string; variantId: s
 }
 
 describe("Module 9 promotion service rules", () => {
+  it("lists only seller-owned promotions inside the effective seller permission scope", async () => {
+    const sellerId = randomUUID();
+    const promotionId = randomUUID();
+    const now = new Date("2026-09-09T12:00:00.000Z");
+    const listSellerPromotions = vi.fn().mockResolvedValue({
+      items: [{
+        id: promotionId,
+        ownerType: PROMOTION_OWNER_TYPE.SELLER,
+        sellerId,
+        name: "Seller Campaign",
+        type: "percentage",
+        value: "10.0000",
+        startAt: now,
+        endAt: new Date("2026-09-10T12:00:00.000Z"),
+        status: PROMOTION_STATUS.DRAFT,
+        fundingType: PROMOTION_FUNDING_TYPE.SELLER,
+        createdAt: now,
+        updatedAt: now,
+      }],
+      totalItems: 1,
+    });
+    const repository = repositoryStub({
+      listSellerPromotions,
+      listScopesByPromotionIds: vi.fn().mockResolvedValue([]),
+      listCouponsByPromotionIds: vi.fn().mockResolvedValue([]),
+    });
+    const service = new PromotionsService({ repository });
+
+    const result = await service.listSellerPromotions(sellerContext(sellerId), {
+      page: 1,
+      pageSize: 20,
+    });
+
+    expect(listSellerPromotions).toHaveBeenCalledWith([sellerId], { page: 1, pageSize: 20 });
+    expect(result.items).toEqual([
+      expect.objectContaining({ id: promotionId, sellerId, ownerType: "seller" }),
+    ]);
+    expect(result.meta).toMatchObject({ page: 1, pageSize: 20, totalItems: 1 });
+  });
+
   it("rejects seller-to-seller promotion scope before any persistence transaction", async () => {
     const sellerA = randomUUID();
     const sellerB = randomUUID();

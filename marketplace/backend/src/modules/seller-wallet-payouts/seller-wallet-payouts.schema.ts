@@ -243,12 +243,23 @@ export const payoutAccountResponseSchema = z
   })
   .strict();
 
-/** Seller Wallet read response also returns safe payout accounts because the approved API has no account-list route. */
+/** Aggregated seller payout facts grouped by currency; no provider secrets or scheduling claims are exposed. */
+export const sellerPayoutSummaryResponseSchema = z
+  .object({
+    currency: walletCurrencySchema,
+    lifetimePaidAmount: walletNonNegativeMoneySchema,
+    inProgressAmount: walletNonNegativeMoneySchema,
+    inProgressCount: z.number().int().nonnegative(),
+  })
+  .strict();
+
+/** Seller Wallet read response also returns safe payout accounts and authoritative payout aggregates. */
 export const sellerWalletResponseSchema = z
   .object({
     wallets: z.array(sellerWalletBalanceResponseSchema),
     entries: z.array(sellerWalletEntryResponseSchema),
     payoutAccounts: z.array(payoutAccountResponseSchema),
+    payoutSummaries: z.array(sellerPayoutSummaryResponseSchema),
   })
   .strict();
 
@@ -308,6 +319,7 @@ export type SettleWalletInput = z.infer<typeof settleWalletBodySchema>;
 export type AdjustWalletInput = z.infer<typeof adjustWalletBodySchema>;
 export type SellerWalletBalanceResponse = z.infer<typeof sellerWalletBalanceResponseSchema>;
 export type PayoutAccountResponse = z.infer<typeof payoutAccountResponseSchema>;
+export type SellerPayoutSummaryResponse = z.infer<typeof sellerPayoutSummaryResponseSchema>;
 export type SellerWalletResponse = z.infer<typeof sellerWalletResponseSchema>;
 export type PayoutResponse = z.infer<typeof payoutResponseSchema>;
 export type SettleWalletResult = z.infer<typeof settleWalletResultSchema>;

@@ -228,6 +228,10 @@ describe("Module 8 repository/service/API integration", () => {
       .send({ variantId: fixture.variant.id, quantity: 3 })
       .expect(200);
     expect(added.body.data.items[0]).toMatchObject({
+      storeId: fixture.seller.storeId,
+      storeName: expect.any(String),
+      storeSlug: expect.any(String),
+      thumbnailFileId: null,
       currentUnitPrice: "100.00",
       previewLineSubtotal: "300.00",
       inStock: true,
@@ -303,6 +307,12 @@ describe("Module 8 repository/service/API integration", () => {
       .send({ productId: first.product.id, variantId: first.variant.id })
       .expect(200);
     expect(firstAdd.body.data.items).toHaveLength(1);
+    expect(firstAdd.body.data.items[0]).toMatchObject({
+      storeId: first.seller.storeId,
+      storeName: expect.any(String),
+      storeSlug: expect.any(String),
+      thumbnailFileId: null,
+    });
 
     const duplicateAdd = await request(app)
       .post("/api/v1/wishlist/items")

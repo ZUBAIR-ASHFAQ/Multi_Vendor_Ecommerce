@@ -3,6 +3,7 @@ import { promotionsApi } from "../api/promotions.api";
 import type {
   AdminPromotionListParams,
   CreatePromotionInput,
+  SellerPromotionListParams,
   UpdatePromotionInput,
 } from "../schemas/promotions.schemas";
 import { promotionsQueryKeys } from "./promotions.query-keys";
@@ -42,8 +43,22 @@ export function useUpdateAdminPromotionMutation(promotionId: string) {
 
 /** Creates one seller-funded promotion using the authenticated seller scope. */
 export function useCreateSellerPromotionMutation() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: CreatePromotionInput) => promotionsApi.createSellerPromotion(input),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: promotionsQueryKeys.seller });
+    },
+  });
+}
+
+/** Loads one bounded page of seller-owned promotions from the server-derived seller scope. */
+export function useSellerPromotionsQuery(params: SellerPromotionListParams, enabled = true) {
+  return useQuery({
+    queryKey: promotionsQueryKeys.sellerList(params),
+    queryFn: () => promotionsApi.listSellerPromotions(params),
+    enabled,
+    retry: false,
   });
 }
 

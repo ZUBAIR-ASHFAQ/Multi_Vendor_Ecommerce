@@ -1,18 +1,30 @@
+import { useState } from "react";
 import { Link, useParams } from "@tanstack/react-router";
-import { ProductCartWishlistActions } from "@/features/cart-wishlist/components/product-cart-wishlist-actions";
-import { ProductReviewsSection } from "@/features/reviews/components/public-reviews-section";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
 import { Button } from "@/components/ui/button";
-import { formatMoney } from "@/lib/money";
+import { usePublicMediaQuery } from "@/features/public-media/hooks/use-public-media";
+import { ProductReviewsSection } from "@/features/reviews/components/public-reviews-section";
+import { PublicProductDetailsSection } from "../components/public-product-details-section";
+import { PublicProductGallery } from "../components/public-product-gallery";
+import { PublicProductPurchasePanel } from "../components/public-product-purchase-panel";
+import { RelatedProducts } from "../components/related-products";
 import { usePublicProductQuery } from "../hooks/use-products";
 
-/** Renders one published Product detail using only fields allowed by the public Product contract. */
+/** Renders one published Product detail using the safe storefront projection returned by Module 6. */
 export function PublicProductDetailPage() {
   const { slug } = useParams({ strict: false }) as { slug: string };
   const product = usePublicProductQuery(slug);
+  const media = usePublicMediaQuery([
+    ...(product.data?.media.map((item) => item.fileId) ?? []),
+    product.data?.store.logoFileId,
+  ]);
+  const [requestedVariantId, setRequestedVariantId] = useState<string | null>(null);
+  const selectedVariantId = product.data?.variants.some((variant) => variant.id === requestedVariantId)
+    ? requestedVariantId
+    : product.data?.variants[0]?.id ?? null;
 
-  if (product.isPending) return <LoadingState label="Loading Product..." />;
+  if (product.isPending) return <LoadingState label="Loading product..." />;
   if (product.isError) {
     return (
       <ErrorState
@@ -23,62 +35,60 @@ export function PublicProductDetailPage() {
     );
   }
 
+  const resolvedLogo = product.data.store.logoFileId
+    ? media.data?.items.find((item) => item.fileId === product.data.store.logoFileId)
+    : undefined;
+
   return (
-    <div className="space-y-6">
-      <Button variant="ghost" asChild><Link to="/products">← Back to Products</Link></Button>
-      <section className="rounded-xl border bg-white p-6 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Published Product</p>
-        <h1 className="mt-1 text-3xl font-bold">{product.data.name}</h1>
-        <p className="mt-4 whitespace-pre-wrap text-slate-700">{product.data.description}</p>
-      </section>
+    <div className="product-detail-page">
+      <nav className="product-detail-breadcrumb" aria-label="Breadcrumb">
+        <Link to="/">Home</Link>
+        <span aria-hidden="true">/</span>
+        <Link to="/products">Products</Link>
+        <span aria-hidden="true">/</span>
+        <span>{product.data.category.name}</span>
+      </nav>
 
-      <section className="rounded-xl border bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-bold">Variants</h2>
-        {product.data.variants.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-500">No public variants are available.</p>
-        ) : (
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {product.data.variants.map((variant) => (
-              <article key={variant.id} className="rounded-lg border p-4">
-                <h3 className="font-semibold">{variant.title}</h3>
-                <p className="mt-1 text-sm text-slate-500">SKU {variant.sku}</p>
-                <p className="mt-2 text-lg font-bold">{formatMoney(variant.price, variant.currency)}</p>
-                {variant.compareAtPrice ? (
-                  <p className="text-sm text-slate-500 line-through">
-                    {formatMoney(variant.compareAtPrice, variant.currency)}
-                  </p>
-                ) : null}
-                <ProductCartWishlistActions
-                  productId={product.data.id}
-                  variantId={variant.id}
-                />
-              </article>
-            ))}
+      <div className="product-detail-hero">
+        <PublicProductGallery
+          productName={product.data.name}
+          media={product.data.media}
+          resolvedMedia={media.data?.items ?? []}
+        />
+        <PublicProductPurchasePanel
+          product={product.data}
+          selectedVariantId={selectedVariantId}
+          onVariantChange={setRequestedVariantId}
+        />
+      </div>
+
+      <section className="product-detail-seller-card" aria-labelledby="seller-card-heading">
+        <div className="product-detail-seller-identity">
+          {resolvedLogo?.mimeType.startsWith("image/") ? (
+            <img src={resolvedLogo.url} alt={`${product.data.store.name} logo`} />
+          ) : (
+            <span className="product-detail-seller-logo-fallback" aria-hidden="true">
+              {product.data.store.name.slice(0, 1).toUpperCase()}
+            </span>
+          )}
+          <div>
+            <p>Marketplace seller</p>
+            <h2 id="seller-card-heading">{product.data.store.name}</h2>
+            <span>Operated by {product.data.store.seller.displayName}</span>
           </div>
-        )}
+        </div>
+        <Button variant="outline" asChild>
+          <Link to="/stores/$slug" params={{ slug: product.data.store.slug }}>Visit store</Link>
+        </Button>
       </section>
 
-      <ProductReviewsSection productId={product.data.id} />
+      <PublicProductDetailsSection product={product.data} selectedVariantId={selectedVariantId} />
 
-      <section className="rounded-xl border bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-bold">Media</h2>
-        <p className="mt-1 text-sm text-slate-600">
-          The current Product API exposes safe media metadata/file IDs, not permanent public object-storage URLs.
-        </p>
-        {product.data.media.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-500">No Product media has been linked yet.</p>
-        ) : (
-          <ul className="mt-4 space-y-2 text-sm">
-            {product.data.media
-              .sort((left, right) => left.sortOrder - right.sortOrder)
-              .map((media) => (
-                <li key={media.id} className="rounded-md border p-3">
-                  {media.altText ?? "Product media"} · {media.mediaType}
-                </li>
-              ))}
-          </ul>
-        )}
-      </section>
+      <div className="product-detail-reviews">
+        <ProductReviewsSection productId={product.data.id} />
+      </div>
+
+      <RelatedProducts productId={product.data.id} categoryId={product.data.category.id} />
     </div>
   );
 }

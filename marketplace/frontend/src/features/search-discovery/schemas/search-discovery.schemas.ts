@@ -69,15 +69,18 @@ export const searchStoresRouteSearchSchema = z.object({
     .catch(SEARCH_UI_LIMITS.PAGE_SIZE),
 });
 
-/** TanStack Form contract for Product Search text, price, rating, availability, and sorting controls. */
+/** TanStack Form contract for the storefront search text field. */
+export const searchQueryFormSchema = z.object({
+  q: z.string().trim().max(SEARCH_UI_LIMITS.QUERY_MAX_LENGTH),
+});
+
+/** TanStack Form contract for scalar Product Search filters. Facets and sorting stay URL-backed separately. */
 export const searchFiltersFormSchema = z
   .object({
-    q: z.string().trim().max(SEARCH_UI_LIMITS.QUERY_MAX_LENGTH),
     minPrice: z.union([z.literal(""), priceSchema]),
     maxPrice: z.union([z.literal(""), priceSchema]),
     minRating: z.enum(["", "1", "2", "3", "4", "5"]),
     inStock: z.enum(["all", "true", "false"]),
-    sort: sortSchema,
   })
   .superRefine((value, context) => {
     if (value.minPrice && value.maxPrice && priceToCents(value.minPrice) > priceToCents(value.maxPrice)) {

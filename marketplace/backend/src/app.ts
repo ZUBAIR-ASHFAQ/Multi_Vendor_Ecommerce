@@ -45,6 +45,11 @@ import {
   type DocumentsAuditService,
 } from "./modules/documents-audit/index.js";
 import {
+  createPublicMediaRouter,
+  PublicMediaController,
+  PublicMediaService,
+} from "./modules/public-media/index.js";
+import {
   createAdminSellerApplicationsRouter,
   createAdminSellersRouter,
   createPublicStoresRouter,
@@ -172,6 +177,7 @@ interface ComposedRouters {
   auth: Router;
   administration: Router;
   documents: Router;
+  publicMedia: Router;
   audit: Router;
   customers: Router;
   adminCustomers: Router;
@@ -351,6 +357,7 @@ function createComposedApplication(): ComposedApplication {
   const dashboardService = new DashboardService({ reports: reportsService });
   const dashboardController = new DashboardController(dashboardService);
   const documentsAuditController = new DocumentsAuditController(documentsService);
+  const publicMediaController = new PublicMediaController(new PublicMediaService());
   const sellersController = new SellersController(sellersService);
   const catalogTaxonomyService = new CatalogTaxonomyService();
   const catalogTaxonomyController = new CatalogTaxonomyController(
@@ -495,6 +502,7 @@ function createComposedApplication(): ComposedApplication {
       new AdministrationController(administrationService),
     ),
     documents: createDocumentsRouter(documentsAuditController),
+    publicMedia: createPublicMediaRouter(publicMediaController),
     audit: createAuditRouter(documentsAuditController),
     customers: createCustomersRouter(customersController),
     adminCustomers: createAdminCustomersRouter(customersController),
@@ -575,6 +583,7 @@ function buildApp(routers: ComposedRouters): Express {
     auth: authRouter,
     administration: administrationRouter,
     documents: documentsRouter,
+    publicMedia: publicMediaRouter,
     audit: auditRouter,
     customers: customersRouter,
     adminCustomers: adminCustomersRouter,
@@ -651,6 +660,7 @@ function buildApp(routers: ComposedRouters): Express {
   app.use(`${API_V1_PREFIX}/auth`, authRouter);
   app.use(`${API_V1_PREFIX}/admin`, administrationRouter);
   app.use(`${API_V1_PREFIX}/documents`, documentsRouter);
+  app.use(`${API_V1_PREFIX}/media`, publicMediaRouter);
   app.use(`${API_V1_PREFIX}/audit`, auditRouter);
   app.use(`${API_V1_PREFIX}/customers`, customersRouter);
   app.use(`${API_V1_PREFIX}/admin/customers`, adminCustomersRouter);

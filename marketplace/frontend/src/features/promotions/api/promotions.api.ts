@@ -5,6 +5,7 @@ import type {
   CreatePromotionInput,
   Promotion,
   PromotionValidation,
+  SellerPromotionListParams,
   UpdatePromotionInput,
 } from "../schemas/promotions.schemas";
 
@@ -50,6 +51,12 @@ export const promotionsApi = {
   /** Creates one seller-funded promotion using server-derived seller ownership. */
   createSellerPromotion: (input: CreatePromotionInput) =>
     one<Promotion>(apiClient.post("/seller/promotions", input)),
+
+  /** Lists seller-owned promotions inside the authenticated seller scope. */
+  listSellerPromotions: (params: SellerPromotionListParams) =>
+    page<Promotion>(
+      apiClient.get("/seller/promotions", { params: queryParams(params) }),
+    ),
 
   /** Validates one normalized coupon against the authenticated customer's current Cart. */
   validateCoupon: (code: string) =>

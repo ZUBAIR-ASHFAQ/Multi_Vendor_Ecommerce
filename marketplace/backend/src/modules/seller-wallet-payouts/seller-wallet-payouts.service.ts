@@ -310,10 +310,11 @@ export class SellerWalletPayoutsService {
     query: SellerWalletQuery,
   ): Promise<SellerWalletResult> {
     const sellerId = this.resolveSingleSeller(context, WALLET_PAYOUT_PERMISSION.SELLER_WALLET_READ);
-    const [wallets, entries, payoutAccounts] = await Promise.all([
+    const [wallets, entries, payoutAccounts, payoutSummaries] = await Promise.all([
       this.repository.listSellerWallets(sellerId, query.currency),
       this.repository.listSellerWalletEntries(sellerId, query),
       this.repository.listPayoutAccountsForSeller(sellerId),
+      this.repository.summarizeSellerPayouts(sellerId, query.currency),
     ]);
 
     return {
@@ -321,6 +322,7 @@ export class SellerWalletPayoutsService {
         wallets: wallets.map((row) => this.toWalletResponse(row)),
         entries: entries.items.map((row) => this.toWalletEntryResponse(row)),
         payoutAccounts: payoutAccounts.map((row) => this.toPayoutAccountResponse(row)),
+        payoutSummaries,
       }),
       meta: paginationMeta(query, entries.totalItems),
     };

@@ -192,8 +192,8 @@ test.describe("Module 3 Customer Management E2E", () => {
     await expect(page).toHaveURL(/\/account$/);
 
     await expect(page.getByText("Customer Self Service", { exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: "My profile" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Address book" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Profile" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Addresses" })).toBeVisible();
 
     const session = await apiLogin(apiContext, customerEmail, customerPassword);
     customerId = session.user.id;
@@ -203,7 +203,7 @@ test.describe("Module 3 Customer Management E2E", () => {
       expect(session.user.permissions).toContain(permission);
     }
 
-    await page.getByRole("link", { name: "My profile" }).click();
+    await page.getByRole("link", { name: "Profile" }).click();
     await expect(page).toHaveURL(/\/customer\/profile$/);
     await expect(page.getByRole("heading", { name: originalDisplayName })).toBeVisible();
 

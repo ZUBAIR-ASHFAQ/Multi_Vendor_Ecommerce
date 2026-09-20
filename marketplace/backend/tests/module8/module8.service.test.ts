@@ -13,7 +13,7 @@ import {
   type CartWishlistInventoryIntegration,
   type CartWishlistProductIntegration,
 } from "../../src/modules/cart-wishlist/cart-wishlist.service.js";
-import type { PublicProductDetailResponse } from "../../src/modules/products/products.schema.js";
+import type { PublicProductCommerceDetailResponse } from "../../src/modules/products/products.schema.js";
 
 /** Builds one authenticated customer context with the supplied Module 8 permissions. */
 function customerContext(permissions: string[]): RequestContext {
@@ -53,7 +53,7 @@ function publicProduct(
   productId: string,
   variantId: string,
   price: string,
-): PublicProductDetailResponse {
+): PublicProductCommerceDetailResponse {
   return {
     id: productId,
     name: "Readable Product",
@@ -67,12 +67,12 @@ function publicProduct(
         currency: "USD",
       },
     ],
-  } as unknown as PublicProductDetailResponse;
+  } as unknown as PublicProductCommerceDetailResponse;
 }
 
 /** Creates Product and Inventory read doubles without exposing persistence to Module 8. */
 function commerceReads(
-  product: PublicProductDetailResponse | null,
+  product: PublicProductCommerceDetailResponse | null,
   inStock: boolean,
 ): {
   products: CartWishlistProductIntegration;
@@ -82,6 +82,16 @@ function commerceReads(
     products: {
       findProductIdByVariantId: vi.fn().mockResolvedValue(product?.id ?? randomUUID()),
       findPublicProductById: vi.fn().mockResolvedValue(product),
+      findPublicProductDisplayContextById: vi.fn().mockResolvedValue(
+        product
+          ? {
+              storeId: randomUUID(),
+              storeSlug: "readable-store",
+              storeName: "Readable Store",
+              thumbnailFileId: randomUUID(),
+            }
+          : null,
+      ),
     },
     inventory: {
       hasAvailableStockForVariants: vi.fn().mockResolvedValue(inStock),
@@ -127,6 +137,8 @@ describe("Module 8 Cart/Wishlist service rules", () => {
       variantId,
       currentUnitPrice: "19.95",
       previewLineSubtotal: "59.85",
+      storeSlug: "readable-store",
+      storeName: "Readable Store",
       inStock: true,
       isPurchasable: true,
     });
@@ -171,6 +183,10 @@ describe("Module 8 Cart/Wishlist service rules", () => {
       variantId,
       currentUnitPrice: null,
       previewLineSubtotal: null,
+      storeId: null,
+      storeSlug: null,
+      storeName: null,
+      thumbnailFileId: null,
       inStock: false,
       isPurchasable: false,
     });
@@ -212,6 +228,10 @@ describe("Module 8 Cart/Wishlist service rules", () => {
       variantId,
       currentUnitPrice: null,
       currency: null,
+      storeId: null,
+      storeSlug: null,
+      storeName: null,
+      thumbnailFileId: null,
       inStock: false,
       isPurchasable: false,
     });
@@ -243,6 +263,7 @@ describe("Module 8 Cart/Wishlist service rules", () => {
     const products: CartWishlistProductIntegration = {
       findProductIdByVariantId: vi.fn().mockResolvedValue(null),
       findPublicProductById: vi.fn(),
+      findPublicProductDisplayContextById: vi.fn(),
     };
     const service = new CartWishlistService({ products });
 

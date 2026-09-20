@@ -57,7 +57,9 @@ const inventoryBooleanQuerySchema = z
 /** Seller inventory-list query; seller/store ownership is still derived and enforced server-side. */
 export const sellerInventoryListQuerySchema = paginationQuerySchema
   .extend({
+    q: z.string().trim().min(1).max(200).optional(),
     storeId: uuidSchema.optional(),
+    variantId: uuidSchema.optional(),
     lowStock: inventoryBooleanQuerySchema.optional(),
   })
   .strict();
@@ -164,8 +166,21 @@ export const stockReservationResponseSchema = z
   })
   .strict();
 
+/** Seller Inventory-list row enriched with Product/variant/Store display context. */
+export const sellerInventoryListItemResponseSchema = inventoryItemResponseSchema.extend({
+  productId: uuidSchema,
+  productName: z.string().trim().min(1),
+  productSlug: z.string().trim().min(1),
+  variantSku: z.string().trim().min(1),
+  variantTitle: z.string().trim().min(1),
+  variantStatus: z.enum(["active", "inactive"]),
+  variantPrice: z.string().trim().regex(/^\d+(?:\.\d+)?$/),
+  variantCurrency: z.string().trim().regex(/^[A-Z]{3}$/),
+  storeName: z.string().trim().min(1),
+});
+
 /** Seller inventory-list response data; pagination metadata belongs in the standard envelope's meta field. */
-export const sellerInventoryListDataSchema = z.array(inventoryItemResponseSchema);
+export const sellerInventoryListDataSchema = z.array(sellerInventoryListItemResponseSchema);
 
 /** Seller movement-history response data; pagination metadata belongs in the standard envelope's meta field. */
 export const stockMovementListDataSchema = z.array(stockMovementResponseSchema);
@@ -179,5 +194,6 @@ export type CommitStockReservationInput = z.infer<typeof commitStockReservationB
 export type ReleaseStockInput = z.infer<typeof releaseStockBodySchema>;
 export type ShipStockInput = z.infer<typeof shipStockBodySchema>;
 export type InventoryItemResponse = z.infer<typeof inventoryItemResponseSchema>;
+export type SellerInventoryListItemResponse = z.infer<typeof sellerInventoryListItemResponseSchema>;
 export type StockMovementResponse = z.infer<typeof stockMovementResponseSchema>;
 export type StockReservationResponse = z.infer<typeof stockReservationResponseSchema>;

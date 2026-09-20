@@ -146,6 +146,61 @@ describe("Module 17 Seller Wallet/Payout repository boundaries", () => {
     );
   });
 
+  it("aggregates seller Payout totals by currency without mixing failed or another seller's history", async () => {
+    const { sellerA, sellerB } = await createSellerPair();
+    const repository = new SellerWalletPayoutsRepository();
+    await repository.ensureWallet(sellerA.sellerId, "PKR");
+    await repository.ensureWallet(sellerB.sellerId, "PKR");
+    const accountA = await createAccount(repository, sellerA.sellerId, randomUUID());
+    const accountB = await createAccount(repository, sellerB.sellerId, randomUUID());
+
+    await repository.createPayout({
+      payoutNo: `PAY-${randomUUID().replaceAll("-", "").toUpperCase()}`,
+      sellerId: sellerA.sellerId,
+      amount: "25.0000",
+      currency: "PKR",
+      accountId: accountA.id,
+      status: PAYOUT_STATUS.PAID,
+      requestedAt: new Date("2026-09-04T00:00:00.000Z"),
+      processedAt: new Date("2026-09-05T00:00:00.000Z"),
+    });
+    await repository.createPayout({
+      payoutNo: `PAY-${randomUUID().replaceAll("-", "").toUpperCase()}`,
+      sellerId: sellerA.sellerId,
+      amount: "10.0000",
+      currency: "PKR",
+      accountId: accountA.id,
+      status: PAYOUT_STATUS.APPROVED,
+    });
+    await repository.createPayout({
+      payoutNo: `PAY-${randomUUID().replaceAll("-", "").toUpperCase()}`,
+      sellerId: sellerA.sellerId,
+      amount: "7.0000",
+      currency: "PKR",
+      accountId: accountA.id,
+      status: PAYOUT_STATUS.FAILED,
+      requestedAt: new Date("2026-09-05T00:00:00.000Z"),
+      processedAt: new Date("2026-09-06T00:00:00.000Z"),
+    });
+    await repository.createPayout({
+      payoutNo: `PAY-${randomUUID().replaceAll("-", "").toUpperCase()}`,
+      sellerId: sellerB.sellerId,
+      amount: "99.0000",
+      currency: "PKR",
+      accountId: accountB.id,
+      status: PAYOUT_STATUS.PAID,
+      requestedAt: new Date("2026-09-06T00:00:00.000Z"),
+      processedAt: new Date("2026-09-07T00:00:00.000Z"),
+    });
+
+    expect(await repository.summarizeSellerPayouts(sellerA.sellerId, "PKR")).toEqual([{
+      currency: "PKR",
+      lifetimePaidAmount: "25.0000",
+      inProgressAmount: "10.0000",
+      inProgressCount: 1,
+    }]);
+  });
+
   it("scopes seller Payout reads and preserves FIFO allocation evidence for finance", async () => {
     const { sellerA, sellerB } = await createSellerPair();
     const repository = new SellerWalletPayoutsRepository();

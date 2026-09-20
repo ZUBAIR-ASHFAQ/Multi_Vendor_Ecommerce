@@ -59,6 +59,24 @@ export interface ProductVariant {
   updatedAt: string;
 }
 
+export interface PublicProductListItem extends PublicProduct {
+  minPrice: string;
+  maxPrice: string;
+  currency: string;
+  thumbnailFileId: string | null;
+}
+
+export interface SellerProductListItem extends Product {
+  storeName: string;
+  storeSlug: string;
+  storeCurrency: string;
+  variantCount: number;
+  minPrice: string | null;
+  maxPrice: string | null;
+  priceCurrency: string | null;
+  thumbnailFileId: string | null;
+}
+
 export interface PublicProductVariant extends Omit<ProductVariant, "status"> {}
 
 export interface ProductAttributeValue {
@@ -101,7 +119,27 @@ export interface ProductDetail extends Product {
   priceHistory?: ProductPriceHistory[];
 }
 
+export interface PublicProductStoreContext {
+  id: string;
+  slug: string;
+  name: string;
+  logoFileId: string | null;
+  seller: {
+    id: string;
+    displayName: string;
+  };
+}
+
+export interface PublicProductTaxonomyContext {
+  id: string;
+  slug: string;
+  name: string;
+}
+
 export interface PublicProductDetail extends PublicProduct {
+  store: PublicProductStoreContext;
+  category: PublicProductTaxonomyContext;
+  brand: PublicProductTaxonomyContext | null;
   variants: PublicProductVariant[];
   attributes: ProductAttributeValue[];
   media: PublicProductMedia[];
@@ -153,12 +191,12 @@ export interface PaginatedAdminProducts {
 }
 
 export interface PaginatedPublicProducts {
-  items: PublicProduct[];
+  items: PublicProductListItem[];
   meta: PaginationMeta;
 }
 
 export interface PaginatedSellerProducts {
-  items: Product[];
+  items: SellerProductListItem[];
   meta: PaginationMeta;
 }
 

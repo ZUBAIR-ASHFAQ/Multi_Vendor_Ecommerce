@@ -64,7 +64,21 @@ describe("Module 7 service authorization and boundary guards", () => {
     const storeId = randomUUID();
     const row = inventoryRow({ sellerId, storeId, onHandQty: 12, reservedQty: 4 });
     const repository = repositoryStub({
-      listSellerInventory: vi.fn().mockResolvedValue({ items: [row], totalItems: 1 }),
+      listSellerInventory: vi.fn().mockResolvedValue({
+        items: [{
+          inventory: row,
+          productId: randomUUID(),
+          productName: "Inventory Product",
+          productSlug: "inventory-product",
+          variantSku: "INV-001",
+          variantTitle: "Default",
+          variantStatus: "active",
+          variantPrice: "29.99",
+          variantCurrency: "USD",
+          storeName: "Seller Store",
+        }],
+        totalItems: 1,
+      }),
     });
     const service = new InventoryService({ repository });
 
@@ -73,7 +87,14 @@ describe("Module 7 service authorization and boundary guards", () => {
       { page: 1, pageSize: 20 },
     );
 
-    expect(result.items[0]).toMatchObject({ onHandQty: 12, reservedQty: 4, availableQty: 8 });
+    expect(result.items[0]).toMatchObject({
+      productName: "Inventory Product",
+      variantSku: "INV-001",
+      storeName: "Seller Store",
+      onHandQty: 12,
+      reservedQty: 4,
+      availableQty: 8,
+    });
     expect(result.meta).toMatchObject({ page: 1, pageSize: 20, totalItems: 1, totalPages: 1 });
   });
 

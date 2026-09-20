@@ -4,6 +4,7 @@ import { authOpenApiPaths } from "../../src/modules/administration/auth.routes.j
 import { catalogTaxonomyOpenApiPaths } from "../../src/modules/catalog-taxonomy/catalog-taxonomy.routes.js";
 import { customersOpenApiPaths } from "../../src/modules/customers/customers.routes.js";
 import { documentsAuditOpenApiPaths } from "../../src/modules/documents-audit/documents-audit.routes.js";
+import { publicMediaOpenApiPaths } from "../../src/modules/public-media/public-media.routes.js";
 import { inventoryOpenApiPaths } from "../../src/modules/inventory/inventory.routes.js";
 import { productsOpenApiPaths } from "../../src/modules/products/products.routes.js";
 import { searchDiscoveryOpenApiPaths } from "../../src/modules/search-discovery/search-discovery.routes.js";
@@ -77,6 +78,12 @@ describe("Implemented marketplace API regression contracts", () => {
       "/api/v1/documents/{id}/link/{linkId}": ["delete"],
       "/api/v1/audit": ["get"],
       "/api/v1/audit/{id}": ["get"],
+    });
+  });
+
+  it("locks the public media resolver to its single approved batch operation", () => {
+    expectExactOpenApiSurface(publicMediaOpenApiPaths, {
+      "/api/v1/media/public/resolve": ["post"],
     });
   });
 
@@ -179,11 +186,11 @@ describe("Implemented marketplace API regression contracts", () => {
     );
   });
 
-  it("locks Module 9 Promotions and Coupons to exactly the seven approved operations", () => {
+  it("locks Module 9 Promotions and Coupons to the approved operations", () => {
     expectExactOpenApiSurface(promotionsOpenApiPaths, {
       "/api/v1/admin/promotions": ["get", "post"],
       "/api/v1/admin/promotions/{id}": ["patch"],
-      "/api/v1/seller/promotions": ["post"],
+      "/api/v1/seller/promotions": ["get", "post"],
       "/api/v1/promotions/validate": ["get"],
       "/api/v1/admin/promotions/{id}/activate": ["post"],
       "/api/v1/admin/promotions/{id}/deactivate": ["post"],

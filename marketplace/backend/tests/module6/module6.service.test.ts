@@ -58,7 +58,7 @@ function repositoryStub(
 ): ProductsRepository {
   return {
     listPublicProducts: vi.fn().mockResolvedValue({ items: [], totalItems: 0 }),
-    findPublicProductBySlug: vi.fn().mockResolvedValue(null),
+    findPublicProductStorefrontBySlug: vi.fn().mockResolvedValue(null),
     listSellerProducts: vi.fn().mockResolvedValue({ items: [], totalItems: 0 }),
     findProductByIdInSellerScope: vi.fn().mockResolvedValue(null),
     listVariantsByProductId: vi.fn().mockResolvedValue([]),
@@ -72,8 +72,18 @@ function repositoryStub(
 describe("Module 6 service authorization and boundary guards", () => {
   it("returns public-safe Product fields without seller/private lifecycle data", async () => {
     const row = productRow();
+    const thumbnailFileId = randomUUID();
     const repository = repositoryStub({
-      listPublicProducts: vi.fn().mockResolvedValue({ items: [row], totalItems: 1 }),
+      listPublicProducts: vi.fn().mockResolvedValue({
+        items: [{
+          product: row,
+          minPrice: "19.99",
+          maxPrice: "29.99",
+          currency: "USD",
+          thumbnailFileId,
+        }],
+        totalItems: 1,
+      }),
     });
     const service = new ProductsService({ repository });
 
@@ -87,7 +97,50 @@ describe("Module 6 service authorization and boundary guards", () => {
     expect(result.items).toHaveLength(1);
     expect(result.items[0]).not.toHaveProperty("sellerId");
     expect(result.items[0]).not.toHaveProperty("publicationStatus");
+    expect(result.items[0]).toMatchObject({
+      minPrice: "19.99",
+      maxPrice: "29.99",
+      currency: "USD",
+      thumbnailFileId,
+    });
     expect(result.meta).toMatchObject({ page: 1, pageSize: 20, totalItems: 1, totalPages: 1 });
+  });
+
+  it("returns safe Store/Seller/category/brand context only on the public HTTP Product detail", async () => {
+    const storeId = randomUUID();
+    const sellerId = randomUUID();
+    const categoryId = randomUUID();
+    const brandId = randomUUID();
+    const row = productRow({ storeId, sellerId, categoryId, brandId });
+    const repository = repositoryStub({
+      findPublicProductStorefrontBySlug: vi.fn().mockResolvedValue({
+        product: row,
+        storeId,
+        storeSlug: "seller-store",
+        storeName: "Seller Store",
+        storeLogoFileId: null,
+        sellerId,
+        sellerDisplayName: "Seller Display",
+        categoryId,
+        categorySlug: "electronics",
+        categoryName: "Electronics",
+        brandId,
+        brandSlug: "acme",
+        brandName: "Acme",
+      }),
+    });
+    const service = new ProductsService({ repository });
+
+    const result = await service.getPublicProduct(row.slug);
+
+    expect(result).toMatchObject({
+      id: row.id,
+      store: { id: storeId, slug: "seller-store", name: "Seller Store", seller: { id: sellerId, displayName: "Seller Display" } },
+      category: { id: categoryId, slug: "electronics", name: "Electronics" },
+      brand: { id: brandId, slug: "acme", name: "Acme" },
+    });
+    expect(result).not.toHaveProperty("sellerId");
+    expect(result).not.toHaveProperty("publicationStatus");
   });
 
   it("rejects seller Product reads when seller-scoped permission is absent", async () => {
@@ -106,6 +159,48 @@ describe("Module 6 service authorization and boundary guards", () => {
       statusCode: 403,
     });
     expect(repository.listSellerProducts).not.toHaveBeenCalled();
+  });
+
+  it("returns the enriched seller Product management projection without changing Product lifecycle fields", async () => {
+    const sellerId = randomUUID();
+    const storeId = randomUUID();
+    const row = productRow({ sellerId, storeId, publicationStatus: PRODUCT_PUBLICATION_STATUS.DRAFT });
+    const thumbnailFileId = randomUUID();
+    const repository = repositoryStub({
+      listSellerProducts: vi.fn().mockResolvedValue({
+        items: [{
+          product: row,
+          storeName: "Seller Store",
+          storeSlug: "seller-store",
+          storeCurrency: "USD",
+          variantCount: 2,
+          minPrice: "19.99",
+          maxPrice: "29.99",
+          priceCurrency: "USD",
+          thumbnailFileId,
+        }],
+        totalItems: 1,
+      }),
+    });
+    const service = new ProductsService({ repository });
+
+    const result = await service.listSellerProducts(
+      sellerContext([PRODUCT_PERMISSION.SELLER_READ], sellerId, storeId),
+      { page: 1, pageSize: 20, sort: "updatedAt", direction: "desc" },
+    );
+
+    expect(result.items[0]).toMatchObject({
+      id: row.id,
+      publicationStatus: PRODUCT_PUBLICATION_STATUS.DRAFT,
+      storeName: "Seller Store",
+      storeSlug: "seller-store",
+      storeCurrency: "USD",
+      variantCount: 2,
+      minPrice: "19.99",
+      maxPrice: "29.99",
+      priceCurrency: "USD",
+      thumbnailFileId,
+    });
   });
 
   it("rejects a seller list store filter outside the server-derived store scope", async () => {

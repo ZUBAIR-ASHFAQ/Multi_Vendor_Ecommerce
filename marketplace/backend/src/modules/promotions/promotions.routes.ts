@@ -17,6 +17,7 @@ import {
   promotionListDataSchema,
   promotionResponseSchema,
   promotionValidationResponseSchema,
+  sellerPromotionListQuerySchema,
   updatePromotionBodySchema,
   validatePromotionQuerySchema,
 } from "./promotions.schema.js";
@@ -57,13 +58,18 @@ export function createAdminPromotionsRouter(
   return router;
 }
 
-/** Creates the seller promotion-creation route with explicit seller-scoped permission enforcement. */
+/** Creates seller promotion read/create routes with explicit seller-scoped permission enforcement. */
 export function createSellerPromotionsRouter(
   controller: PromotionsController,
 ): Router {
   const router = Router();
   router.use(authenticationMiddleware);
 
+  router.get(
+    "/",
+    requirePermission(PROMOTION_PERMISSION.SELLER_MANAGE),
+    controller.listSellerPromotions,
+  );
   router.post(
     "/",
     requirePermission(PROMOTION_PERMISSION.SELLER_MANAGE),
@@ -281,7 +287,7 @@ const validationFailures = {
   "500": protectedFailures["500"],
 } as const;
 
-/** OpenAPI contract for exactly the seven approved Module 9 runtime operations. */
+/** OpenAPI contract for the approved Module 9 runtime operations. */
 export const promotionsOpenApiPaths = {
   "/api/v1/admin/promotions": {
     get: {
@@ -344,6 +350,26 @@ export const promotionsOpenApiPaths = {
     },
   },
   "/api/v1/seller/promotions": {
+    get: {
+      tags: ["Promotions & Coupons"],
+      summary: "List seller-owned promotions",
+      operationId: "listSellerPromotions",
+      description:
+        "Returns only seller-funded promotions owned by seller scopes where seller.promotions.manage is effective.",
+      security: [{ bearerAuth: [] }],
+      parameters: queryParameters(sellerPromotionListQuerySchema),
+      responses: {
+        "200": {
+          description: "Paginated seller-owned promotion list returned.",
+          content: {
+            "application/json": {
+              schema: paginatedSuccess(openApiSchema(promotionListDataSchema)),
+            },
+          },
+        },
+        ...protectedFailures,
+      },
+    },
     post: {
       tags: ["Promotions & Coupons"],
       summary: "Create seller-funded promotion",

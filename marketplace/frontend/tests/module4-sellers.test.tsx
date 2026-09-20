@@ -18,6 +18,8 @@ const fileId = "55555555-5555-4555-8555-555555555555";
 const linkId = "66666666-6666-4666-8666-666666666666";
 const staffUserId = "77777777-7777-4777-8777-777777777777";
 const sellerManagerRoleId = "88888888-8888-4888-8888-888888888888";
+const publicProductId = "99999999-9999-4999-8999-999999999999";
+const publicProductFileId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 
 /** Creates one deterministic current actor for Module 4 frontend tests. */
 function actor(
@@ -629,7 +631,8 @@ describe("Module 4 Seller & Store Management UI", () => {
     expect(await screen.findByText("Seller Example Seller is now suspended.")).toBeInTheDocument();
   });
 
-  it("renders only the public-safe store projection without loading an authenticated actor", async () => {
+  it("renders a shoppable public-safe storefront without loading an authenticated actor", async () => {
+    let productStoreFilter = "";
     server.use(
       http.get(`${env.VITE_API_BASE_URL}/stores/example-store`, () =>
         HttpResponse.json({
@@ -639,20 +642,78 @@ describe("Module 4 Seller & Store Management UI", () => {
             slug: "example-store",
             name: "Example Store",
             description: "Simple storefront",
-            logoFileId: null,
+            logoFileId: fileId,
             defaultCurrency: "USD",
             supportEmail: "support@example.com",
             seller: { id: sellerId, displayName: "Example Seller" },
           },
         }),
       ),
+      http.get(`${env.VITE_API_BASE_URL}/products`, ({ request }) => {
+        productStoreFilter = new URL(request.url).searchParams.get("storeId") ?? "";
+        return HttpResponse.json({
+          success: true,
+          data: [
+            {
+              id: publicProductId,
+              storeId,
+              categoryId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+              brandId: null,
+              slug: "store-product",
+              name: "Store Product",
+              description: "Published store product",
+              minPrice: "29.00",
+              maxPrice: "29.00",
+              currency: "USD",
+              thumbnailFileId: publicProductFileId,
+              publishedAt: "2026-09-20T10:00:00.000Z",
+              createdAt: "2026-09-20T10:00:00.000Z",
+              updatedAt: "2026-09-20T10:00:00.000Z",
+            },
+          ],
+          meta: { page: 1, pageSize: 12, totalItems: 1, totalPages: 1 },
+        });
+      }),
+      http.post(`${env.VITE_API_BASE_URL}/media/public/resolve`, async ({ request }) => {
+        const body = await request.json() as { fileIds: string[] };
+        return HttpResponse.json({
+          success: true,
+          data: {
+            items: body.fileIds.map((resolvedFileId) => ({
+              fileId: resolvedFileId,
+              url: `https://media.example.test/${resolvedFileId}.jpg`,
+              mimeType: "image/jpeg",
+              expiresAt: "2026-09-20T10:15:00.000Z",
+            })),
+          },
+        });
+      }),
+      http.get(`${env.VITE_API_BASE_URL}/stores/${storeId}/reviews`, () =>
+        HttpResponse.json({
+          success: true,
+          data: { reviews: [], rating: { ratingAvg: 0, ratingCount: 0 } },
+          meta: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 },
+        }),
+      ),
     );
 
     await renderRoute("/stores/example-store");
     expect(await screen.findByRole("heading", { name: "Example Store" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Store Product" })).toBeInTheDocument();
+    expect(productStoreFilter).toBe(storeId);
     expect(screen.getByText("Sold by Example Seller")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Example Store logo" })).toBeInTheDocument();
     expect(screen.queryByText("Example Seller LLC")).not.toBeInTheDocument();
     expect(screen.queryByText("TAX-100")).not.toBeInTheDocument();
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("tab", { name: "Reviews" }));
+    expect(await screen.findByRole("heading", { name: "Store Reviews" })).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: "About" }));
+    expect(screen.getByRole("link", { name: "support@example.com" })).toHaveAttribute(
+      "href",
+      "mailto:support@example.com",
+    );
   });
 
   it("shows a permission state before a seller without store permission calls store APIs", async () => {

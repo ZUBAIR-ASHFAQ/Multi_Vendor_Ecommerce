@@ -1,6 +1,12 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { Button } from "@/components/ui/button";
+import {
+  WORKSPACE_NAV_ACTIVE_CLASS,
+  WORKSPACE_NAV_LINK_CLASS,
+  WorkspaceNavGroup,
+  WorkspaceShell,
+  WorkspaceSidebar,
+} from "@/components/workspace/workspace-shell";
 import { AuthenticatedPanel } from "@/features/auth/components/authenticated-panel";
 import type { AuthenticatedUser } from "@/features/auth/types/auth.types";
 import {
@@ -21,43 +27,48 @@ function Layout({ user, children }: { user: AuthenticatedUser; children: ReactNo
   );
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-xl border bg-white p-4 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Documents & Audit
-            </p>
-            <p className="mt-1 font-semibold">{user.displayName}</p>
-            <p className="text-xs text-slate-500">{user.email}</p>
-          </div>
-          <Button asChild variant="ghost">
-            <Link to="/account">Account</Link>
-          </Button>
-        </div>
-        <nav className="mt-4 flex flex-wrap gap-2" aria-label="Documents and audit navigation">
-          {canUseDocuments && (
-            <Link
-              to="/documents"
-              className="rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
-              activeProps={{ className: "bg-slate-900 text-white hover:bg-slate-900" }}
-            >
-              Documents
-            </Link>
+    <WorkspaceShell
+      sidebar={(
+        <WorkspaceSidebar
+          ariaLabel="Documents and audit navigation"
+          kicker="Documents & Audit"
+          title={user.displayName}
+          subtitle={user.email}
+          footer={(
+            <>
+              <strong>Controlled evidence</strong>
+              <p>Upload, link, download, and audit access continue to use the existing backend permission checks.</p>
+              <div className="workspace-account-actions">
+                <Link to="/account" className={WORKSPACE_NAV_LINK_CLASS}>Account <span>›</span></Link>
+              </div>
+            </>
           )}
-          {canReadAudit && (
-            <Link
-              to="/audit"
-              className="rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
-              activeProps={{ className: "bg-slate-900 text-white hover:bg-slate-900" }}
-            >
-              Audit log
-            </Link>
-          )}
-        </nav>
-      </section>
+        >
+          <WorkspaceNavGroup label="Operations">
+            {canUseDocuments ? (
+              <Link
+                to="/documents"
+                className={WORKSPACE_NAV_LINK_CLASS}
+                activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}
+              >
+                Documents <span>›</span>
+              </Link>
+            ) : null}
+            {canReadAudit ? (
+              <Link
+                to="/audit"
+                className={WORKSPACE_NAV_LINK_CLASS}
+                activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}
+              >
+                Audit log <span>›</span>
+              </Link>
+            ) : null}
+          </WorkspaceNavGroup>
+        </WorkspaceSidebar>
+      )}
+    >
       {children}
-    </div>
+    </WorkspaceShell>
   );
 }
 

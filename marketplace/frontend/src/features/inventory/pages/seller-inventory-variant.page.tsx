@@ -1,35 +1,43 @@
-import { useParams } from "@tanstack/react-router";
+import { Link, useParams } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/feedback/error-state";
-import { RequireSellerPermission, SellerLayout } from "@/features/sellers/components/seller-layout";
+import { SellerLayout } from "@/features/sellers/components/seller-layout";
+import { formatMoney } from "@/lib/money";
 import { InventoryAdjustmentForm } from "../forms/inventory-adjustment-form";
 import { InventoryReorderLevelForm } from "../forms/inventory-reorder-level-form";
 import {
   useAdjustStockMutation,
+  useSellerInventoryQuery,
   useUpdateReorderLevelMutation,
 } from "../hooks/use-inventory";
 
+const INVENTORY_READ_PERMISSION = "inventory.read";
 const INVENTORY_ADJUST_PERMISSION = "inventory.adjust";
 const INVENTORY_REORDER_PERMISSION = "inventory.reorder.manage";
 
 /** Renders Inventory commands for a Product variant even before its first Inventory row exists. */
 function SellerInventoryVariantContent({
   variantId,
+  canRead,
   canAdjust,
   canManageReorder,
 }: {
   variantId: string;
+  canRead: boolean;
   canAdjust: boolean;
   canManageReorder: boolean;
 }) {
+  const inventory = useSellerInventoryQuery({ page: 1, pageSize: 1, variantId }, canRead);
   const adjust = useAdjustStockMutation(variantId);
   const reorder = useUpdateReorderLevelMutation(variantId);
-  const latestItem = reorder.data ?? adjust.data;
+  const contextItem = inventory.data?.items[0];
+  const latestItem = reorder.data ?? adjust.data ?? contextItem;
 
   if (!canAdjust && !canManageReorder) {
     return (
       <ErrorState
         title="Inventory management permission required"
-        message="Your seller account can read Inventory but cannot change stock or reorder thresholds."
+        message="Your seller account cannot change stock or reorder thresholds."
       />
     );
   }
@@ -37,14 +45,38 @@ function SellerInventoryVariantContent({
   return (
     <div className="space-y-5">
       <section className="rounded-xl border bg-white p-5 shadow-sm">
-        <h1 className="text-2xl font-bold">Manage variant Inventory</h1>
-        <p className="mt-1 break-all text-sm text-slate-500">Variant {variantId}</p>
-        <p className="mt-3 text-sm text-slate-600">
-          This screen also works for a new Product variant that does not have an Inventory row yet.
-          The server creates the zero-balance row only after an authorized command.
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Inventory management</p>
+            <h1 className="mt-1 text-2xl font-bold">
+              {contextItem ? `${contextItem.productName} · ${contextItem.variantTitle}` : "Manage variant Inventory"}
+            </h1>
+            <p className="mt-1 text-sm text-slate-500">
+              {contextItem ? `SKU ${contextItem.variantSku} · ${contextItem.storeName}` : `Variant ${variantId}`}
+            </p>
+            {contextItem ? (
+              <p className="mt-2 text-sm font-medium text-slate-700">
+                {formatMoney(contextItem.variantPrice, contextItem.variantCurrency)} · {contextItem.variantStatus}
+              </p>
+            ) : (
+              <p className="mt-3 max-w-2xl text-sm text-slate-600">
+                This variant does not have an Inventory row yet. The server creates the zero-balance row only after an authorized stock or reorder command.
+              </p>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {canRead ? (
+              <Button variant="outline" asChild><Link to="/seller/inventory">Back to Inventory</Link></Button>
+            ) : null}
+            {contextItem ? (
+              <Button variant="ghost" asChild>
+                <Link to="/seller/products/$productId" params={{ productId: contextItem.productId }}>Open Product</Link>
+              </Button>
+            ) : null}
+          </div>
+        </div>
         {latestItem ? (
-          <div className="mt-4 grid max-w-xl grid-cols-3 gap-3 rounded-lg bg-slate-50 p-4 text-center text-sm">
+          <div className="mt-5 grid max-w-2xl grid-cols-3 gap-3 rounded-xl bg-slate-50 p-4 text-center text-sm">
             <div><strong className="block text-xl">{latestItem.onHandQty}</strong><span className="text-slate-500">On hand</span></div>
             <div><strong className="block text-xl">{latestItem.reservedQty}</strong><span className="text-slate-500">Reserved</span></div>
             <div><strong className="block text-xl">{latestItem.availableQty}</strong><span className="text-slate-500">Available</span></div>
@@ -88,7 +120,7 @@ function SellerInventoryVariantContent({
   );
 }
 
-/** Protects direct variant Inventory management with seller authentication and server-derived permissions. */
+/** Preserves direct Inventory command access while enriching the page when read access is available. */
 export function SellerInventoryVariantPage() {
   const { variantId } = useParams({ strict: false }) as { variantId: string };
   return (
@@ -96,6 +128,7 @@ export function SellerInventoryVariantPage() {
       {(user) => (
         <SellerInventoryVariantContent
           variantId={variantId}
+          canRead={user.permissions.includes(INVENTORY_READ_PERMISSION)}
           canAdjust={user.permissions.includes(INVENTORY_ADJUST_PERMISSION)}
           canManageReorder={user.permissions.includes(INVENTORY_REORDER_PERMISSION)}
         />

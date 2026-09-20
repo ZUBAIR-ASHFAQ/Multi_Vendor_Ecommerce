@@ -347,7 +347,7 @@ async function browserLogin(page: Page, email: string, password: string): Promis
 
 /** Selects the deterministic Shipping Core row seeded by the cross-module E2E runner. */
 async function chooseShippingMethod(page: Page): Promise<void> {
-  const select = page.getByLabel(/Shipping method for store/).first();
+  const select = page.getByLabel(/Shipping method for/).first();
   await expect(select).toBeVisible();
   const option = select.locator("option").filter({ hasText: "E2E Checkout Standard" }).first();
   const value = await option.getAttribute("value");
@@ -367,7 +367,7 @@ async function checkoutThroughBrowser(page: Page): Promise<{ quote: CheckoutQuot
       response.request().method() === "POST" &&
       response.status() === 201,
   );
-  await page.getByRole("button", { name: "Calculate authoritative quote" }).click();
+  await page.getByRole("button", { name: "Review order" }).click();
   const quoteResponse = await quoteResponsePromise;
   const quote = ((await quoteResponse.json()) as ApiEnvelope<CheckoutQuote>).data;
 

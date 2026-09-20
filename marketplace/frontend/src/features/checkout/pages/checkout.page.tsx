@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
 import { Button } from "@/components/ui/button";
+import { StatusPill } from "@/components/ui/status-pill";
 import { FormError } from "@/features/auth/components/form-error";
 import { useCartQuery } from "@/features/cart-wishlist/hooks/use-cart-wishlist";
 import { useCustomerAddressesQuery } from "@/features/customers/hooks/use-customers";
@@ -28,8 +29,8 @@ function newConfirmationKey(): string {
   return crypto.randomUUID();
 }
 
-/** Renders the authenticated customer Checkout workflow without treating Payment or Order state as Module 10 state. */
-function CheckoutContent({ canConfirm }: { canConfirm: boolean }) {
+/** Renders the authenticated customer Checkout workflow without changing server authority boundaries. */
+function CheckoutContent({ canConfirm, displayName }: { canConfirm: boolean; displayName: string }) {
   const cart = useCartQuery();
   const addresses = useCustomerAddressesQuery();
   const createQuote = useCreateCheckoutQuoteMutation();
@@ -92,120 +93,144 @@ function CheckoutContent({ canConfirm }: { canConfirm: boolean }) {
 
   if (cart.data.items.length === 0) {
     return (
-      <section className="rounded-xl border bg-white p-8 text-center shadow-sm">
-        <h1 className="text-2xl font-bold">Checkout</h1>
-        <p className="mt-2 text-sm text-slate-600">Your Cart is empty. Add a Product before creating a Checkout quote.</p>
-        <Button className="mt-4" asChild><Link to="/products">Browse Products</Link></Button>
+      <section className="checkout-empty-state">
+        <h1>Checkout</h1>
+        <p>Your cart is empty. Add something you love before continuing to Checkout.</p>
+        <Button asChild><Link to="/products">Browse Products</Link></Button>
       </section>
     );
   }
 
   if (addresses.data.length === 0) {
     return (
-      <section className="rounded-xl border bg-white p-8 text-center shadow-sm">
-        <h1 className="text-2xl font-bold">Checkout needs an address</h1>
-        <p className="mt-2 text-sm text-slate-600">Add an active saved address before calculating shipping and authoritative totals.</p>
-        <Button className="mt-4" asChild><Link to="/customer/addresses">Manage addresses</Link></Button>
+      <section className="checkout-empty-state">
+        <h1>Checkout needs an address</h1>
+        <p>Add a saved delivery address before choosing shipping and reviewing your order.</p>
+        <Button asChild><Link to="/customer/addresses">Manage addresses</Link></Button>
       </section>
     );
   }
 
-  const quote = quoteQuery.data;
+  const quote = quoteQuery.data ?? null;
   const quoteExpired = quote ? checkoutQuoteIsExpired(quote.expiresAt) : false;
-  const activeStep = attemptId ? 4 : quote ? 3 : 1;
+  const activeStep = attemptId ? 4 : quote ? 3 : 2;
+  const storeNamesById = new Map(
+    cart.data.items.flatMap((item) => item.storeId ? [[item.storeId, item.storeName ?? "Marketplace seller"] as const] : []),
+  );
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-xl border bg-white p-5 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Module 10 · Checkout</p>
-        <h1 className="mt-1 text-2xl font-bold">Checkout</h1>
-        <p className="mt-2 max-w-3xl text-sm text-slate-600">
-          Cart totals are not trusted here. The backend recalculates price, discount, shipping, tax, and stock before confirmation.
-        </p>
-      </section>
+    <div className="checkout-page">
+      <header className="checkout-page-heading">
+        <div>
+          <p>Secure checkout</p>
+          <h1>Checkout</h1>
+          <span>Signed in as {displayName}. Review delivery details, confirm your order, then pay securely.</span>
+        </div>
+        <Link to="/cart">Edit cart</Link>
+      </header>
 
       <CheckoutStepper activeStep={activeStep} />
 
-      <CheckoutQuoteForm
-        addresses={addresses.data}
-        isPending={createQuote.isPending}
-        error={createQuote.error}
-        onSubmit={calculateQuote}
-      />
+      <div className="checkout-content-grid">
+        <main className="checkout-flow-column">
+          <CheckoutQuoteForm
+            addresses={addresses.data}
+            storeNamesById={storeNamesById}
+            isPending={createQuote.isPending}
+            error={createQuote.error}
+            onSubmit={calculateQuote}
+          />
 
-      {quoteId && quoteQuery.isPending ? <LoadingState label="Loading authoritative quote..." /> : null}
-      {quoteQuery.isError ? (
-        <ErrorState
-          title="Quote could not be loaded"
-          message={quoteQuery.error instanceof Error ? quoteQuery.error.message : "Please recalculate Checkout."}
-          requestId={quoteQuery.error instanceof ApiClientError ? quoteQuery.error.requestId : undefined}
-          onRetry={() => void quoteQuery.refetch()}
-        />
-      ) : null}
-
-      {quote ? (
-        <>
-          <CheckoutQuoteSummary quote={quote} cart={cart.data} />
-          <CheckoutExpiryWarning expiresAt={quote.expiresAt} />
-          <CheckoutChangeWarning error={confirmQuote.error} />
-
-          <section className="rounded-xl border bg-white p-5 shadow-sm">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Step 4</p>
-                <h2 className="mt-1 text-xl font-bold">Confirm &amp; pay</h2>
-                <p className="mt-1 max-w-2xl text-sm text-slate-600">
-                  Confirmation creates the Checkout attempt and Inventory reservations. Payment capture remains owned
-                  by the downstream Payments module.
-                </p>
-              </div>
-              <Button
-                type="button"
-                disabled={!canConfirm || quoteExpired || confirmQuote.isPending || Boolean(attemptId)}
-                onClick={() => void confirmCurrentQuote()}
-              >
-                {confirmQuote.isPending ? "Confirming..." : "Confirm & pay"}
-              </Button>
-            </div>
-            {!canConfirm ? (
-              <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-950">
-                Your account can create quotes but does not have checkout.confirm_own permission.
-              </p>
-            ) : null}
-            <FormError error={confirmQuote.error} />
-          </section>
-        </>
-      ) : null}
-
-      {attemptId ? (
-        <section className="rounded-xl border bg-white p-5 shadow-sm" aria-label="Checkout attempt status">
-          <h2 className="text-xl font-bold">Checkout attempt</h2>
-          {attemptStatus.isPending ? <LoadingState label="Loading Checkout status..." /> : null}
-          {attemptStatus.isError ? (
+          {quoteId && quoteQuery.isPending ? <LoadingState label="Reviewing your latest order totals..." /> : null}
+          {quoteQuery.isError ? (
             <ErrorState
-              title="Checkout status could not be loaded"
-              message={attemptStatus.error instanceof Error ? attemptStatus.error.message : "Please try again."}
-              requestId={attemptStatus.error instanceof ApiClientError ? attemptStatus.error.requestId : undefined}
-              onRetry={() => void attemptStatus.refetch()}
+              title="Order review could not be loaded"
+              message={quoteQuery.error instanceof Error ? quoteQuery.error.message : "Please review your order again."}
+              requestId={quoteQuery.error instanceof ApiClientError ? quoteQuery.error.requestId : undefined}
+              onRetry={() => void quoteQuery.refetch()}
             />
           ) : null}
-          {attemptStatus.data ? (
-            <div className="mt-3 space-y-2 text-sm">
-              <p><span className="font-semibold">Status:</span> {attemptStatus.data.status}</p>
-              <p><span className="font-semibold">Attempt:</span> {attemptStatus.data.id}</p>
-              <p className="rounded-md bg-slate-50 px-3 py-2 text-slate-700">
-                Checkout is confirmed and the Order now exists. Payment capture is still provider-authoritative;
-                this page does not mark an order paid.
-              </p>
-              {attemptStatus.data.orderId ? (
-                <div className="mt-4">
-                  <CheckoutPayment orderId={attemptStatus.data.orderId} />
+
+          {quote ? (
+            <section className="checkout-confirm-card" aria-labelledby="checkout-confirm-heading">
+              <div className="checkout-section-heading">
+                <div>
+                  <p>Step 3</p>
+                  <h2 id="checkout-confirm-heading">Review and place order</h2>
+                  <span>Check the final total in the order summary before creating your order.</span>
+                </div>
+              </div>
+
+              <CheckoutExpiryWarning expiresAt={quote.expiresAt} />
+              <CheckoutChangeWarning error={confirmQuote.error} />
+
+              {!canConfirm ? (
+                <p className="checkout-inline-warning">
+                  Your account can review this order but does not have permission to place it.
+                </p>
+              ) : null}
+              <FormError error={confirmQuote.error} />
+
+              <div className="checkout-place-order-row">
+                <div>
+                  <strong>Ready to continue?</strong>
+                  <span>Your order is created only after the latest price and stock checks pass.</span>
+                </div>
+                <Button
+                  type="button"
+                  disabled={!canConfirm || quoteExpired || confirmQuote.isPending || Boolean(attemptId)}
+                  onClick={() => void confirmCurrentQuote()}
+                >
+                  {confirmQuote.isPending ? "Placing order..." : "Confirm & pay"}
+                </Button>
+              </div>
+            </section>
+          ) : null}
+
+          {attemptId ? (
+            <section className="checkout-payment-card" aria-label="Checkout attempt status">
+              <div className="checkout-section-heading checkout-payment-heading">
+                <div>
+                  <p>Step 4</p>
+                  <h2>Payment</h2>
+                  <span>Your order is created. Complete secure payment to finish Checkout.</span>
+                </div>
+                {attemptStatus.data ? (
+                  <StatusPill tone={attemptStatus.data.status === "confirmed" ? "positive" : "warning"}>
+                    {attemptStatus.data.status}
+                  </StatusPill>
+                ) : null}
+              </div>
+
+              {attemptStatus.isPending ? <LoadingState label="Preparing payment..." /> : null}
+              {attemptStatus.isError ? (
+                <ErrorState
+                  title="Checkout status could not be loaded"
+                  message={attemptStatus.error instanceof Error ? attemptStatus.error.message : "Please try again."}
+                  requestId={attemptStatus.error instanceof ApiClientError ? attemptStatus.error.requestId : undefined}
+                  onRetry={() => void attemptStatus.refetch()}
+                />
+              ) : null}
+              {attemptStatus.data ? (
+                <div className="checkout-payment-ready">
+                  <p>Your order has been created. Payment is completed only after secure confirmation from Stripe.</p>
+                  {attemptStatus.data.orderId ? (
+                    <CheckoutPayment orderId={attemptStatus.data.orderId} />
+                  ) : (
+                    <p className="checkout-state-message checkout-state-message-neutral">
+                      Your order is being prepared for payment. Refresh this status if payment does not appear shortly.
+                    </p>
+                  )}
                 </div>
               ) : null}
-            </div>
+            </section>
           ) : null}
-        </section>
-      ) : null}
+        </main>
+
+        <div className="checkout-summary-column">
+          <CheckoutQuoteSummary quote={quote} cart={cart.data} />
+        </div>
+      </div>
     </div>
   );
 }
@@ -215,7 +240,10 @@ export function CheckoutPage() {
   return (
     <CheckoutLayout>
       {(user) => (
-        <CheckoutContent canConfirm={user.permissions.includes(CHECKOUT_PERMISSION.CONFIRM_OWN)} />
+        <CheckoutContent
+          canConfirm={user.permissions.includes(CHECKOUT_PERMISSION.CONFIRM_OWN)}
+          displayName={user.displayName}
+        />
       )}
     </CheckoutLayout>
   );

@@ -197,8 +197,87 @@ describe("Module 1 Dashboard React feature", () => {
     expect(
       await screen.findByText("Finance-sensitive Dashboard values are hidden for this account.", { exact: false }),
     ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Business snapshot" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Sales trend" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Action required" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Seller performance" })).not.toBeInTheDocument();
     await waitFor(() => expect(summarySearch).not.toContain("sellerId="));
-    expect(screen.getAllByText("Restricted").length).toBeGreaterThan(0);
+  });
+
+
+  it("composes recent Orders and Wallet balances from their existing seller-owned APIs when permitted", async () => {
+    useActor(actor("seller", [
+      "dashboard.read",
+      "dashboard.seller.read",
+      "seller.orders.read",
+      "seller.wallet.read",
+    ]));
+    useDashboardReads(false);
+    server.use(
+      http.get(`${env.VITE_API_BASE_URL}/seller/orders`, () =>
+        HttpResponse.json({
+          success: true,
+          data: [{
+            id: resourceId,
+            sellerOrderNo: "SO-2026-000001",
+            sellerId,
+            storeId,
+            orderId: savedFilterId,
+            orderNo: "ORD-2026-000001",
+            currency: "USD",
+            subtotal: "120.00",
+            discountTotal: "0.00",
+            taxTotal: "0.00",
+            shippingTotal: "5.00",
+            grandTotal: "125.00",
+            status: "processing",
+            paymentStatus: "captured",
+            fulfillmentStatus: "unfulfilled",
+            createdAt: now,
+          }],
+          meta: { page: 1, pageSize: 5, totalItems: 1, totalPages: 1 },
+          requestId: "req-dashboard-recent-orders",
+        })),
+      http.get(`${env.VITE_API_BASE_URL}/seller/wallet`, () =>
+        HttpResponse.json({
+          success: true,
+          data: {
+            wallets: [{
+              sellerId,
+              currency: "USD",
+              pendingBalance: "200.0000",
+              availableBalance: "800.0000",
+              heldBalance: "50.0000",
+              negativeBalance: "0.0000",
+              updatedAt: now,
+            }],
+            entries: [],
+            payoutAccounts: [{
+              id: savedFilterId,
+              sellerId,
+              providerType: "stripe",
+              maskedDetails: "•••• 4242",
+              status: "active",
+              verifiedAt: now,
+            }],
+            payoutSummaries: [{
+              currency: "USD",
+              lifetimePaidAmount: "3000.0000",
+              inProgressAmount: "150.0000",
+              inProgressCount: 1,
+            }],
+          },
+          meta: { page: 1, pageSize: 1, totalItems: 0, totalPages: 0 },
+          requestId: "req-dashboard-wallet",
+        })),
+    );
+
+    await renderDashboard();
+    expect(await screen.findByRole("heading", { name: "Recent orders" })).toBeInTheDocument();
+    expect(await screen.findByText("SO-2026-000001")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Wallet snapshot" })).toBeInTheDocument();
+    expect(await screen.findByText("$800.00")).toBeInTheDocument();
+    expect(screen.getByText("1 active payout account(s).")).toBeInTheDocument();
   });
 
   it("persists saved filters through the single documented preferences command without sending user identity", async () => {

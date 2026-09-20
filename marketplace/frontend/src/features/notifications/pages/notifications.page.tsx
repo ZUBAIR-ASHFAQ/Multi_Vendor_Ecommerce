@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
-import { AuthenticatedPanel } from "@/features/auth/components/authenticated-panel";
+import { CustomerAccountLayout } from "@/features/customers/components/customer-account-shell";
 import { ApiClientError } from "@/lib/api-error";
 import { NotificationCard } from "../components/notification-card";
 import { NotificationPagination } from "../components/notification-pagination";
@@ -100,12 +100,12 @@ function NotificationsContent() {
 /** Protects the own-Notification page with the server-provided read permission. */
 export function NotificationsPage() {
   return (
-    <AuthenticatedPanel>
+    <CustomerAccountLayout>
       {(user) => user.permissions.includes(NOTIFICATIONS_PERMISSION.READ_OWN) ? (
         <NotificationsContent />
       ) : (
         <ErrorState title="Access denied" message="Your account cannot read notifications." />
       )}
-    </AuthenticatedPanel>
+    </CustomerAccountLayout>
   );
 }

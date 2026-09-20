@@ -174,6 +174,13 @@ describe("Module 15 Reviews & Ratings React feature", () => {
           requestId: "req-store",
         }),
       ),
+      http.get(`${env.VITE_API_BASE_URL}/products`, () =>
+        HttpResponse.json({
+          success: true,
+          data: [],
+          meta: { page: 1, pageSize: 12, totalItems: 0, totalPages: 0 },
+        }),
+      ),
       http.get(`${env.VITE_API_BASE_URL}/stores/${storeId}/reviews`, () =>
         HttpResponse.json({
           success: true,
@@ -185,6 +192,8 @@ describe("Module 15 Reviews & Ratings React feature", () => {
     );
 
     await renderRoute("/stores/store-one");
+    expect(await screen.findByRole("heading", { name: "Store One" })).toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole("tab", { name: "Reviews" }));
     expect(await screen.findByRole("heading", { name: "Store Reviews" })).toBeInTheDocument();
     expect(screen.getByText("4.5")).toBeInTheDocument();
     expect(screen.getByText("8 reviews")).toBeInTheDocument();

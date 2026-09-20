@@ -34,7 +34,7 @@ export function ProductCartWishlistActions({
   );
 
   return (
-    <div className="mt-4 space-y-3 rounded-lg bg-slate-50 p-3">
+    <div className="product-detail-cart-actions">
       <CartQuantityForm
         initialQuantity={1}
         submitLabel="Add to Cart"

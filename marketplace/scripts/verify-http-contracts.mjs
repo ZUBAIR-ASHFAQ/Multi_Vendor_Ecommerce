@@ -473,6 +473,7 @@ const moduleContracts = [
       "GET /api/v1/admin/promotions",
       "POST /api/v1/admin/promotions",
       "PATCH /api/v1/admin/promotions/{id}",
+      "GET /api/v1/seller/promotions",
       "POST /api/v1/seller/promotions",
       "GET /api/v1/promotions/validate",
       "POST /api/v1/admin/promotions/{id}/activate",

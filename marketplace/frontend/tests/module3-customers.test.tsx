@@ -1,5 +1,5 @@
 import { http, HttpResponse } from "msw";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { App } from "@/app/app";
 import { createTestRouter } from "@/app/router/router";
@@ -117,6 +117,10 @@ describe("Module 3 Customer Management UI", () => {
     const user = userEvent.setup();
     expect(await screen.findByRole("heading", { name: "Customer Jane" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Order summary" })).toHaveAttribute("href", "#order-summary");
+    const accountNavigation = screen.getByRole("navigation", { name: "Customer account navigation" });
+    expect(within(accountNavigation).getByRole("link", { name: "Profile" })).toBeInTheDocument();
+    expect(within(accountNavigation).getByRole("link", { name: "Addresses" })).toBeInTheDocument();
+    expect(within(accountNavigation).queryByRole("link", { name: "Orders" })).not.toBeInTheDocument();
 
     await user.clear(screen.getByLabelText("Customer display name"));
     await user.type(screen.getByLabelText("Customer display name"), "Jane Updated");

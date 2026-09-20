@@ -1,8 +1,11 @@
 import { useForm } from "@tanstack/react-form";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { FormError, firstFieldError } from "@/features/auth/components/form-error";
 import type { CustomerAddress } from "@/features/customers/types/customers.types";
 import { ApiClientError } from "@/lib/api-error";
@@ -41,14 +44,16 @@ function replaceShippingSelection(
   return [...withoutStore, { storeId, shippingMethodId }];
 }
 
-/** Collects addresses, coupon, and one Shipping Core method per server-derived store using TanStack Form + Zod. */
+/** Collects saved addresses, coupon, and one server-provided delivery method per store. */
 export function CheckoutQuoteForm({
   addresses,
+  storeNamesById,
   isPending,
   error,
   onSubmit,
 }: {
   addresses: CustomerAddress[];
+  storeNamesById: ReadonlyMap<string, string>;
   isPending: boolean;
   error: unknown;
   onSubmit: (input: CreateCheckoutQuoteInput) => Promise<void>;
@@ -73,7 +78,7 @@ export function CheckoutQuoteForm({
     onSubmit: async ({ value }) => {
       const expectedSelections = shippingOptions.data?.groups.length ?? 0;
       if (expectedSelections === 0 || value.shippingSelections.length !== expectedSelections) {
-        setSelectionMessage("Choose one available shipping method for every seller/store group.");
+        setSelectionMessage("Choose one delivery method for every seller in your order.");
         return;
       }
 
@@ -96,157 +101,177 @@ export function CheckoutQuoteForm({
 
   return (
     <form
-      className="space-y-5 rounded-xl border bg-white p-5 shadow-sm"
+      className="checkout-selection-card"
       aria-label="Checkout selections"
       onSubmit={(event) => {
         event.preventDefault();
         void form.handleSubmit();
       }}
     >
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Step 1–2</p>
-        <h2 className="mt-1 text-xl font-bold">Address and shipping</h2>
-        <p className="mt-1 text-sm text-slate-600">
-          The server will reload Cart, Product, Inventory, Promotion, Shipping, address, and tax data before returning totals.
-        </p>
-      </div>
+      <section className="checkout-form-section" aria-labelledby="checkout-address-heading">
+        <div className="checkout-section-heading">
+          <div>
+            <p>Step 1</p>
+            <h2 id="checkout-address-heading">Delivery address</h2>
+            <span>Choose where this order should be delivered and billed.</span>
+          </div>
+          <Link to="/customer/addresses">Manage addresses</Link>
+        </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <form.Field name="shippingAddressId">
+        <div className="checkout-address-grid">
+          <form.Field name="shippingAddressId">
+            {(field) => {
+              const fieldError = firstFieldError(field.state.meta.errors);
+              return (
+                <label className="checkout-field">
+                  <span>Shipping address</span>
+                  <Select
+                    aria-label="Shipping address"
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(event) => {
+                      const addressId = event.target.value;
+                      field.handleChange(addressId);
+                      form.setFieldValue("shippingSelections", []);
+                      setShippingAddressId(addressId);
+                      setSelectionMessage(null);
+                    }}
+                    aria-invalid={Boolean(fieldError)}
+                  >
+                    {addresses.map((address) => (
+                      <option key={address.id} value={address.id}>{addressLabel(address)}</option>
+                    ))}
+                  </Select>
+                  {fieldError ? <small className="checkout-field-error">{fieldError}</small> : null}
+                </label>
+              );
+            }}
+          </form.Field>
+
+          <form.Field name="billingAddressId">
+            {(field) => {
+              const fieldError = firstFieldError(field.state.meta.errors);
+              return (
+                <label className="checkout-field">
+                  <span>Billing address</span>
+                  <Select
+                    aria-label="Billing address"
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(event) => field.handleChange(event.target.value)}
+                    aria-invalid={Boolean(fieldError)}
+                  >
+                    <option value="">Same as shipping address</option>
+                    {addresses.map((address) => (
+                      <option key={address.id} value={address.id}>{addressLabel(address)}</option>
+                    ))}
+                  </Select>
+                  {fieldError ? <small className="checkout-field-error">{fieldError}</small> : null}
+                </label>
+              );
+            }}
+          </form.Field>
+        </div>
+      </section>
+
+      <section className="checkout-form-section" aria-labelledby="checkout-delivery-heading">
+        <div className="checkout-section-heading">
+          <div>
+            <p>Step 2</p>
+            <h2 id="checkout-delivery-heading">Delivery options</h2>
+            <span>Choose one available method for each seller in your order.</span>
+          </div>
+        </div>
+
+        {shippingOptions.isPending ? <LoadingState label="Loading delivery options..." /> : null}
+        {shippingOptions.isError ? (
+          <ErrorState
+            title="Delivery options could not be loaded"
+            message={shippingOptions.error instanceof Error ? shippingOptions.error.message : "Please try again."}
+            requestId={shippingOptions.error instanceof ApiClientError ? shippingOptions.error.requestId : undefined}
+            onRetry={() => void shippingOptions.refetch()}
+          />
+        ) : null}
+
+        {shippingOptions.data ? (
+          <form.Field name="shippingSelections">
+            {(field) => (
+              <div className="checkout-delivery-groups" aria-label="Seller shipment groups">
+                {shippingOptions.data.groups.length === 0 ? (
+                  <p className="checkout-inline-warning">
+                    No delivery methods are available for this address. Try another saved address.
+                  </p>
+                ) : null}
+                {shippingOptions.data.groups.map((group) => {
+                  const selected = field.state.value.find((selection) => selection.storeId === group.storeId)?.shippingMethodId ?? "";
+                  const storeName = storeNamesById.get(group.storeId) ?? `Store ${group.storeId.slice(0, 8)}`;
+                  return (
+                    <label key={group.storeId} className="checkout-delivery-group">
+                      <span className="checkout-delivery-store">{storeName}</span>
+                      <Select
+                        aria-label={`Shipping method for ${storeName}`}
+                        value={selected}
+                        onBlur={field.handleBlur}
+                        onChange={(event) => {
+                          field.handleChange(replaceShippingSelection(field.state.value, group.storeId, event.target.value));
+                          setSelectionMessage(null);
+                        }}
+                      >
+                        <option value="">Choose delivery method</option>
+                        {group.options.map((option) => (
+                          <option key={option.id} value={option.id}>
+                            {option.name} · {formatMoney(option.rate, option.currency)}
+                          </option>
+                        ))}
+                      </Select>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </form.Field>
+        ) : null}
+      </section>
+
+      <section className="checkout-form-section checkout-promo-section" aria-labelledby="checkout-promo-heading">
+        <div className="checkout-section-heading">
+          <div>
+            <p>Optional</p>
+            <h2 id="checkout-promo-heading">Promo code</h2>
+            <span>Eligible discounts are verified when your order is reviewed.</span>
+          </div>
+        </div>
+
+        <form.Field name="couponCode">
           {(field) => {
             const fieldError = firstFieldError(field.state.meta.errors);
             return (
-              <label className="block text-sm font-medium">
-                Shipping address
-                <select
-                  aria-label="Shipping address"
-                  className="mt-1 w-full rounded-md border bg-white px-3 py-2"
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(event) => {
-                    const addressId = event.target.value;
-                    field.handleChange(addressId);
-                    form.setFieldValue("shippingSelections", []);
-                    setShippingAddressId(addressId);
-                    setSelectionMessage(null);
-                  }}
-                  aria-invalid={Boolean(fieldError)}
-                >
-                  {addresses.map((address) => (
-                    <option key={address.id} value={address.id}>{addressLabel(address)}</option>
-                  ))}
-                </select>
-                {fieldError ? <span className="mt-1 block text-xs text-red-600">{fieldError}</span> : null}
-              </label>
-            );
-          }}
-        </form.Field>
-
-        <form.Field name="billingAddressId">
-          {(field) => {
-            const fieldError = firstFieldError(field.state.meta.errors);
-            return (
-              <label className="block text-sm font-medium">
-                Billing address
-                <select
-                  aria-label="Billing address"
-                  className="mt-1 w-full rounded-md border bg-white px-3 py-2"
+              <label className="checkout-field checkout-coupon-field">
+                <span>Coupon code</span>
+                <Input
+                  aria-label="Checkout coupon code"
+                  className="uppercase"
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={(event) => field.handleChange(event.target.value)}
+                  placeholder="SAVE10"
                   aria-invalid={Boolean(fieldError)}
-                >
-                  <option value="">Same as shipping address</option>
-                  {addresses.map((address) => (
-                    <option key={address.id} value={address.id}>{addressLabel(address)}</option>
-                  ))}
-                </select>
-                {fieldError ? <span className="mt-1 block text-xs text-red-600">{fieldError}</span> : null}
+                />
+                {fieldError ? <small className="checkout-field-error">{fieldError}</small> : null}
               </label>
             );
           }}
         </form.Field>
-      </div>
+      </section>
 
-      <form.Field name="couponCode">
-        {(field) => {
-          const fieldError = firstFieldError(field.state.meta.errors);
-          return (
-            <label className="block text-sm font-medium">
-              Coupon code (optional)
-              <input
-                aria-label="Checkout coupon code"
-                className="mt-1 w-full rounded-md border px-3 py-2 uppercase md:max-w-sm"
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(event) => field.handleChange(event.target.value)}
-                placeholder="SAVE10"
-                aria-invalid={Boolean(fieldError)}
-              />
-              {fieldError ? <span className="mt-1 block text-xs text-red-600">{fieldError}</span> : null}
-            </label>
-          );
-        }}
-      </form.Field>
-
-      {shippingOptions.isPending ? <LoadingState label="Loading shipping methods..." /> : null}
-      {shippingOptions.isError ? (
-        <ErrorState
-          title="Shipping options could not be loaded"
-          message={shippingOptions.error instanceof Error ? shippingOptions.error.message : "Please try again."}
-          requestId={shippingOptions.error instanceof ApiClientError ? shippingOptions.error.requestId : undefined}
-          onRetry={() => void shippingOptions.refetch()}
-        />
-      ) : null}
-
-      {shippingOptions.data ? (
-        <form.Field name="shippingSelections">
-          {(field) => (
-            <section className="space-y-3" aria-label="Seller shipment groups">
-              <div>
-                <h3 className="font-semibold">Seller shipment groups</h3>
-                <p className="text-sm text-slate-600">Choose one current server-provided Shipping Core method for every store.</p>
-              </div>
-              {shippingOptions.data.groups.length === 0 ? (
-                <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-950">
-                  No eligible shipping methods are available for this Cart and address.
-                </p>
-              ) : null}
-              {shippingOptions.data.groups.map((group) => {
-                const selected = field.state.value.find((selection) => selection.storeId === group.storeId)?.shippingMethodId ?? "";
-                return (
-                  <label key={group.storeId} className="block rounded-lg border p-3 text-sm font-medium">
-                    Store {group.storeId.slice(0, 8)}
-                    <select
-                      aria-label={`Shipping method for store ${group.storeId.slice(0, 8)}`}
-                      className="mt-2 w-full rounded-md border bg-white px-3 py-2"
-                      value={selected}
-                      onBlur={field.handleBlur}
-                      onChange={(event) => {
-                        field.handleChange(replaceShippingSelection(field.state.value, group.storeId, event.target.value));
-                        setSelectionMessage(null);
-                      }}
-                    >
-                      <option value="">Choose shipping method</option>
-                      {group.options.map((option) => (
-                        <option key={option.id} value={option.id}>
-                          {option.name} · {formatMoney(option.rate, option.currency)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                );
-              })}
-            </section>
-          )}
-        </form.Field>
-      ) : null}
-
-      {selectionMessage ? <p role="alert" className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-950">{selectionMessage}</p> : null}
+      {selectionMessage ? <p role="alert" className="checkout-inline-warning">{selectionMessage}</p> : null}
       <FormError error={error} />
-      <Button type="submit" disabled={isPending || shippingOptions.isPending || shippingOptions.isError}>
-        {isPending ? "Calculating..." : "Calculate authoritative quote"}
-      </Button>
+      <div className="checkout-form-actions">
+        <Button type="submit" disabled={isPending || shippingOptions.isPending || shippingOptions.isError}>
+          {isPending ? "Reviewing order..." : "Review order"}
+        </Button>
+        <p>Final prices, discounts, tax, stock and delivery charges are recalculated before you can place the order.</p>
+      </div>
     </form>
   );
 }

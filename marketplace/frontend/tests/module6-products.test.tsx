@@ -140,7 +140,40 @@ describe("Module 6 Product Management UI", () => {
     expect(getPostLoginPath(sellerActor(["seller.products.read"]))).toBe("/seller/products");
   });
 
-  it("renders the public Product catalog and opens public Product detail", async () => {
+
+  it("renders the enriched seller Product management projection", async () => {
+    useSeller(["seller.products.read", "inventory.read"]);
+    server.use(
+      http.get(`${env.VITE_API_BASE_URL}/seller/products`, () =>
+        HttpResponse.json({
+          success: true,
+          data: [
+            {
+              ...productDetail({ variants: [], attributes: [], media: [], priceHistory: [] }),
+              storeName: "Demo Store",
+              storeSlug: "demo-store",
+              storeCurrency: "USD",
+              variantCount: 2,
+              minPrice: "19.99",
+              maxPrice: "29.99",
+              priceCurrency: "USD",
+              thumbnailFileId: null,
+            },
+          ],
+          meta: { page: 1, pageSize: 20, totalItems: 1, totalPages: 1 },
+        }),
+      ),
+    );
+
+    await renderRoute("/seller/products");
+    expect(await screen.findByText("Demo Product")).toBeInTheDocument();
+    expect(screen.getByText("Demo Store")).toBeInTheDocument();
+    expect(screen.getByText("$19.99 – $29.99")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Manage stock" })).toHaveAttribute("href", "/seller/inventory");
+  });
+
+  it("renders the public Product catalog and opens the enriched public Product detail", async () => {
+    useTaxonomy();
     server.use(
       http.get(`${env.VITE_API_BASE_URL}/products`, () =>
         HttpResponse.json({
@@ -154,6 +187,10 @@ describe("Module 6 Product Management UI", () => {
               slug: "demo-product",
               name: "Demo Product",
               description: "Public description",
+              minPrice: "19.99",
+              maxPrice: "19.99",
+              currency: "USD",
+              thumbnailFileId: fileId,
               publishedAt: "2026-09-06T10:00:00.000Z",
               createdAt: "2026-09-06T10:00:00.000Z",
               updatedAt: "2026-09-06T10:00:00.000Z",
@@ -176,6 +213,15 @@ describe("Module 6 Product Management UI", () => {
             publishedAt: "2026-09-06T10:00:00.000Z",
             createdAt: "2026-09-06T10:00:00.000Z",
             updatedAt: "2026-09-06T10:00:00.000Z",
+            store: {
+              id: storeId,
+              slug: "demo-store",
+              name: "Demo Store",
+              logoFileId: null,
+              seller: { id: sellerId, displayName: "Demo Seller" },
+            },
+            category: { id: categoryId, slug: "electronics", name: "Electronics" },
+            brand: { id: brandId, slug: "acme", name: "Acme" },
             variants: [
               {
                 id: variantId,
@@ -191,16 +237,63 @@ describe("Module 6 Product Management UI", () => {
               },
             ],
             attributes: [],
-            media: [],
+            media: [
+              {
+                id: mediaId,
+                productId,
+                variantId: null,
+                fileId,
+                mediaType: "image",
+                altText: "Demo Product front",
+                sortOrder: 0,
+                createdAt: "2026-09-06T10:00:00.000Z",
+              },
+            ],
           },
         }),
       ),
+      http.get(`${env.VITE_API_BASE_URL}/products/${productId}/reviews`, () =>
+        HttpResponse.json({
+          success: true,
+          data: { reviews: [], rating: { ratingAvg: 0, ratingCount: 0 } },
+          meta: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 },
+        }),
+      ),
+      http.post(`${env.VITE_API_BASE_URL}/media/public/resolve`, async ({ request }) => {
+        expect(await request.json()).toEqual({ fileIds: [fileId] });
+        return HttpResponse.json({
+          success: true,
+          data: {
+            items: [
+              {
+                fileId,
+                url: "https://media.example.test/demo-product.jpg",
+                mimeType: "image/jpeg",
+                expiresAt: "2026-09-06T10:15:00.000Z",
+              },
+            ],
+          },
+        });
+      }),
     );
 
     await renderRoute("/products");
-    expect(await screen.findByText("Demo Product")).toBeInTheDocument();
-    await userEvent.setup().click(screen.getByRole("link", { name: "View Product" }));
-    expect(await screen.findByText("$19.99")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Demo Product" })).toBeInTheDocument();
+    expect(screen.getByText("$19.99")).toBeInTheDocument();
+    expect(await screen.findByRole("img", { name: "Demo Product" })).toHaveAttribute(
+      "src",
+      "https://media.example.test/demo-product.jpg",
+    );
+    await userEvent.setup().click(screen.getByRole("link", { name: "Demo Product" }));
+    expect((await screen.findAllByText("$19.99")).length).toBeGreaterThan(0);
+    expect(await screen.findByRole("img", { name: "Demo Product front" })).toHaveAttribute(
+      "src",
+      "https://media.example.test/demo-product.jpg",
+    );
+    expect(screen.getByRole("heading", { name: "Demo Store" })).toBeInTheDocument();
+    expect(screen.getAllByText("Electronics").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Acme").length).toBeGreaterThan(0);
+    expect(screen.getByRole("link", { name: "Visit store" })).toHaveAttribute("href", "/stores/demo-store");
   });
 
   it("creates a normalized draft Product through the seller create form", async () => {

@@ -220,7 +220,7 @@ describe("Module 16 Commissions UI", () => {
     await renderRoute("/seller/commissions");
 
     expect(await screen.findByRole("heading", { name: "Seller fee statement" })).toBeInTheDocument();
-    expect(screen.getByText("89.0000")).toBeInTheDocument();
+    expect(screen.getByText("$89.00")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Per-order Commission breakdown" })).toBeInTheDocument();
     const url = new URL(requestedUrl);
     expect(url.searchParams.has("sellerId")).toBe(false);

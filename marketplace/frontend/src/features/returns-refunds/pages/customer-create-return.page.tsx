@@ -1,7 +1,9 @@
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
-import { AuthenticatedPanel } from "@/features/auth/components/authenticated-panel";
+import { PageHeader } from "@/components/ui/page-header";
+import { Surface } from "@/components/ui/surface";
+import { CustomerAccountLayout } from "@/features/customers/components/customer-account-shell";
 import { useCustomerOrderDetailQuery } from "@/features/orders/hooks/use-orders";
 import { useOrderShipmentsQuery } from "@/features/shipping/hooks/use-shipping";
 import { ApiClientError } from "@/lib/api-error";
@@ -95,27 +97,42 @@ function CustomerCreateReturnContent({
     .filter((item) => item.maxQuantity > 0);
 
   return (
-    <div className="space-y-5">
-      <div>
-        <Link className="text-sm underline" to="/orders/$orderId" params={{ orderId }}>← Order detail</Link>
-        <h1 className="mt-2 text-2xl font-bold">Request a Return</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          {order.data.orderNo} · {sellerOrder.sellerOrderNo}. Delivered quantity is only a browser hint; the API
-          re-checks ownership, delivery, prior Returns, and the Return window.
-        </p>
-      </div>
-
-      <ReturnRequestForm
-        sellerOrderId={sellerOrderId}
-        items={items}
-        isPending={createReturn.isPending}
-        error={createReturn.error}
-        onSubmit={(input) =>
-          createReturn.mutateAsync(input).then(async () => {
-            await navigate({ to: "/returns" });
-          })
-        }
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow={<Link className="hover:underline" to="/orders/$orderId" params={{ orderId }}>← Order detail</Link>}
+        title="Request a Return"
+        description={`Choose only delivered quantities from ${order.data.orderNo}. The server re-checks ownership, delivery, prior Returns and the Return window when you submit.`}
       />
+
+      <Surface variant="muted" padding="sm" className="flex flex-wrap items-center justify-between gap-3 text-sm">
+        <div>
+          <span className="text-foreground-muted">Fulfillment group</span>
+          <p className="font-semibold text-foreground">{sellerOrder.sellerOrderNo}</p>
+        </div>
+        <div className="text-right">
+          <span className="text-foreground-muted">Eligible items</span>
+          <p className="font-semibold text-foreground">{items.length}</p>
+        </div>
+      </Surface>
+
+      {items.length === 0 ? (
+        <ErrorState
+          title="No delivered quantity is available to return"
+          message="This fulfillment group has no delivered quantity remaining after earlier non-rejected Return requests."
+        />
+      ) : (
+        <ReturnRequestForm
+          sellerOrderId={sellerOrderId}
+          items={items}
+          isPending={createReturn.isPending}
+          error={createReturn.error}
+          onSubmit={(input) =>
+            createReturn.mutateAsync(input).then(async () => {
+              await navigate({ to: "/returns" });
+            })
+          }
+        />
+      )}
     </div>
   );
 }
@@ -125,7 +142,7 @@ export function CustomerCreateReturnPage() {
   const { orderId, sellerOrderId } = useParams({ strict: false });
 
   return (
-    <AuthenticatedPanel>
+    <CustomerAccountLayout>
       {(user) =>
         user.permissions.includes(RETURNS_PERMISSION.CREATE_OWN) &&
         user.permissions.includes("orders.read_own") &&
@@ -135,6 +152,6 @@ export function CustomerCreateReturnPage() {
           <ErrorState title="Access denied" message="Your account does not have permission to create this Return Request." />
         )
       }
-    </AuthenticatedPanel>
+    </CustomerAccountLayout>
   );
 }

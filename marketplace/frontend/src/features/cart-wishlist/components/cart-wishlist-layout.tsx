@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { ErrorState } from "@/components/feedback/error-state";
 import { AuthenticatedPanel } from "@/features/auth/components/authenticated-panel";
 import type { AuthenticatedUser } from "@/features/auth/types/auth.types";
+import { CustomerAccountShell } from "@/features/customers/components/customer-account-shell";
 import {
   CART_WISHLIST_PERMISSION,
   hasCartWishlistPermission,
@@ -15,15 +16,21 @@ function CartCacheLoader() {
   return null;
 }
 
-/** Renders customer Cart/Wishlist navigation after the server actor has been authenticated. */
-function CartWishlistNavigation({ user }: { user: AuthenticatedUser }) {
-  const isCustomer = user.accountType === "customer";
-  const canUseCart =
-    isCustomer &&
+/** Returns whether this actor may use the customer Cart. */
+function canUseCart(user: AuthenticatedUser): boolean {
+  return (
+    user.accountType === "customer" &&
     hasCartWishlistPermission(
       user.permissions,
       CART_WISHLIST_PERMISSION.CART_MANAGE_OWN,
-    );
+    )
+  );
+}
+
+/** Renders customer Cart/Wishlist navigation after the server actor has been authenticated. */
+function CartWishlistNavigation({ user }: { user: AuthenticatedUser }) {
+  const isCustomer = user.accountType === "customer";
+  const cartVisible = canUseCart(user);
   const canUseWishlist =
     isCustomer &&
     hasCartWishlistPermission(
@@ -32,46 +39,43 @@ function CartWishlistNavigation({ user }: { user: AuthenticatedUser }) {
     );
 
   return (
-    <>
-      {canUseCart ? <CartCacheLoader /> : null}
-      <section className="rounded-xl border bg-white p-4 shadow-sm">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Customer Commerce
-          </p>
-          <p className="mt-1 font-semibold">{user.displayName}</p>
-        </div>
-        <nav
-          className="mt-4 flex flex-wrap gap-2"
-          aria-label="Cart and Wishlist navigation"
-        >
-          {canUseCart ? (
-            <Link
-              to="/cart"
-              className="rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
-              activeProps={{ className: "bg-slate-900 text-white hover:bg-slate-900" }}
-            >
-              Cart
-            </Link>
-          ) : null}
-          {canUseWishlist ? (
-            <Link
-              to="/wishlist"
-              className="rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
-              activeProps={{ className: "bg-slate-900 text-white hover:bg-slate-900" }}
-            >
-              Wishlist
-            </Link>
-          ) : null}
+    <section className="rounded-xl border bg-white p-4 shadow-sm">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          Customer Commerce
+        </p>
+        <p className="mt-1 font-semibold">{user.displayName}</p>
+      </div>
+      <nav
+        className="mt-4 flex flex-wrap gap-2"
+        aria-label="Cart and Wishlist navigation"
+      >
+        {cartVisible ? (
           <Link
-            to="/products"
+            to="/cart"
             className="rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+            activeProps={{ className: "bg-slate-900 text-white hover:bg-slate-900" }}
           >
-            Continue shopping
+            Cart
           </Link>
-        </nav>
-      </section>
-    </>
+        ) : null}
+        {canUseWishlist ? (
+          <Link
+            to="/wishlist"
+            className="rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+            activeProps={{ className: "bg-slate-900 text-white hover:bg-slate-900" }}
+          >
+            Wishlist
+          </Link>
+        ) : null}
+        <Link
+          to="/products"
+          className="rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+        >
+          Continue shopping
+        </Link>
+      </nav>
+    </section>
   );
 }
 
@@ -103,20 +107,38 @@ function RequireCartWishlistPermission({
 export function CartWishlistLayout({
   permission,
   children,
+  accountShell = false,
 }: {
   permission: string;
   children: ReactNode;
+  accountShell?: boolean;
 }) {
   return (
     <AuthenticatedPanel>
-      {(user) => (
-        <div className="space-y-6">
-          <CartWishlistNavigation user={user} />
+      {(user) => {
+        const content = (
           <RequireCartWishlistPermission user={user} permission={permission}>
             {children}
           </RequireCartWishlistPermission>
-        </div>
-      )}
+        );
+
+        if (accountShell) {
+          return (
+            <>
+              {canUseCart(user) ? <CartCacheLoader /> : null}
+              <CustomerAccountShell user={user}>{content}</CustomerAccountShell>
+            </>
+          );
+        }
+
+        return (
+          <div className="space-y-6">
+            {canUseCart(user) ? <CartCacheLoader /> : null}
+            <CartWishlistNavigation user={user} />
+            {content}
+          </div>
+        );
+      }}
     </AuthenticatedPanel>
   );
 }

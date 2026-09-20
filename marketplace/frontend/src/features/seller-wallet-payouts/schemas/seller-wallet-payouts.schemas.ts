@@ -58,11 +58,20 @@ export const payoutAccountSchema = z.object({
   verifiedAt: isoDateTime.nullable(),
 });
 
-/** Seller Wallet read contains balances, one ledger page, and safe payout accounts. */
+/** Authoritative seller payout totals grouped by currency. */
+export const sellerPayoutSummarySchema = z.object({
+  currency: z.string().regex(/^[A-Z]{3}$/),
+  lifetimePaidAmount: walletNonNegativeMoneySchema,
+  inProgressAmount: walletNonNegativeMoneySchema,
+  inProgressCount: z.number().int().nonnegative(),
+});
+
+/** Seller Wallet read contains balances, one ledger page, safe payout accounts, and payout aggregates. */
 export const sellerWalletResponseSchema = z.object({
   wallets: z.array(sellerWalletBalanceSchema),
   entries: z.array(sellerWalletEntrySchema),
   payoutAccounts: z.array(payoutAccountSchema),
+  payoutSummaries: z.array(sellerPayoutSummarySchema),
 });
 
 /** Safe Payout allocation evidence links reserved money to immutable Wallet entries. */
@@ -121,5 +130,6 @@ export function normalizeScale4Money(value: string): string {
 export type SellerWalletBalance = z.infer<typeof sellerWalletBalanceSchema>;
 export type SellerWalletEntry = z.infer<typeof sellerWalletEntrySchema>;
 export type PayoutAccount = z.infer<typeof payoutAccountSchema>;
+export type SellerPayoutSummary = z.infer<typeof sellerPayoutSummarySchema>;
 export type SellerWalletResponse = z.infer<typeof sellerWalletResponseSchema>;
 export type Payout = z.infer<typeof payoutSchema>;

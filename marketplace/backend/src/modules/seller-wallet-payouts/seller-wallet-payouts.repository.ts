@@ -30,6 +30,7 @@ import {
 } from "../../database/schema/seller-wallet-payouts.js";
 import type { DatabaseExecutor } from "../../database/types.js";
 import {
+  PAYOUT_STATUS,
   WALLET_BALANCE_BUCKET,
   WALLET_ENTRY_TYPE,
 } from "./seller-wallet-payouts.constants.js";
@@ -53,6 +54,14 @@ export interface PaginatedWalletEntryRows {
 export interface PaginatedPayoutRows {
   items: PayoutRow[];
   totalItems: number;
+}
+
+/** Per-currency seller payout aggregates used by the finance overview without loading unbounded history. */
+export interface SellerPayoutSummaryRow {
+  currency: string;
+  lifetimePaidAmount: string;
+  inProgressAmount: string;
+  inProgressCount: number;
 }
 
 /** Complete Wallet balance snapshot already calculated by the Module 17 service. */
@@ -202,6 +211,41 @@ export class SellerWalletPayoutsRepository {
         ]),
       )
       .orderBy(asc(sellerWallets.currency));
+  }
+
+  /** Aggregates seller-owned Payout totals by currency without inventing a payout schedule. */
+  async summarizeSellerPayouts(
+    sellerId: string,
+    currency?: string,
+  ): Promise<SellerPayoutSummaryRow[]> {
+    const inProgress = inArray(payouts.status, [
+      PAYOUT_STATUS.REQUESTED,
+      PAYOUT_STATUS.APPROVED,
+      PAYOUT_STATUS.PROCESSING,
+    ]);
+    return this.executor
+      .select({
+        currency: payouts.currency,
+        lifetimePaidAmount: sql<string>`
+          coalesce(
+            sum(case when ${eq(payouts.status, PAYOUT_STATUS.PAID)} then ${payouts.amount} else 0 end),
+            0
+          )::numeric(18,4)::text
+        `,
+        inProgressAmount: sql<string>`
+          coalesce(sum(case when ${inProgress} then ${payouts.amount} else 0 end), 0)::numeric(18,4)::text
+        `,
+        inProgressCount: sql<number>`count(*) filter (where ${inProgress})::int`,
+      })
+      .from(payouts)
+      .where(
+        combineConditions([
+          eq(payouts.sellerId, sellerId),
+          currency ? eq(payouts.currency, currency) : undefined,
+        ]),
+      )
+      .groupBy(payouts.currency)
+      .orderBy(asc(payouts.currency));
   }
 
   /** Persists the complete service-approved Wallet snapshot after immutable ledger rows are written. */

@@ -22,7 +22,7 @@ import type {
 } from "../catalog-taxonomy/catalog-taxonomy.schema.js";
 import { InventoryService } from "../inventory/inventory.service.js";
 import { ProductsService } from "../products/products.service.js";
-import type { PublicProductDetailResponse } from "../products/products.schema.js";
+import type { PublicProductCommerceDetailResponse } from "../products/products.schema.js";
 import type { PublicStoreResponse } from "../sellers/sellers.schema.js";
 import {
   SEARCH_AUDIT_ACTION,
@@ -60,7 +60,7 @@ export type SearchTransactionRunner = <T>(
 /** Public Product source boundary consumed by Search without importing Product persistence. */
 export interface SearchProductIntegration {
   /** Returns a public Product aggregate only while it is currently eligible for storefront exposure. */
-  findPublicProductById(productId: string): Promise<PublicProductDetailResponse | null>;
+  findPublicProductById(productId: string): Promise<PublicProductCommerceDetailResponse | null>;
 
   /** Resolves one Inventory event variant back to its Product without exposing seller-private data. */
   findProductIdByVariantId(variantId: string): Promise<string | null>;
@@ -527,7 +527,7 @@ export class SearchDiscoveryService {
   }
 
   /** Resolves active taxonomy labels/path and only category-mapped filterable Product attributes. */
-  private async buildTaxonomySnapshot(product: PublicProductDetailResponse): Promise<{
+  private async buildTaxonomySnapshot(product: PublicProductCommerceDetailResponse): Promise<{
     categoryPath: string;
     brandName: string | null;
     filterableAttributes: SearchFilterableAttributes;
@@ -596,7 +596,7 @@ export class SearchDiscoveryService {
   /** Converts one Product attribute value into the public text used for filter facets and Search terms. */
   private attributeDisplayValue(
     attribute: AttributeResponse,
-    value: PublicProductDetailResponse["attributes"][number],
+    value: PublicProductCommerceDetailResponse["attributes"][number],
   ): string | null {
     if (value.valueId) {
       return attribute.values.find((option) => option.id === value.valueId)?.value ?? null;
@@ -607,7 +607,7 @@ export class SearchDiscoveryService {
   }
 
   /** Builds deterministic whitespace-normalized text from fields already approved for public Product exposure. */
-  private buildSearchableText(product: PublicProductDetailResponse, taxonomyTerms: string[]): string {
+  private buildSearchableText(product: PublicProductCommerceDetailResponse, taxonomyTerms: string[]): string {
     const variantTerms = product.variants.flatMap((variant) => [variant.title, variant.sku]);
     return [product.name, product.slug, product.description, ...variantTerms, ...taxonomyTerms]
       .map((value) => value.trim())

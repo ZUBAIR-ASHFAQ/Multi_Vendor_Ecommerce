@@ -387,6 +387,7 @@ function verifyHttpContracts() {
     'operationId: "listAdminPromotions"',
     'operationId: "createAdminPromotion"',
     'operationId: "updateAdminPromotion"',
+    'operationId: "listSellerPromotions"',
     'operationId: "createSellerPromotion"',
     'operationId: "validatePromotionCoupon"',
     'operationId: "activateAdminPromotion"',
@@ -510,7 +511,7 @@ function verifyBackendTests() {
   );
 
   for (const proof of [
-    "documents exactly the seven approved promotion operations with bearer authentication",
+    "documents the approved promotion operations with bearer authentication",
     "normalizes coupon codes and rejects client-owned authority fields",
     "rejects invalid date ranges, percentage overflow, duplicate scopes, and empty updates",
   ]) {
@@ -571,7 +572,7 @@ function verifyBackendTests() {
   requireText(backendCi, "npm run test:module9:specs", "Module 9 CI test gate");
   requireText(
     regression,
-    "locks Module 9 Promotions and Coupons to exactly the seven approved operations",
+    "locks Module 9 Promotions and Coupons to the approved operations",
     "Module 9 exact API regression contract",
   );
 }
@@ -598,6 +599,7 @@ function verifyFrontendFeature() {
     'apiClient.get("/admin/promotions"',
     'apiClient.post("/admin/promotions", input)',
     'apiClient.patch(`/admin/promotions/${promotionId}`, input)',
+    'apiClient.get("/seller/promotions"',
     'apiClient.post("/seller/promotions", input)',
     'apiClient.get("/promotions/validate"',
     'apiClient.post(`/admin/promotions/${promotionId}/activate`, {})',
