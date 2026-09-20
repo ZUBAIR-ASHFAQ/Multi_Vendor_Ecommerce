@@ -1,4 +1,4 @@
-import { and, eq, isNull, ne } from "drizzle-orm";
+import { and, eq, isNull, lte, ne, or, sql } from "drizzle-orm";
 import { db } from "../../database/db.js";
 import {
   refreshSessions,
@@ -15,11 +15,6 @@ interface RotateSessionInput {
   currentSessionLastUsedAt: Date;
   revokeReason: string;
   replacement: NewRefreshSessionRow;
-}
-
-interface LoginFailureStateInput {
-  failedLoginAttempts: number;
-  lockedUntil: Date | null;
 }
 
 /**
@@ -193,20 +188,29 @@ export class AuthRepository {
     return row ?? null;
   }
 
-  /** Persists service-calculated failed-login/temporary-lock state. */
-  async updateLoginFailureState(
+  /** Atomically increments failed-login state and applies the temporary lock at the threshold. */
+  async recordFailedLoginAttempt(
     userId: string,
-    input: LoginFailureStateInput,
-    updatedAt: Date,
+    lockThreshold: number,
+    lockUntil: Date,
+    attemptedAt: Date,
   ): Promise<UserRow | null> {
     const [row] = await this.executor
       .update(users)
       .set({
-        failedLoginAttempts: input.failedLoginAttempts,
-        lockedUntil: input.lockedUntil,
-        updatedAt,
+        failedLoginAttempts: sql`${users.failedLoginAttempts} + 1`,
+        lockedUntil: sql`case
+          when ${users.failedLoginAttempts} + 1 >= ${lockThreshold} then ${lockUntil}
+          else null
+        end`,
+        updatedAt: attemptedAt,
       })
-      .where(eq(users.id, userId))
+      .where(
+        and(
+          eq(users.id, userId),
+          or(isNull(users.lockedUntil), lte(users.lockedUntil, attemptedAt)),
+        ),
+      )
       .returning();
 
     return row ?? null;

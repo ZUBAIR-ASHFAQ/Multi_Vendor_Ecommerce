@@ -327,6 +327,43 @@ describe("Module 2 approved Auth + Administration integration", () => {
     ).rejects.toMatchObject({ code: AUTH_ERROR_CODE.USER_LOCKED, statusCode: 423 });
   });
 
+  it("atomically counts concurrent failed logins and locks at the configured threshold", async () => {
+    const service = new AuthService();
+    const attempts = Array.from(
+      { length: AUTH_LIMITS.FAILED_LOGIN_LOCK_THRESHOLD + 3 },
+      () =>
+        service.login(
+          { email: ADMIN_EMAIL, password: "WrongPassword!123" },
+          { ipAddress: "127.0.0.1", userAgent: "module2-concurrency-vitest" },
+          randomUUID(),
+        ),
+    );
+
+    const results = await Promise.allSettled(attempts);
+    for (const result of results) {
+      expect(result.status).toBe("rejected");
+      if (result.status === "rejected") {
+        expect(result.reason).toMatchObject({
+          code: AUTH_ERROR_CODE.INVALID_CREDENTIALS,
+          statusCode: 401,
+        });
+      }
+    }
+
+    const state = await databasePool.query<{
+      failed_login_attempts: number;
+      locked_until: Date | null;
+    }>(
+      "select failed_login_attempts, locked_until from users where email = $1",
+      [ADMIN_EMAIL],
+    );
+
+    expect(state.rows[0]?.failed_login_attempts).toBe(
+      AUTH_LIMITS.FAILED_LOGIN_LOCK_THRESHOLD,
+    );
+    expect(state.rows[0]?.locked_until).toBeTruthy();
+  });
+
   it("enforces RBAC on approved routes even when a limited user calls the API directly", async () => {
     const admin = await issueAdminSession();
     const limited = await createTestUser("limited@example.com", "LimitedPassword!123");

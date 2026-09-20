@@ -299,12 +299,7 @@ export class AuthService {
       const temporaryLockActive =
         user.lockedUntil !== null && user.lockedUntil.getTime() > now.getTime();
       if (user.status === USER_STATUS.ACTIVE && !temporaryLockActive) {
-        await this.recordFailedLogin(
-          user.id,
-          user.failedLoginAttempts,
-          requestId,
-          now,
-        );
+        await this.recordFailedLogin(user.id, requestId, now);
       } else {
         await this.recordKnownLoginFailureWithoutStateChange(user.id, requestId);
       }
@@ -781,24 +776,23 @@ export class AuthService {
   /** Applies the failed-login counter/temporary lock policy and records the security audit. */
   private async recordFailedLogin(
     userId: string,
-    previousAttempts: number,
     requestId: string | undefined,
     now: Date,
   ): Promise<void> {
-    const failedLoginAttempts = previousAttempts + 1;
-    const lockedUntil =
-      failedLoginAttempts >= AUTH_LIMITS.FAILED_LOGIN_LOCK_THRESHOLD
-        ? new Date(now.getTime() + AUTH_LIMITS.FAILED_LOGIN_LOCK_MINUTES * 60_000)
-        : null;
+    const lockUntil = new Date(
+      now.getTime() + AUTH_LIMITS.FAILED_LOGIN_LOCK_MINUTES * 60_000,
+    );
 
     await this.transactionRunner(async (tx) => {
       const authRepository = new AuthRepository(tx);
       const audit = AuditService.using(tx);
-      await authRepository.updateLoginFailureState(
+      const updatedUser = await authRepository.recordFailedLoginAttempt(
         userId,
-        { failedLoginAttempts, lockedUntil },
+        AUTH_LIMITS.FAILED_LOGIN_LOCK_THRESHOLD,
+        lockUntil,
         now,
       );
+      const currentUser = updatedUser ?? (await authRepository.findUserById(userId));
       await audit.record({
         actorId: userId,
         actorType: ACTOR_TYPE.SYSTEM,
@@ -808,8 +802,12 @@ export class AuthService {
         ...(requestId !== undefined ? { requestId } : {}),
         metadata: {
           reason: "invalid_credentials",
-          failedLoginAttempts,
-          lockedUntil: lockedUntil?.toISOString() ?? null,
+          ...(currentUser
+            ? {
+                failedLoginAttempts: currentUser.failedLoginAttempts,
+                lockedUntil: currentUser.lockedUntil?.toISOString() ?? null,
+              }
+            : {}),
         },
       });
     });
