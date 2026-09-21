@@ -205,7 +205,7 @@ export const checkoutOpenApiPaths = {
       summary: "Create an authoritative Checkout quote",
       operationId: "createCheckoutQuote",
       description: [
-        "Reloads the authenticated customer's current Cart and server-authoritative Product, Inventory,",
+        "Reloads the authenticated customer's Cart or Buy Now item and server-authoritative Product, Inventory,",
         "Promotion, Shipping, address, currency, and tax state before persisting a short-lived quote.",
       ].join(" "),
       security: [{ bearerAuth: [] }],

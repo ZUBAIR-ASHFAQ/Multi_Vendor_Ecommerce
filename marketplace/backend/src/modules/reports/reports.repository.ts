@@ -34,6 +34,7 @@ import type {
   InventoryReportQuery,
   PayoutsReportQuery,
   RefundsReportQuery,
+  ReportRunListQuery,
   SalesReportQuery,
 } from "./reports.schema.js";
 
@@ -958,6 +959,27 @@ export class ReportsRepository {
       .returning();
     if (!row) throw new Error("Report run insert completed without returning a row.");
     return row;
+  }
+
+  /** Lists one bounded page of export runs owned by the authenticated requester. */
+  async listReportRunsByRequester(
+    requestedBy: string,
+    query: ReportRunListQuery,
+  ): Promise<ReportsPage<ReportRunRow>> {
+    const { limit, offset } = toLimitOffset(query);
+    const where = eq(reportRuns.requestedBy, requestedBy);
+    const items = await this.executor
+      .select()
+      .from(reportRuns)
+      .where(where)
+      .orderBy(desc(reportRuns.createdAt), desc(reportRuns.id))
+      .limit(limit)
+      .offset(offset);
+    const [totalRow] = await this.executor
+      .select({ value: count() })
+      .from(reportRuns)
+      .where(where);
+    return { items, totalItems: Number(totalRow?.value ?? 0) };
   }
 
   /** Reads one report run without applying requester authorization; the service owns that policy. */

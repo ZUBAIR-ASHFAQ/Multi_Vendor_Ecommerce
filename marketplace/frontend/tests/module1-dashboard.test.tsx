@@ -233,6 +233,7 @@ describe("Module 1 Dashboard React feature", () => {
             status: "processing",
             paymentStatus: "captured",
             fulfillmentStatus: "unfulfilled",
+            fulfillmentStage: "unfulfilled",
             createdAt: now,
           }],
           meta: { page: 1, pageSize: 5, totalItems: 1, totalPages: 1 },

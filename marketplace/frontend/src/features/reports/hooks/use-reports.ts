@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { reportsApi } from "../api/reports.api";
 import type {
   CommissionsReportParams,
@@ -6,6 +6,7 @@ import type {
   PayoutsReportParams,
   RefundsReportParams,
   ReportExportCommand,
+  ReportRunListParams,
   SalesReportParams,
   SellersReportParams,
 } from "../types/reports.types";
@@ -74,10 +75,23 @@ export function usePayoutsReportQuery(params: PayoutsReportParams) {
   });
 }
 
-/** Queues one report export without duplicating report data into client state. */
-export function useCreateReportRunMutation() {
+/** Loads one bounded durable export-history page for the current authenticated user. */
+export function useReportRunsQuery(userId: string, params: ReportRunListParams) {
+  return useQuery({
+    queryKey: reportsQueryKeys.runs(userId, params),
+    queryFn: () => reportsApi.listRuns(params),
+    retry: false,
+  });
+}
+
+/** Queues one report export and invalidates the server-backed history for the current user. */
+export function useCreateReportRunMutation(userId: string) {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: ReportExportCommand) => reportsApi.createRun(input),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: reportsQueryKeys.runsAll(userId) });
+    },
   });
 }
 

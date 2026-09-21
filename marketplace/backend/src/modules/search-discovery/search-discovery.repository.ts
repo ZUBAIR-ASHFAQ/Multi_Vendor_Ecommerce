@@ -24,6 +24,7 @@ import {
 import {
   productMedia,
   products,
+  productVariants,
 } from "../../database/schema/products.js";
 import {
   productSearchDocuments,
@@ -90,6 +91,8 @@ export interface SearchProductRow {
   brand: string | null;
   minPrice: string;
   maxPrice: string;
+  minCompareAtPrice: string | null;
+  maxCompareAtPrice: string | null;
   currency: string;
   ratingAvg: string;
   ratingCount: number;
@@ -480,6 +483,22 @@ export class SearchDiscoveryRepository {
       order by ${productMedia.sortOrder} asc, ${productMedia.id} asc
       limit 1
     )`;
+    const minCompareAtPrice = sql<string | null>`(
+      select min(${productVariants.compareAtPrice})
+      from ${productVariants}
+      where ${productVariants.productId} = ${products.id}
+        and ${productVariants.status} = ${PRODUCT_STATUS.ACTIVE}
+        and ${productVariants.compareAtPrice} is not null
+        and ${productVariants.compareAtPrice} > ${productVariants.price}
+    )`;
+    const maxCompareAtPrice = sql<string | null>`(
+      select max(${productVariants.compareAtPrice})
+      from ${productVariants}
+      where ${productVariants.productId} = ${products.id}
+        and ${productVariants.status} = ${PRODUCT_STATUS.ACTIVE}
+        and ${productVariants.compareAtPrice} is not null
+        and ${productVariants.compareAtPrice} > ${productVariants.price}
+    )`;
 
     const items = await this.executor
       .select({
@@ -493,6 +512,8 @@ export class SearchDiscoveryRepository {
         brand: productSearchDocuments.brand,
         minPrice: productSearchDocuments.minPrice,
         maxPrice: productSearchDocuments.maxPrice,
+        minCompareAtPrice,
+        maxCompareAtPrice,
         currency: stores.defaultCurrency,
         ratingAvg: productSearchDocuments.ratingAvg,
         ratingCount: productSearchDocuments.ratingCount,

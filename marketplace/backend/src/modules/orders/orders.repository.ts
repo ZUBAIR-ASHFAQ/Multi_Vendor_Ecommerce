@@ -31,7 +31,7 @@ import {
   type SellerOrderRow,
 } from "../../database/schema/orders.js";
 import { stores } from "../../database/schema/sellers.js";
-import { shipments } from "../../database/schema/shipping.js";
+import { shipmentItems, shipments } from "../../database/schema/shipping.js";
 import type { DatabaseExecutor } from "../../database/types.js";
 import type {
   AdminOrderListQuery,
@@ -150,6 +150,20 @@ export interface SellerOrderWithParentRow {
   order: OrderRow;
 }
 
+/** Seller-specific quantities and Shipment state used to derive one operational fulfillment stage. */
+export interface SellerOrderFulfillmentMetrics {
+  commercialQuantity: number;
+  allocatedQuantity: number;
+  deliveredQuantity: number;
+  hasCreatedShipment: boolean;
+  hasShippedShipment: boolean;
+}
+
+/** Seller Order list row plus server-derived fulfillment metrics used by queue filtering/display. */
+export interface SellerOrderListRow extends SellerOrderWithParentRow {
+  fulfillment: SellerOrderFulfillmentMetrics;
+}
+
 /** Paginated parent Customer Order rows returned by customer/admin list reads. */
 export interface PaginatedOrderRows {
   items: OrderRow[];
@@ -183,7 +197,7 @@ export interface CustomerOrderListShipmentRow {
 
 /** Paginated Seller Order rows returned only inside one server-derived seller/store scope. */
 export interface PaginatedSellerOrderRows {
-  items: SellerOrderWithParentRow[];
+  items: SellerOrderListRow[];
   totalItems: number;
 }
 
@@ -229,6 +243,89 @@ function customerOrderSort(query: Pick<CustomerOrderListQuery, "sort" | "order">
     case "createdAt":
     default:
       return [direction(orders.createdAt), asc(orders.id)];
+  }
+}
+
+/** Commercial quantity still owned by one Seller Order after any pre-fulfillment cancellation. */
+function sellerOrderCommercialQuantityExpression(): SQL<number> {
+  return sql<number>`coalesce((
+    select sum(${orderItems.qty} - ${orderItems.cancelledQty})
+    from ${orderItems}
+    where ${orderItems.sellerOrderId} = ${sellerOrders.id}
+  ), 0)::int`;
+}
+
+/** Quantity already allocated to immutable Shipments, regardless of current Shipment lifecycle state. */
+function sellerOrderAllocatedQuantityExpression(): SQL<number> {
+  return sql<number>`coalesce((
+    select sum(${shipmentItems.quantity})
+    from ${shipmentItems}
+    inner join ${shipments} on ${shipments.id} = ${shipmentItems.shipmentId}
+    where ${shipments.sellerOrderId} = ${sellerOrders.id}
+  ), 0)::int`;
+}
+
+/** Quantity whose Shipment has reached the authoritative delivered state. */
+function sellerOrderDeliveredQuantityExpression(): SQL<number> {
+  return sql<number>`coalesce((
+    select sum(${shipmentItems.quantity})
+    from ${shipmentItems}
+    inner join ${shipments} on ${shipments.id} = ${shipmentItems.shipmentId}
+    where ${shipments.sellerOrderId} = ${sellerOrders.id}
+      and ${shipments.status} = 'delivered'
+  ), 0)::int`;
+}
+
+/** Returns whether one Seller Order currently has at least one Shipment in the requested lifecycle state. */
+function sellerOrderHasShipmentStatusExpression(status: "created" | "shipped"): SQL<boolean> {
+  return sql<boolean>`exists (
+    select 1
+    from ${shipments}
+    where ${shipments.sellerOrderId} = ${sellerOrders.id}
+      and ${shipments.status} = ${status}
+  )`;
+}
+
+/** Returns the seller-specific fulfillment fields selected for queue display and detail parity. */
+function sellerOrderFulfillmentMetricsSelection() {
+  return {
+    commercialQuantity: sellerOrderCommercialQuantityExpression(),
+    allocatedQuantity: sellerOrderAllocatedQuantityExpression(),
+    deliveredQuantity: sellerOrderDeliveredQuantityExpression(),
+    hasCreatedShipment: sellerOrderHasShipmentStatusExpression("created"),
+    hasShippedShipment: sellerOrderHasShipmentStatusExpression("shipped"),
+  };
+}
+
+/** Maps one seller operational queue to a server-authoritative SQL predicate before pagination. */
+function sellerOrderQueueCondition(query: SellerOrderListQuery): SQL | undefined {
+  if (!query.queue) return undefined;
+
+  const commercialQuantity = sellerOrderCommercialQuantityExpression();
+  const allocatedQuantity = sellerOrderAllocatedQuantityExpression();
+  const deliveredQuantity = sellerOrderDeliveredQuantityExpression();
+  const hasCreatedShipment = sellerOrderHasShipmentStatusExpression("created");
+  const hasShippedShipment = sellerOrderHasShipmentStatusExpression("shipped");
+
+  switch (query.queue) {
+    case "needs_action":
+      return sql`(
+        ${sellerOrders.status} = 'pending_acceptance'
+        or (
+          ${sellerOrders.status} = 'processing'
+          and (${allocatedQuantity} < ${commercialQuantity} or ${hasCreatedShipment})
+        )
+      )`;
+    case "unfulfilled":
+      return sql`${sellerOrders.status} = 'processing' and ${allocatedQuantity} < ${commercialQuantity}`;
+    case "ready_to_ship":
+      return sql`${sellerOrders.status} = 'processing' and ${hasCreatedShipment}`;
+    case "shipped":
+      return sql`${sellerOrders.status} = 'processing' and ${hasShippedShipment}`;
+    case "delivered":
+      return sql`${sellerOrders.status} = 'processing' and ${commercialQuantity} > 0 and ${deliveredQuantity} >= ${commercialQuantity}`;
+    case "cancelled":
+      return eq(sellerOrders.status, "cancelled");
   }
 }
 
@@ -589,10 +686,15 @@ export class OrdersRepository {
       sellerOrderScopeCondition(scope),
       query.storeId ? eq(sellerOrders.storeId, query.storeId) : undefined,
       query.status ? eq(sellerOrders.status, query.status) : undefined,
+      sellerOrderQueueCondition(query),
     ]);
 
     const rows = await this.executor
-      .select({ sellerOrder: sellerOrders, order: orders })
+      .select({
+        sellerOrder: sellerOrders,
+        order: orders,
+        ...sellerOrderFulfillmentMetricsSelection(),
+      })
       .from(sellerOrders)
       .innerJoin(orders, eq(orders.id, sellerOrders.orderId))
       .where(where)
@@ -606,8 +708,38 @@ export class OrdersRepository {
       .where(where);
 
     return {
-      items: rows,
+      items: rows.map((row) => ({
+        sellerOrder: row.sellerOrder,
+        order: row.order,
+        fulfillment: {
+          commercialQuantity: Number(row.commercialQuantity),
+          allocatedQuantity: Number(row.allocatedQuantity),
+          deliveredQuantity: Number(row.deliveredQuantity),
+          hasCreatedShipment: Boolean(row.hasCreatedShipment),
+          hasShippedShipment: Boolean(row.hasShippedShipment),
+        },
+      })),
       totalItems: Number(totalRow?.totalItems ?? 0),
+    };
+  }
+
+  /** Reads seller-specific Shipment allocation metrics only inside the same server-derived seller/store scope. */
+  async getSellerOrderFulfillmentMetricsInScope(
+    sellerOrderId: string,
+    scope: OrderSellerScope,
+  ): Promise<SellerOrderFulfillmentMetrics> {
+    const [row] = await this.executor
+      .select(sellerOrderFulfillmentMetricsSelection())
+      .from(sellerOrders)
+      .where(and(eq(sellerOrders.id, sellerOrderId), sellerOrderScopeCondition(scope)))
+      .limit(1);
+
+    return {
+      commercialQuantity: Number(row?.commercialQuantity ?? 0),
+      allocatedQuantity: Number(row?.allocatedQuantity ?? 0),
+      deliveredQuantity: Number(row?.deliveredQuantity ?? 0),
+      hasCreatedShipment: Boolean(row?.hasCreatedShipment),
+      hasShippedShipment: Boolean(row?.hasShippedShipment),
     };
   }
 

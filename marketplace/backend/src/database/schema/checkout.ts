@@ -32,6 +32,7 @@ export const checkoutQuotes = pgTable(
     shippingAddressId: uuid("shipping_address_id"),
     billingAddressId: uuid("billing_address_id"),
     couponCode: varchar("coupon_code", { length: 120 }),
+    source: varchar("source", { length: 20 }).notNull().default("cart"),
     currency: varchar("currency", { length: 3 }).notNull(),
     subtotal: numeric("subtotal", { precision: 18, scale: 4 }).notNull(),
     discountTotal: numeric("discount_total", { precision: 18, scale: 4 }).notNull(),
@@ -64,6 +65,10 @@ export const checkoutQuotes = pgTable(
     check(
       "checkout_quotes_coupon_code_normalized_check",
       sql`${table.couponCode} is null or (${table.couponCode} = upper(btrim(${table.couponCode})) and length(${table.couponCode}) > 0)`,
+    ),
+    check(
+      "checkout_quotes_source_check",
+      sql`${table.source} in ('cart', 'buy_now')`,
     ),
     check(
       "checkout_quotes_currency_check",

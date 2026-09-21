@@ -22,6 +22,7 @@ export interface CreateCheckoutQuoteRecordInput {
   shippingAddressId: string;
   billingAddressId: string;
   couponCode: string | null;
+  source?: "cart" | "buy_now";
   currency: string;
   subtotal: string;
   discountTotal: string;

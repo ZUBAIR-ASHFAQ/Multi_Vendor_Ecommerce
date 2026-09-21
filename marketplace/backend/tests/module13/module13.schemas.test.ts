@@ -74,7 +74,15 @@ describe("Module 13 Shipping Configuration Core contracts", () => {
 
   it("keeps the shipping-options query strict and customer input minimal", () => {
     const addressId = randomUUID();
+    const variantId = randomUUID();
     expect(shippingOptionsQuerySchema.parse({ addressId })).toEqual({ addressId });
+    expect(shippingOptionsQuerySchema.parse({ addressId, variantId, quantity: "2" })).toEqual({
+      addressId,
+      variantId,
+      quantity: 2,
+    });
+    expect(() => shippingOptionsQuerySchema.parse({ addressId, variantId })).toThrow();
+    expect(() => shippingOptionsQuerySchema.parse({ addressId, quantity: "2" })).toThrow();
     expect(() => shippingOptionsQuerySchema.parse({ addressId, sellerId: randomUUID() })).toThrow();
     expect(() => shippingOptionsQuerySchema.parse({})).toThrow();
   });

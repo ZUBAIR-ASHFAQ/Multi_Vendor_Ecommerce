@@ -20,6 +20,8 @@ export function SearchProductCard({
     name: product.name,
     minPrice: product.minPrice,
     maxPrice: product.maxPrice,
+    minCompareAtPrice: product.minCompareAtPrice,
+    maxCompareAtPrice: product.maxCompareAtPrice,
     currency: product.currency,
     eyebrow: product.brand ?? product.categoryPath,
     secondaryLabel: product.brand ? product.categoryPath : null,

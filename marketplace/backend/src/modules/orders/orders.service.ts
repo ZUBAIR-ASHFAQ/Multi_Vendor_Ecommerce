@@ -51,6 +51,8 @@ import {
   type OrderPaymentBoundaryRow,
   type OrderReviewEligibilityRow,
   type OrderSellerScope,
+  type SellerOrderFulfillmentMetrics,
+  type SellerOrderListRow,
   type SellerOrderWithParentRow,
 } from "./orders.repository.js";
 import {
@@ -874,7 +876,7 @@ export class OrdersService {
     this.assertStoreInSellerScope(query.storeId, scope);
     const result = await this.repository.listSellerOrdersInScope(scope, query);
     return {
-      items: result.items.map((row) => this.toSellerOrderListItem(row)),
+      items: result.items.map((row) => this.toSellerOrderListItem(row, row.fulfillment)),
       meta: paginationMeta(query, result.totalItems),
     };
   }
@@ -2180,14 +2182,15 @@ export class OrdersService {
     row: SellerOrderWithParentRow,
     scope: OrderSellerScope,
   ): Promise<SellerOrderDetail> {
-    const [items, addresses, history] = await Promise.all([
+    const [items, addresses, history, fulfillment] = await Promise.all([
       repository.listOrderItemsBySellerOrderInScope(row.sellerOrder.id, scope),
       repository.listOrderAddressesByOrderId(row.order.id),
       repository.listSellerOrderStatusHistoryInScope(row.sellerOrder.id, scope),
+      repository.getSellerOrderFulfillmentMetricsInScope(row.sellerOrder.id, scope),
     ]);
     const shippingAddress = this.requireAddress(addresses, "shipping");
     return {
-      ...this.toSellerOrderListItem(row),
+      ...this.toSellerOrderListItem(row, fulfillment),
       shippingMethod: this.toShippingMethodResponse(row.sellerOrder, row.order.currency),
       items: items.map((item) => this.toOrderItemResponse(item)),
       shippingAddress: this.toOrderAddressResponse(shippingAddress),
@@ -2268,8 +2271,33 @@ export class OrdersService {
     }));
   }
 
+  /** Derives one seller-specific fulfillment stage from persisted Order and Shipment facts. */
+  private sellerOrderFulfillmentStage(
+    row: SellerOrderWithParentRow,
+    fulfillment: SellerOrderFulfillmentMetrics,
+  ): SellerOrderListItem["fulfillmentStage"] {
+    if (row.sellerOrder.status === SELLER_ORDER_STATUS.CANCELLED) return "cancelled";
+    if (row.sellerOrder.status === SELLER_ORDER_STATUS.PENDING_PAYMENT) return "awaiting_payment";
+    if (row.sellerOrder.status === SELLER_ORDER_STATUS.PENDING_ACCEPTANCE) return "needs_acceptance";
+
+    if (fulfillment.allocatedQuantity < fulfillment.commercialQuantity) return "unfulfilled";
+    if (fulfillment.hasCreatedShipment) return "ready_to_ship";
+    if (
+      fulfillment.commercialQuantity > 0 &&
+      fulfillment.deliveredQuantity >= fulfillment.commercialQuantity
+    ) {
+      return "delivered";
+    }
+    if (fulfillment.hasShippedShipment) return "shipped";
+
+    return "unfulfilled";
+  }
+
   /** Converts one scoped Seller Order + parent row into the seller queue response. */
-  private toSellerOrderListItem(row: SellerOrderWithParentRow): SellerOrderListItem {
+  private toSellerOrderListItem(
+    row: SellerOrderWithParentRow | SellerOrderListRow,
+    fulfillment: SellerOrderFulfillmentMetrics,
+  ): SellerOrderListItem {
     return {
       id: row.sellerOrder.id,
       sellerOrderNo: row.sellerOrder.sellerOrderNo,
@@ -2286,6 +2314,7 @@ export class OrdersService {
       status: row.sellerOrder.status as SellerOrderListItem["status"],
       paymentStatus: row.order.paymentStatus as SellerOrderListItem["paymentStatus"],
       fulfillmentStatus: row.order.fulfillmentStatus as SellerOrderListItem["fulfillmentStatus"],
+      fulfillmentStage: this.sellerOrderFulfillmentStage(row, fulfillment),
       createdAt: row.sellerOrder.createdAt.toISOString(),
     };
   }

@@ -9,12 +9,13 @@ import {
   payoutsReportQuerySchema,
   refundsReportQuerySchema,
   reportRunIdParamsSchema,
+  reportRunListQuerySchema,
   salesReportQuerySchema,
   sellersReportQuerySchema,
 } from "./reports.schema.js";
 import { ReportsService } from "./reports.service.js";
 
-/** Thin HTTP adapter for the exact nine Module 20 Reports & Analytics operations. */
+/** Thin HTTP adapter for the bounded Reports & Analytics operations. */
 export class ReportsController {
   /** Stores the composed Reports service so handlers contain validation and transport mapping only. */
   constructor(private readonly reportsService: ReportsService) {}
@@ -159,6 +160,29 @@ export class ReportsController {
     try {
       const query = payoutsReportQuerySchema.parse(request.query);
       const result = await this.reportsService.getPayoutsReport(
+        getRequestContext(response),
+        query,
+      );
+      response.status(200).json(
+        successResponse(result.data, {
+          meta: result.meta,
+          requestId: getRequestId(response),
+        }),
+      );
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /** Returns one bounded page of durable requester-owned export history. */
+  listReportRuns = async (
+    request: Request,
+    response: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const query = reportRunListQuerySchema.parse(request.query);
+      const result = await this.reportsService.listReportRuns(
         getRequestContext(response),
         query,
       );

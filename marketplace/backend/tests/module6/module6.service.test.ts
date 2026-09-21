@@ -58,6 +58,7 @@ function repositoryStub(
 ): ProductsRepository {
   return {
     listPublicProducts: vi.fn().mockResolvedValue({ items: [], totalItems: 0 }),
+    listActiveVariantIdsByProductIds: vi.fn().mockResolvedValue([]),
     findPublicProductStorefrontBySlug: vi.fn().mockResolvedValue(null),
     listSellerProducts: vi.fn().mockResolvedValue({ items: [], totalItems: 0 }),
     findProductByIdInSellerScope: vi.fn().mockResolvedValue(null),
@@ -73,19 +74,35 @@ describe("Module 6 service authorization and boundary guards", () => {
   it("returns public-safe Product fields without seller/private lifecycle data", async () => {
     const row = productRow();
     const thumbnailFileId = randomUUID();
+    const variantId = randomUUID();
     const repository = repositoryStub({
       listPublicProducts: vi.fn().mockResolvedValue({
         items: [{
           product: row,
           minPrice: "19.99",
           maxPrice: "29.99",
+          minCompareAtPrice: "24.99",
+          maxCompareAtPrice: "39.99",
           currency: "USD",
           thumbnailFileId,
         }],
         totalItems: 1,
       }),
+      listActiveVariantIdsByProductIds: vi.fn().mockResolvedValue([
+        { productId: row.id, variantId },
+      ]),
     });
-    const service = new ProductsService({ repository });
+    const service = new ProductsService({
+      repository,
+      inventory: {
+        getPublicVariantAvailability: vi.fn().mockResolvedValue(new Map([[variantId, true]])),
+      },
+      ratings: {
+        getPublishedRatingAggregates: vi.fn().mockResolvedValue(
+          new Map([[row.id, { average: 4.5, count: 12 }]]),
+        ),
+      },
+    });
 
     const result = await service.listPublicProducts({
       page: 1,
@@ -100,7 +117,12 @@ describe("Module 6 service authorization and boundary guards", () => {
     expect(result.items[0]).toMatchObject({
       minPrice: "19.99",
       maxPrice: "29.99",
+      minCompareAtPrice: "24.99",
+      maxCompareAtPrice: "39.99",
       currency: "USD",
+      ratingAvg: 4.5,
+      ratingCount: 12,
+      inStock: true,
       thumbnailFileId,
     });
     expect(result.meta).toMatchObject({ page: 1, pageSize: 20, totalItems: 1, totalPages: 1 });
@@ -112,6 +134,7 @@ describe("Module 6 service authorization and boundary guards", () => {
     const categoryId = randomUUID();
     const brandId = randomUUID();
     const row = productRow({ storeId, sellerId, categoryId, brandId });
+    const variantId = randomUUID();
     const repository = repositoryStub({
       findPublicProductStorefrontBySlug: vi.fn().mockResolvedValue({
         product: row,
@@ -128,8 +151,26 @@ describe("Module 6 service authorization and boundary guards", () => {
         brandSlug: "acme",
         brandName: "Acme",
       }),
+      listVariantsByProductId: vi.fn().mockResolvedValue([{
+        id: variantId,
+        productId: row.id,
+        sku: "PUBLIC-1",
+        title: "Default",
+        price: "19.99",
+        compareAtPrice: null,
+        currency: "USD",
+        status: PRODUCT_STATUS.ACTIVE,
+        weight: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }]),
     });
-    const service = new ProductsService({ repository });
+    const service = new ProductsService({
+      repository,
+      inventory: {
+        getPublicVariantAvailability: vi.fn().mockResolvedValue(new Map([[variantId, false]])),
+      },
+    });
 
     const result = await service.getPublicProduct(row.slug);
 
@@ -138,6 +179,7 @@ describe("Module 6 service authorization and boundary guards", () => {
       store: { id: storeId, slug: "seller-store", name: "Seller Store", seller: { id: sellerId, displayName: "Seller Display" } },
       category: { id: categoryId, slug: "electronics", name: "Electronics" },
       brand: { id: brandId, slug: "acme", name: "Acme" },
+      variants: [expect.objectContaining({ id: variantId, inStock: false })],
     });
     expect(result).not.toHaveProperty("sellerId");
     expect(result).not.toHaveProperty("publicationStatus");

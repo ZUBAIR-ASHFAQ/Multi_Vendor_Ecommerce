@@ -16,7 +16,7 @@ export class CheckoutController {
   /** Stores the already-composed Checkout service used by this HTTP adapter. */
   constructor(private readonly checkoutService: CheckoutService) {}
 
-  /** Creates one authoritative short-lived quote from the authenticated customer's current Cart. */
+  /** Creates one authoritative short-lived quote from the authenticated customer's Cart or one Buy Now item. */
   createQuote = async (
     request: Request,
     response: Response,

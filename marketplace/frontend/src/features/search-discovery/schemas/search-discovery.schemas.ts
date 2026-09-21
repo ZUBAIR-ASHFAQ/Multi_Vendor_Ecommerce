@@ -110,6 +110,8 @@ export const searchProductCardSchema = z.object({
   brand: z.string().trim().min(1).max(200).nullable(),
   minPrice: priceSchema,
   maxPrice: priceSchema,
+  minCompareAtPrice: priceSchema.nullable(),
+  maxCompareAtPrice: priceSchema.nullable(),
   currency: z.string().regex(/^[A-Z]{3}$/),
   ratingAvg: z.number().min(0).max(5),
   ratingCount: z.number().int().nonnegative(),

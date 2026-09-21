@@ -15,13 +15,21 @@ import { useSellerOrdersQuery } from "../hooks/use-orders";
 import { ORDERS_PERMISSION } from "../orders.constants";
 import type { SellerOrdersParams } from "../types/orders.types";
 
-const SELLER_ORDER_FILTERS: Array<{ label: string; value?: SellerOrdersParams["status"] }> = [
+const SELLER_ORDER_QUEUE_FILTERS: Array<{ label: string; value?: SellerOrdersParams["queue"] }> = [
   { label: "All" },
-  { label: "Needs acceptance", value: "pending_acceptance" },
-  { label: "Processing", value: "processing" },
-  { label: "Awaiting payment", value: "pending_payment" },
+  { label: "Needs action", value: "needs_action" },
+  { label: "Unfulfilled", value: "unfulfilled" },
+  { label: "Ready to ship", value: "ready_to_ship" },
+  { label: "Shipped", value: "shipped" },
+  { label: "Delivered", value: "delivered" },
   { label: "Cancelled", value: "cancelled" },
 ];
+
+
+/** Returns whether one server-derived stage should open the Shipment fulfillment workspace directly. */
+function hasShippingWork(stage: string): boolean {
+  return stage === "unfulfilled" || stage === "ready_to_ship" || stage === "shipped";
+}
 
 /** Formats one server timestamp for compact operational display. */
 function formatDateTime(value: string): string {
@@ -59,11 +67,11 @@ function SellerOrdersContent() {
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Fulfillment</p>
             <h1 className="mt-1 text-2xl font-bold">Seller Order queue</h1>
             <p className="mt-1 max-w-3xl text-sm text-slate-600">
-              Prioritize paid orders that need acceptance, then hand processing orders into Shipping.
+              Prioritize acceptance, allocation, dispatch and delivery work from one server-derived queue.
             </p>
           </div>
           <label className="text-sm font-medium">
-            Status
+            Lifecycle
             <select
               aria-label="Seller Order status filter"
               className="ml-2 rounded-md border px-3 py-2"
@@ -86,16 +94,16 @@ function SellerOrdersContent() {
           </label>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2" aria-label="Seller Order queue filters">
-          {SELLER_ORDER_FILTERS.map((filter) => {
-            const active = (params.status ?? undefined) === filter.value;
+        <div className="mt-4 flex flex-wrap gap-2" aria-label="Seller Order operational queue filters">
+          {SELLER_ORDER_QUEUE_FILTERS.map((filter) => {
+            const active = (params.queue ?? undefined) === filter.value;
             return (
               <Button
                 key={filter.label}
                 type="button"
                 size="sm"
                 variant={active ? "default" : "outline"}
-                onClick={() => setParams((current) => ({ ...current, page: 1, status: filter.value }))}
+                onClick={() => setParams((current) => ({ ...current, page: 1, queue: filter.value }))}
               >
                 {filter.label}
               </Button>
@@ -111,7 +119,7 @@ function SellerOrdersContent() {
               <tr>
                 <th className="px-4 py-3">Seller Order</th>
                 <th className="px-4 py-3">Placed</th>
-                <th className="px-4 py-3">Order status</th>
+                <th className="px-4 py-3">Lifecycle</th>
                 <th className="px-4 py-3">Payment</th>
                 <th className="px-4 py-3">Fulfillment</th>
                 <th className="px-4 py-3 text-right">Total</th>
@@ -128,16 +136,26 @@ function SellerOrdersContent() {
                   <td className="px-4 py-4 text-slate-600">{formatDateTime(order.createdAt)}</td>
                   <td className="px-4 py-4"><OrderStatus value={order.status} /></td>
                   <td className="px-4 py-4"><OrderStatus value={order.paymentStatus} /></td>
-                  <td className="px-4 py-4"><OrderStatus value={order.fulfillmentStatus} /></td>
+                  <td className="px-4 py-4"><OrderStatus value={order.fulfillmentStage} /></td>
                   <td className="px-4 py-4 text-right font-semibold">{formatMoney(order.grandTotal, order.currency)}</td>
                   <td className="px-4 py-4 text-right">
-                    <Link
-                      className="font-medium text-slate-900 underline underline-offset-4"
-                      to="/seller/orders/$sellerOrderId"
-                      params={{ sellerOrderId: order.id }}
-                    >
-                      Open
-                    </Link>
+                    {hasShippingWork(order.fulfillmentStage) ? (
+                      <Link
+                        className="font-medium text-slate-900 underline underline-offset-4"
+                        to="/seller/orders/$sellerOrderId/shipping"
+                        params={{ sellerOrderId: order.id }}
+                      >
+                        Fulfill
+                      </Link>
+                    ) : (
+                      <Link
+                        className="font-medium text-slate-900 underline underline-offset-4"
+                        to="/seller/orders/$sellerOrderId"
+                        params={{ sellerOrderId: order.id }}
+                      >
+                        Open
+                      </Link>
+                    )}
                   </td>
                 </tr>
               ))}

@@ -10,7 +10,6 @@ import {
   type ReportCode,
 } from "../reports.constants";
 import { useCreateReportRunMutation } from "../hooks/use-reports";
-import { rememberRecentReportRun } from "../reports.history";
 
 /** Queues a server-authoritative report export and opens its status page. */
 export function ReportExportControls({
@@ -23,7 +22,7 @@ export function ReportExportControls({
   filters: Record<string, unknown>;
 }) {
   const navigate = useNavigate();
-  const createRun = useCreateReportRunMutation();
+  const createRun = useCreateReportRunMutation(user.id);
 
   if (!user.permissions.includes(REPORTS_PERMISSION.EXPORT)) return null;
 
@@ -43,15 +42,9 @@ export function ReportExportControls({
               onClick={() => {
                 void createRun
                   .mutateAsync({ reportCode, filters, outputFormat })
-                  .then((run) => {
-                    rememberRecentReportRun(user.id, {
-                      id: run.id,
-                      reportCode: run.reportCode,
-                      outputFormat: run.outputFormat,
-                      createdAt: run.createdAt,
-                    });
-                    return navigate({ to: "/reports/runs/$runId", params: { runId: run.id } });
-                  });
+                  .then((run) =>
+                    navigate({ to: "/reports/runs/$runId", params: { runId: run.id } }),
+                  );
               }}
             >
               Export {outputFormat.toUpperCase()}

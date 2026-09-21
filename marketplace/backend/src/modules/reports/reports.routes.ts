@@ -16,6 +16,7 @@ import {
   refundsReportQuerySchema,
   refundsReportResponseSchema,
   reportRunIdParamsSchema,
+  reportRunListQuerySchema,
   reportRunResponseSchema,
   reportsCatalogResponseSchema,
   salesReportQuerySchema,
@@ -60,6 +61,11 @@ export function createReportsRouter(controller: ReportsController): Router {
     "/payouts",
     requirePermission(REPORTS_PERMISSION.FINANCE_READ),
     controller.getPayoutsReport,
+  );
+  router.get(
+    "/runs",
+    requirePermission(REPORTS_PERMISSION.EXPORT),
+    controller.listReportRuns,
   );
   router.post(
     "/runs",
@@ -238,7 +244,7 @@ const runFailures = {
   },
 } as const;
 
-/** Route-owned OpenAPI definitions for exactly the nine documented Module 20 operations. */
+/** Route-owned OpenAPI definitions for the documented Module 20 operations. */
 export const reportsOpenApiPaths = {
   "/api/v1/reports/catalog": {
     get: {
@@ -373,6 +379,23 @@ export const reportsOpenApiPaths = {
     },
   },
   "/api/v1/reports/runs": {
+    get: {
+      tags: ["Reports & Analytics"],
+      summary: "List requester-owned report exports",
+      security: [{ bearerAuth: [] }],
+      parameters: queryParameters(reportRunListQuerySchema),
+      responses: {
+        "200": {
+          description: "Paged durable export history owned by the authenticated requester.",
+          content: {
+            "application/json": {
+              schema: paginatedSuccess(openApiSchema(reportRunResponseSchema.array())),
+            },
+          },
+        },
+        ...readFailures,
+      },
+    },
     post: {
       tags: ["Reports & Analytics"],
       summary: "Create asynchronous report export",

@@ -366,6 +366,7 @@ describe("Module 6 repository/service/API integration", () => {
       sku: "PUBLISH-SKU",
       title: "Published Variant",
       price: "200.00",
+      compareAtPrice: "250.00",
       currency: "PKR",
     });
     const thumbnailFileId = await createConfirmedProductMediaFile(seller.owner.id, "image/png");
@@ -387,6 +388,8 @@ describe("Module 6 repository/service/API integration", () => {
       id: product.id,
       minPrice: "200.00",
       maxPrice: "200.00",
+      minCompareAtPrice: "250.00",
+      maxCompareAtPrice: "250.00",
       currency: "PKR",
       thumbnailFileId,
     });

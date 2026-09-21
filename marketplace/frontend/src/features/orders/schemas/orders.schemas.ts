@@ -140,6 +140,15 @@ export const sellerOrderListItemSchema = z.object({
   status: z.enum(SELLER_ORDER_STATUS),
   paymentStatus: z.enum(["pending", "captured"]),
   fulfillmentStatus: z.enum(["unfulfilled", "partially_fulfilled", "fulfilled"]),
+  fulfillmentStage: z.enum([
+    "awaiting_payment",
+    "needs_acceptance",
+    "unfulfilled",
+    "ready_to_ship",
+    "shipped",
+    "delivered",
+    "cancelled",
+  ]),
   createdAt: isoDateTime,
 });
 

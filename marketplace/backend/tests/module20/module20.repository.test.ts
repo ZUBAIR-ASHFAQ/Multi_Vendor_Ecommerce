@@ -131,6 +131,13 @@ describe("Module 20 Reports repository boundaries", () => {
     });
     expect(created.status).toBe("queued");
 
+    const history = await repository.listReportRunsByRequester(fixture.order.customer.id, {
+      page: 1,
+      pageSize: 6,
+    });
+    expect(history.totalItems).toBe(1);
+    expect(history.items[0]?.id).toBe(created.id);
+
     const startedAt = new Date(created.createdAt.getTime() + 1_000);
     const processing = await repository.markReportRunProcessing(created.id, startedAt);
     expect(processing?.status).toBe("processing");

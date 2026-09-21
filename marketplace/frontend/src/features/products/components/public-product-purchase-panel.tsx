@@ -56,7 +56,10 @@ export function PublicProductPurchasePanel({
                     onClick={() => onVariantChange(variant.id)}
                   >
                     <span>{variant.title}</span>
-                    <small>{formatMoney(variant.price, variant.currency)}</small>
+                    <small>
+                      {formatMoney(variant.price, variant.currency)}
+                      {variant.inStock ? "" : " · Out of stock"}
+                    </small>
                   </button>
                 ))}
               </div>
@@ -67,9 +70,15 @@ export function PublicProductPurchasePanel({
             <span>Selected</span>
             <strong>{selected.title}</strong>
             <small>SKU {selected.sku}</small>
+            <small role="status">{selected.inStock ? "In stock" : "Out of stock"}</small>
           </div>
 
-          <ProductCartWishlistActions productId={product.id} variantId={selected.id} />
+          <ProductCartWishlistActions
+            productId={product.id}
+            productSlug={product.slug}
+            variantId={selected.id}
+            cartDisabled={!selected.inStock}
+          />
         </>
       ) : (
         <div className="product-detail-unavailable">

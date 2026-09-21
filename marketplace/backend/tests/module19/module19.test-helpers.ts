@@ -62,6 +62,7 @@ export async function createPublishedSearchProduct(input: {
   label: string;
   brandId?: string | null;
   price?: string;
+  compareAtPrice?: string;
 }): Promise<{ product: ProductDetailResponse; variant: ProductVariantResponse }> {
   const suffix = randomUUID();
   const product = await createProductViaHttp(input.ownerToken, {
@@ -76,6 +77,7 @@ export async function createPublishedSearchProduct(input: {
     sku: `M19-${input.label.toUpperCase()}-${suffix}`,
     title: `${input.label} Variant`,
     price: input.price ?? "100.00",
+    ...(input.compareAtPrice ? { compareAtPrice: input.compareAtPrice } : {}),
     currency: "PKR",
   });
   const response = await request(createApp())

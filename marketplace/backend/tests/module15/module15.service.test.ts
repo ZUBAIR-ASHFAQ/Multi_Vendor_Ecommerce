@@ -148,6 +148,7 @@ function repositoryStub(
     appendModerationHistory: vi.fn().mockResolvedValue(randomUUID()),
     recalculateRatingAggregate: vi.fn().mockResolvedValue(null),
     findRatingAggregate: vi.fn().mockResolvedValue(null),
+    listRatingAggregates: vi.fn().mockResolvedValue([]),
     listAdminReviews: vi.fn().mockResolvedValue({ items: [], totalItems: 0 }),
     ...overrides,
   } as unknown as ReviewsRepository;
@@ -183,6 +184,27 @@ function purchaseSnapshot(input: {
 }
 
 describe("Module 15 Reviews service business rules", () => {
+  it("returns bounded published Product rating aggregates with zero defaults", async () => {
+    const ratedProductId = randomUUID();
+    const unratedProductId = randomUUID();
+    const repository = repositoryStub({
+      listRatingAggregates: vi.fn().mockResolvedValue([
+        aggregateRow(REVIEW_RATING_ENTITY.PRODUCT, ratedProductId, "4.25", 8),
+      ]),
+    });
+    const service = new ReviewsService({ repository });
+
+    const result = await service.getPublishedRatingAggregates([
+      ratedProductId,
+      unratedProductId,
+    ]);
+
+    expect(result).toEqual(new Map([
+      [ratedProductId, { average: 4.25, count: 8 }],
+      [unratedProductId, { average: 0, count: 0 }],
+    ]));
+  });
+
   it("creates a server-derived verified Review only after owned purchase and full-delivery checks", async () => {
     const customerUserId = randomUUID();
     const context = customerContext(customerUserId, [REVIEWS_PERMISSION.CREATE_VERIFIED]);

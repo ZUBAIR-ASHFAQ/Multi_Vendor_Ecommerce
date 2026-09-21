@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { paginationQuerySchema } from "../../common/schemas/pagination.schema.js";
+import { CART_WISHLIST_LIMITS } from "../cart-wishlist/cart-wishlist.constants.js";
 import {
   isoDateTimeSchema,
   nonNegativeDecimalStringSchema,
@@ -101,8 +102,19 @@ export const shippingMethodCoreSchema = z
 export const shippingOptionsQuerySchema = z
   .object({
     addressId: uuidSchema,
+    variantId: uuidSchema.optional(),
+    quantity: z.coerce.number().int().min(1).max(CART_WISHLIST_LIMITS.MAX_ITEM_QUANTITY).optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((value, context) => {
+    if ((value.variantId === undefined) !== (value.quantity === undefined)) {
+      context.addIssue({
+        code: "custom",
+        path: [value.variantId === undefined ? "variantId" : "quantity"],
+        message: "Buy Now shipping requires both variantId and quantity.",
+      });
+    }
+  });
 
 /** One customer-safe flat-rate option returned for one server-derived store group. */
 export const checkoutShippingOptionSchema = z

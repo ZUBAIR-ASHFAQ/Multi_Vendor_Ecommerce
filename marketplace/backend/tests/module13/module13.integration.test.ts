@@ -351,6 +351,79 @@ describe("Module 13 Shipping fulfillment PostgreSQL regression", () => {
     expect(finalOrder.paymentStatus).toBe("captured");
   });
 
+  it("projects seller operational queues from authoritative Shipment allocation and lifecycle state", async () => {
+    const fixture = await prepareFulfillmentFixture(2);
+
+    const unfulfilled = await request(createApp())
+      .get("/api/v1/seller/orders")
+      .query({ queue: "unfulfilled" })
+      .set(bearer(fixture.sellerToken))
+      .expect(200);
+    expect(unfulfilled.body.data).toEqual([
+      expect.objectContaining({
+        id: fixture.sellerOrderId,
+        fulfillmentStage: "unfulfilled",
+      }),
+    ]);
+
+    const needsAction = await request(createApp())
+      .get("/api/v1/seller/orders")
+      .query({ queue: "needs_action" })
+      .set(bearer(fixture.sellerToken))
+      .expect(200);
+    expect(needsAction.body.data).toHaveLength(1);
+
+    const shipment = await createShipmentViaHttp(
+      fixture.sellerToken,
+      fixture.sellerOrderId,
+      [{ orderItemId: fixture.orderItemId, quantity: 2 }],
+    );
+
+    const ready = await request(createApp())
+      .get("/api/v1/seller/orders")
+      .query({ queue: "ready_to_ship" })
+      .set(bearer(fixture.sellerToken))
+      .expect(200);
+    expect(ready.body.data).toEqual([
+      expect.objectContaining({
+        id: fixture.sellerOrderId,
+        fulfillmentStage: "ready_to_ship",
+      }),
+    ]);
+
+    await updateShipmentTrackingViaHttp(fixture.sellerToken, shipment.id, {
+      carrier: "Queue Carrier",
+      trackingNo: "QUEUE-TRACK-1",
+    });
+    await markShipmentShippedViaHttp(fixture.sellerToken, shipment.id);
+
+    const shipped = await request(createApp())
+      .get("/api/v1/seller/orders")
+      .query({ queue: "shipped" })
+      .set(bearer(fixture.sellerToken))
+      .expect(200);
+    expect(shipped.body.data).toEqual([
+      expect.objectContaining({
+        id: fixture.sellerOrderId,
+        fulfillmentStage: "shipped",
+      }),
+    ]);
+
+    await markShipmentDeliveredViaHttp(fixture.sellerToken, shipment.id);
+
+    const delivered = await request(createApp())
+      .get("/api/v1/seller/orders")
+      .query({ queue: "delivered" })
+      .set(bearer(fixture.sellerToken))
+      .expect(200);
+    expect(delivered.body.data).toEqual([
+      expect.objectContaining({
+        id: fixture.sellerOrderId,
+        fulfillmentStage: "delivered",
+      }),
+    ]);
+  });
+
   it("rejects pre-capture fulfillment, idempotency payload conflicts, and over-allocation", async () => {
     const unpaid = await prepareOrderFixture({ sellerCount: 1, quantities: [2] });
     const unpaidOrder = await getCustomerOrderViaHttp(unpaid.customerToken, unpaid.orderId);

@@ -131,7 +131,19 @@ describe("Module 6 Zod and OpenAPI contracts", () => {
       },
       category: { id: randomUUID(), slug: "electronics", name: "Electronics" },
       brand: { id: randomUUID(), slug: "acme", name: "Acme" },
-      variants: [],
+      variants: [{
+        id: randomUUID(),
+        productId: randomUUID(),
+        sku: "PUBLIC-1",
+        title: "Default",
+        price: "19.99",
+        compareAtPrice: null,
+        currency: "USD",
+        weight: null,
+        inStock: true,
+        createdAt: "2026-09-20T08:00:00.000Z",
+        updatedAt: "2026-09-20T08:00:00.000Z",
+      }],
       attributes: [],
       media: [],
     });
@@ -156,11 +168,21 @@ describe("Module 6 Zod and OpenAPI contracts", () => {
       updatedAt: "2026-09-20T08:00:00.000Z",
       minPrice: "19.99",
       maxPrice: "29.99",
+      minCompareAtPrice: "24.99",
+      maxCompareAtPrice: "39.99",
       currency: "USD",
+      ratingAvg: 4.5,
+      ratingCount: 12,
+      inStock: true,
       thumbnailFileId: randomUUID(),
     });
 
     expect(value.minPrice).toBe("19.99");
+    expect(value.minCompareAtPrice).toBe("24.99");
+    expect(value.maxCompareAtPrice).toBe("39.99");
+    expect(value.ratingAvg).toBe(4.5);
+    expect(value.ratingCount).toBe(12);
+    expect(value.inStock).toBe(true);
     expect(value.thumbnailFileId).toBeTruthy();
     expect(() => publicProductListItemResponseSchema.parse({ ...value, sellerId: randomUUID() })).toThrow();
   });

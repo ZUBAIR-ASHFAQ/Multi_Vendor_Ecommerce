@@ -153,10 +153,10 @@ function verifyMigrationChain() {
     .filter((name) => /^\d{4}_.+\.sql$/u.test(name))
     .sort();
 
-  if (migrations.length !== 37) {
-    throw new Error(`Expected 37 backend migrations, found ${migrations.length}.`);
+  if (migrations.length !== 38) {
+    throw new Error(`Expected 38 backend migrations, found ${migrations.length}.`);
   }
-  if (migrations.at(-1) !== "0036_product_moderation_workflow.sql") {
+  if (migrations.at(-1) !== "0037_checkout_buy_now_source.sql") {
     throw new Error(`Unexpected migration head: ${migrations.at(-1) ?? "none"}.`);
   }
 

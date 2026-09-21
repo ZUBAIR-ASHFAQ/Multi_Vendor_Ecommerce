@@ -3,6 +3,7 @@ import type {
   InventoryReportParams,
   PayoutsReportParams,
   RefundsReportParams,
+  ReportRunListParams,
   SalesReportParams,
   SellersReportParams,
 } from "../types/reports.types";
@@ -29,6 +30,13 @@ export const reportsQueryKeys = {
   /** Returns the stable cache key for one Payout report page. */
   payouts: (params: PayoutsReportParams) => ["reports", "payouts", params] as const,
 
+  /** Prefix for all durable export-history pages owned by one signed-in user. */
+  runsAll: (userId: string) => ["reports", "runs", "history", userId] as const,
+
+  /** Returns the stable cache key for one durable requester-owned export-history page. */
+  runs: (userId: string, params: ReportRunListParams) =>
+    [...reportsQueryKeys.runsAll(userId), params] as const,
+
   /** Returns the stable cache key for one requester-owned export run. */
-  run: (runId: string) => ["reports", "runs", runId] as const,
+  run: (runId: string) => ["reports", "runs", "detail", runId] as const,
 };

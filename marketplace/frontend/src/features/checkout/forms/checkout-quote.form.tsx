@@ -15,7 +15,7 @@ import {
   checkoutQuoteFormSchema,
   type CheckoutQuoteFormValues,
 } from "../schemas/checkout.schemas";
-import type { CreateCheckoutQuoteInput } from "../types/checkout.types";
+import type { CheckoutBuyNowItemInput, CreateCheckoutQuoteInput } from "../types/checkout.types";
 
 /** Returns a compact readable label for one saved customer address. */
 function addressLabel(address: CustomerAddress): string {
@@ -51,12 +51,14 @@ export function CheckoutQuoteForm({
   isPending,
   error,
   onSubmit,
+  buyNowItem,
 }: {
   addresses: CustomerAddress[];
   storeNamesById: ReadonlyMap<string, string>;
   isPending: boolean;
   error: unknown;
   onSubmit: (input: CreateCheckoutQuoteInput) => Promise<void>;
+  buyNowItem?: CheckoutBuyNowItemInput;
 }) {
   const initialShippingAddressId = defaultAddressId(addresses, "shipping");
   const initialBillingAddressId = defaultAddressId(addresses, "billing");
@@ -65,6 +67,7 @@ export function CheckoutQuoteForm({
   const shippingOptions = useCheckoutShippingOptionsQuery(
     shippingAddressId,
     shippingAddressId.length > 0,
+    buyNowItem,
   );
 
   const form = useForm({
@@ -89,6 +92,7 @@ export function CheckoutQuoteForm({
         ...(value.billingAddressId ? { billingAddressId: value.billingAddressId } : {}),
         ...(normalizedCoupon ? { couponCode: normalizedCoupon } : {}),
         shippingSelections: value.shippingSelections,
+        ...(buyNowItem ? { buyNowItem } : {}),
       };
 
       try {

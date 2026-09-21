@@ -106,7 +106,7 @@ export const REPORTS_ERROR_CODE = {
   EXPORT_FAILED: "REPORT_EXPORT_FAILED",
 } as const;
 
-/** Exact nine-operation Module 20 HTTP path surface required by the controlling guide. */
+/** Stable Module 20 HTTP paths. GET and POST intentionally share the durable /runs collection path. */
 export const REPORTS_PATH = {
   CATALOG: "/api/v1/reports/catalog",
   SALES: "/api/v1/reports/sales",

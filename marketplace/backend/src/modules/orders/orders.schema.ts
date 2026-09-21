@@ -13,7 +13,9 @@ import {
   ORDER_SORT_DIRECTION_VALUES,
   ORDER_STATUS_VALUES,
   ORDERS_LIMITS,
+  SELLER_ORDER_FULFILLMENT_STAGE_VALUES,
   SELLER_ORDER_LIST_SORT_VALUES,
+  SELLER_ORDER_QUEUE_VALUES,
   SELLER_ORDER_STATUS_VALUES,
 } from "./orders.constants.js";
 
@@ -90,11 +92,18 @@ export const customerOrderListQuerySchema = paginationQuerySchema
   })
   .strict();
 
+/** Seller Order operational queue filter derived from seller lifecycle plus Shipment allocation/state. */
+export const sellerOrderQueueSchema = z.enum(SELLER_ORDER_QUEUE_VALUES);
+
+/** Seller-specific fulfillment stage returned by the seller queue. */
+export const sellerOrderFulfillmentStageSchema = z.enum(SELLER_ORDER_FULFILLMENT_STAGE_VALUES);
+
 /** Seller Order queue query; seller identity is derived from authenticated seller/store scope. */
 export const sellerOrderListQuerySchema = paginationQuerySchema
   .extend({
     storeId: uuidSchema.optional(),
     status: sellerOrderStatusSchema.optional(),
+    queue: sellerOrderQueueSchema.optional(),
     sort: z.enum(SELLER_ORDER_LIST_SORT_VALUES).default("createdAt"),
     order: z.enum(ORDER_SORT_DIRECTION_VALUES).default("desc"),
   })
@@ -458,6 +467,7 @@ export const sellerOrderListItemSchema = z
     status: sellerOrderStatusSchema,
     paymentStatus: orderPaymentStatusSchema,
     fulfillmentStatus: orderFulfillmentStatusSchema,
+    fulfillmentStage: sellerOrderFulfillmentStageSchema,
     createdAt: isoDateTimeSchema,
   })
   .strict();

@@ -6,6 +6,7 @@ import {
   createOrderFromCheckoutInputSchema,
   orderCancelHeadersSchema,
   paymentConfirmedBodySchema,
+  sellerOrderListQuerySchema,
 } from "../../src/modules/orders/orders.schema.js";
 
 /** Builds one valid trusted Checkout -> Orders DTO used by focused contract tests. */
@@ -142,6 +143,20 @@ describe("Module 11 Pass 2 Zod contracts", () => {
       sourceKey: "payments:evt_123",
       currency: "PKR",
     });
+  });
+
+
+  it("accepts only the server-owned seller operational queue values", () => {
+    expect(
+      sellerOrderListQuerySchema.parse({ queue: "ready_to_ship" }),
+    ).toMatchObject({
+      queue: "ready_to_ship",
+      page: 1,
+      sort: "createdAt",
+      order: "desc",
+    });
+
+    expect(() => sellerOrderListQuerySchema.parse({ queue: "awaiting_payment" })).toThrow();
   });
 
   it("keeps admin search allow-listed and rejects an inverted created-at range", () => {

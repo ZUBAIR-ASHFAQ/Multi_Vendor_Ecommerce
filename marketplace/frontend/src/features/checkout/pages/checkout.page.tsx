@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
@@ -7,13 +7,14 @@ import { StatusPill } from "@/components/ui/status-pill";
 import { FormError } from "@/features/auth/components/form-error";
 import { useCartQuery } from "@/features/cart-wishlist/hooks/use-cart-wishlist";
 import { useCustomerAddressesQuery } from "@/features/customers/hooks/use-customers";
+import { usePublicProductQuery } from "@/features/products/hooks/use-products";
 import { CheckoutPayment } from "@/features/payments/components/checkout-payment";
 import { ApiClientError } from "@/lib/api-error";
 import { CHECKOUT_PERMISSION } from "../checkout.constants";
 import { CheckoutChangeWarning } from "../components/checkout-change-warning";
 import { CheckoutExpiryWarning, checkoutQuoteIsExpired } from "../components/checkout-expiry-warning";
 import { CheckoutLayout } from "../components/checkout-layout";
-import { CheckoutQuoteSummary } from "../components/checkout-quote-summary";
+import { CheckoutQuoteSummary, type CheckoutBuyNowSummaryItem } from "../components/checkout-quote-summary";
 import { CheckoutStepper } from "../components/checkout-stepper";
 import { CheckoutQuoteForm } from "../forms/checkout-quote.form";
 import {
@@ -22,7 +23,8 @@ import {
   useConfirmCheckoutQuoteMutation,
   useCreateCheckoutQuoteMutation,
 } from "../hooks/use-checkout";
-import type { CreateCheckoutQuoteInput } from "../types/checkout.types";
+import type { CheckoutBuyNowItemInput, CreateCheckoutQuoteInput } from "../types/checkout.types";
+import type { CheckoutRouteSearch } from "../schemas/checkout.schemas";
 
 /** Returns a new browser-generated idempotency key for one quote confirmation lifecycle. */
 function newConfirmationKey(): string {
@@ -31,7 +33,13 @@ function newConfirmationKey(): string {
 
 /** Renders the authenticated customer Checkout workflow without changing server authority boundaries. */
 function CheckoutContent({ canConfirm, displayName }: { canConfirm: boolean; displayName: string }) {
-  const cart = useCartQuery();
+  const search = useSearch({ strict: false }) as CheckoutRouteSearch;
+  const buyNowItem: CheckoutBuyNowItemInput | null =
+    search.buyNowVariantId && search.buyNowQuantity && search.productSlug
+      ? { variantId: search.buyNowVariantId, quantity: search.buyNowQuantity }
+      : null;
+  const cart = useCartQuery(!buyNowItem);
+  const buyNowProduct = usePublicProductQuery(buyNowItem ? search.productSlug ?? "" : "");
   const addresses = useCustomerAddressesQuery();
   const createQuote = useCreateCheckoutQuoteMutation();
   const [quoteId, setQuoteId] = useState("");
@@ -65,11 +73,11 @@ function CheckoutContent({ canConfirm, displayName }: { canConfirm: boolean; dis
     }
   }
 
-  if (cart.isPending || addresses.isPending) {
+  if ((!buyNowItem && cart.isPending) || (buyNowItem && buyNowProduct.isPending) || addresses.isPending) {
     return <LoadingState label="Preparing Checkout..." />;
   }
 
-  if (cart.isError) {
+  if (!buyNowItem && cart.isError) {
     return (
       <ErrorState
         title="Cart could not be loaded"
@@ -91,7 +99,7 @@ function CheckoutContent({ canConfirm, displayName }: { canConfirm: boolean; dis
     );
   }
 
-  if (cart.data.items.length === 0) {
+  if (!buyNowItem && cart.data && cart.data.items.length === 0) {
     return (
       <section className="checkout-empty-state">
         <h1>Checkout</h1>
@@ -111,22 +119,78 @@ function CheckoutContent({ canConfirm, displayName }: { canConfirm: boolean; dis
     );
   }
 
+  if (buyNowItem && buyNowProduct.isError) {
+    return (
+      <ErrorState
+        title="Buy Now item could not be loaded"
+        message={buyNowProduct.error instanceof Error ? buyNowProduct.error.message : "Please return to the product and try again."}
+        requestId={buyNowProduct.error instanceof ApiClientError ? buyNowProduct.error.requestId : undefined}
+        onRetry={() => void buyNowProduct.refetch()}
+      />
+    );
+  }
+
+  const buyNowVariant = buyNowItem
+    ? buyNowProduct.data?.variants.find((variant) => variant.id === buyNowItem.variantId) ?? null
+    : null;
+  if (buyNowItem && buyNowProduct.data && (!buyNowVariant || !buyNowVariant.inStock)) {
+    return (
+      <section className="checkout-empty-state">
+        <h1>Buy Now item unavailable</h1>
+        <p>The selected option is no longer available for immediate checkout.</p>
+        <Button asChild>
+          <Link to="/products/$slug" params={{ slug: buyNowProduct.data.slug }}>Return to product</Link>
+        </Button>
+      </section>
+    );
+  }
+
+  if (!buyNowItem && !cart.data) {
+    return <LoadingState label="Preparing Checkout..." />;
+  }
+
   const quote = quoteQuery.data ?? null;
   const quoteExpired = quote ? checkoutQuoteIsExpired(quote.expiresAt) : false;
   const activeStep = attemptId ? 4 : quote ? 3 : 2;
+  const cartData = buyNowItem ? null : cart.data ?? null;
   const storeNamesById = new Map(
-    cart.data.items.flatMap((item) => item.storeId ? [[item.storeId, item.storeName ?? "Marketplace seller"] as const] : []),
+    buyNowItem && buyNowProduct.data
+      ? [[buyNowProduct.data.store.id, buyNowProduct.data.store.name] as const]
+      : (cartData?.items.flatMap((item) =>
+          item.storeId ? [[item.storeId, item.storeName ?? "Marketplace seller"] as const] : [],
+        ) ?? []),
   );
+  const buyNowSummary: CheckoutBuyNowSummaryItem | undefined =
+    buyNowItem && buyNowProduct.data && buyNowVariant
+      ? {
+          variantId: buyNowVariant.id,
+          productName: buyNowProduct.data.name,
+          storeId: buyNowProduct.data.store.id,
+          storeName: buyNowProduct.data.store.name,
+          variantTitle: buyNowVariant.title,
+          thumbnailFileId:
+            buyNowProduct.data.media.find((item) => item.variantId === buyNowVariant.id)?.fileId ??
+            buyNowProduct.data.media[0]?.fileId ??
+            null,
+          quantity: buyNowItem.quantity,
+          unitPrice: buyNowVariant.price,
+          currency: buyNowVariant.currency,
+        }
+      : undefined;
 
   return (
     <div className="checkout-page">
       <header className="checkout-page-heading">
         <div>
           <p>Secure checkout</p>
-          <h1>Checkout</h1>
+          <h1>{buyNowItem ? "Buy Now" : "Checkout"}</h1>
           <span>Signed in as {displayName}. Review delivery details, confirm your order, then pay securely.</span>
         </div>
-        <Link to="/cart">Edit cart</Link>
+        {buyNowItem && buyNowProduct.data ? (
+          <Link to="/products/$slug" params={{ slug: buyNowProduct.data.slug }}>Back to product</Link>
+        ) : (
+          <Link to="/cart">Edit cart</Link>
+        )}
       </header>
 
       <CheckoutStepper activeStep={activeStep} />
@@ -139,6 +203,7 @@ function CheckoutContent({ canConfirm, displayName }: { canConfirm: boolean; dis
             isPending={createQuote.isPending}
             error={createQuote.error}
             onSubmit={calculateQuote}
+            buyNowItem={buyNowItem ?? undefined}
           />
 
           {quoteId && quoteQuery.isPending ? <LoadingState label="Reviewing your latest order totals..." /> : null}
@@ -228,7 +293,7 @@ function CheckoutContent({ canConfirm, displayName }: { canConfirm: boolean; dis
         </section>
 
         <div className="checkout-summary-column">
-          <CheckoutQuoteSummary quote={quote} cart={cart.data} />
+          <CheckoutQuoteSummary quote={quote} cart={cartData} buyNowItem={buyNowSummary} />
         </div>
       </div>
     </div>

@@ -30,7 +30,7 @@ import type {
   OrderShippingFulfillmentSnapshot,
 } from "../orders/orders.service.js";
 import { OrdersService } from "../orders/orders.service.js";
-import { ProductsService } from "../products/products.service.js";
+import { ProductsService, type CheckoutProductVariant } from "../products/products.service.js";
 import {
   SHIPMENT_STATUS,
   SHIPPING_AUDIT_ACTION,
@@ -72,10 +72,13 @@ export interface ShippingCartIntegration {
 
 /** Product boundary used to resolve server-owned seller/store grouping for current Cart Products. */
 export interface ShippingProductIntegration {
-  /** Resolves one currently public Product to the seller/store scope needed for shipment grouping. */
+  /** Resolves one currently public Product to the seller/store scope needed for Cart shipment grouping. */
   resolvePublicProductSellerStoreScope(
     productId: string,
   ): Promise<{ productId: string; sellerId: string; storeId: string } | null>;
+
+  /** Resolves one currently sellable variant for direct Buy Now shipment grouping. */
+  resolveVariantForCheckout(variantId: string): Promise<CheckoutProductVariant | null>;
 }
 
 /** Administration boundary used to reject currencies that are no longer supported. */
@@ -323,6 +326,28 @@ export class ShippingService {
     query: ShippingOptionsQuery,
   ): Promise<ShippingOptionsResponse> {
     await this.customers.assertActiveOwnedAddress(context, query.addressId);
+
+    if (query.variantId && query.quantity) {
+      const product = await this.products.resolveVariantForCheckout(query.variantId);
+      if (!product) {
+        throw new AppError({
+          code: ERROR_CODE.CONFLICT,
+          message: "The selected Buy Now item changed and must be reviewed before checkout.",
+          statusCode: 409,
+        });
+      }
+      const currency = product.currency.trim().toUpperCase();
+      if (!(await this.currencies.isSupportedCurrency(currency))) {
+        throw unsupportedCurrencyError();
+      }
+      const group = { sellerId: product.sellerId, storeId: product.storeId };
+      const methods = await this.repository.listCheckoutEligibleMethods(currency, [product.sellerId]);
+      return {
+        addressId: query.addressId,
+        currency,
+        groups: [this.buildGroupResponse(group, methods)],
+      };
+    }
 
     const cart = await this.cart.getCheckoutCart(context);
     if (cart.hasUnavailableItems) throw staleCartError();

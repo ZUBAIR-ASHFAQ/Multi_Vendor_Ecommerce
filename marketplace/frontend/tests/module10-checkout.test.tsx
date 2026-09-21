@@ -151,6 +151,52 @@ function shippingOptionsResponse() {
   };
 }
 
+/** Builds the public Product detail used to render a direct Buy Now Checkout summary. */
+function buyNowProductResponse() {
+  return {
+    id: productId,
+    storeId,
+    categoryId: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+    brandId: null,
+    slug: "checkout-product",
+    name: "Checkout Product",
+    description: "Direct checkout product.",
+    publishedAt: now,
+    createdAt: now,
+    updatedAt: now,
+    variants: [
+      {
+        id: variantId,
+        productId,
+        sku: "CHECKOUT-1",
+        title: "Default",
+        price: "100.0000",
+        compareAtPrice: null,
+        currency: "USD",
+        weight: null,
+        inStock: true,
+        createdAt: now,
+        updatedAt: now,
+      },
+    ],
+    attributes: [],
+    media: [],
+    store: {
+      id: storeId,
+      slug: "cedar-goods",
+      name: "Cedar Goods",
+      logoFileId: null,
+      seller: { id: sellerId, displayName: "Cedar Seller" },
+    },
+    category: {
+      id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+      slug: "general",
+      name: "General",
+    },
+    brand: null,
+  };
+}
+
 /** Builds one authoritative server quote returned after current commerce state is recalculated. */
 function quoteResponse(overrides: Record<string, unknown> = {}) {
   return {
@@ -286,6 +332,60 @@ describe("Module 10 Checkout UI", () => {
     expect(idempotencyKey).toMatch(/^[0-9a-f-]{36}$/i);
     expect(await screen.findByRole("region", { name: "Checkout attempt status" })).toHaveTextContent("confirmed");
     expect(screen.getByText(/Your order has been created/i)).toBeInTheDocument();
+  });
+
+  it("creates Buy Now shipping and quote requests without loading or changing the customer Cart", async () => {
+    useActor(customerActor(["checkout.create_own", "checkout.confirm_own", "customer.address.manage_own"]));
+    let cartRequestCount = 0;
+    let shippingQuery: URLSearchParams | null = null;
+    let createBody: Record<string, unknown> | null = null;
+
+    server.use(
+      http.get(`${env.VITE_API_BASE_URL}/cart`, () => {
+        cartRequestCount += 1;
+        return HttpResponse.json({ success: true, data: cartResponse(), requestId: "unexpected-cart" });
+      }),
+      http.get(`${env.VITE_API_BASE_URL}/customers/me/addresses`, () =>
+        HttpResponse.json({ success: true, data: addressResponse(), requestId: "req-buy-now-addresses" }),
+      ),
+      http.get(`${env.VITE_API_BASE_URL}/products/checkout-product`, () =>
+        HttpResponse.json({ success: true, data: buyNowProductResponse(), requestId: "req-buy-now-product" }),
+      ),
+      http.get(`${env.VITE_API_BASE_URL}/checkout/shipping-options`, ({ request }) => {
+        shippingQuery = new URL(request.url).searchParams;
+        return HttpResponse.json({ success: true, data: shippingOptionsResponse(), requestId: "req-buy-now-shipping" });
+      }),
+      http.post(`${env.VITE_API_BASE_URL}/checkout/quote`, async ({ request }) => {
+        createBody = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ success: true, data: quoteResponse({ couponCode: null }), requestId: "req-buy-now-quote" }, { status: 201 });
+      }),
+      http.get(`${env.VITE_API_BASE_URL}/checkout/quote/${quoteId}`, () =>
+        HttpResponse.json({ success: true, data: quoteResponse({ couponCode: null }), requestId: "req-buy-now-read" }),
+      ),
+    );
+
+    await renderRoute(`/checkout?buyNowVariantId=${variantId}&buyNowQuantity=2&productSlug=checkout-product`);
+    expect(await screen.findByRole("heading", { name: "Buy Now", level: 1 })).toBeInTheDocument();
+    expect(screen.getByText("Buy Now does not change your Cart.", { exact: false })).toBeInTheDocument();
+
+    const user = userEvent.setup();
+    await user.selectOptions(
+      await screen.findByLabelText("Shipping method for Cedar Goods"),
+      shippingMethodId,
+    );
+    await user.click(screen.getByRole("button", { name: "Review order" }));
+
+    await waitFor(() => expect(createBody).not.toBeNull());
+    expect(cartRequestCount).toBe(0);
+    expect(shippingQuery?.get("addressId")).toBe(addressId);
+    expect(shippingQuery?.get("variantId")).toBe(variantId);
+    expect(shippingQuery?.get("quantity")).toBe("2");
+    expect(createBody).toEqual({
+      shippingAddressId: addressId,
+      billingAddressId,
+      shippingSelections: [{ storeId, shippingMethodId }],
+      buyNowItem: { variantId, quantity: 2 },
+    });
   });
 
   it("shows a quote-change warning with the safe request ID when confirmation detects a stale price", async () => {

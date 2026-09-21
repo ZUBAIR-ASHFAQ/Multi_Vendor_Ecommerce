@@ -399,18 +399,29 @@ export const publicProductTaxonomyResponseSchema = z
   })
   .strict();
 
-/** Public HTTP Product detail adds only safe storefront presentation context to the lean commerce aggregate. */
+/** Public Product-detail variant adds only a stock-availability bit, never exact inventory quantities. */
+export const publicProductDetailVariantResponseSchema = publicProductVariantResponseSchema.extend({
+  inStock: z.boolean(),
+});
+
+/** Public HTTP Product detail adds safe storefront presentation and per-variant availability context. */
 export const publicProductDetailResponseSchema = publicProductCommerceDetailResponseSchema.extend({
   store: publicProductStoreResponseSchema,
   category: publicProductTaxonomyResponseSchema,
   brand: publicProductTaxonomyResponseSchema.nullable(),
+  variants: z.array(publicProductDetailVariantResponseSchema),
 });
 
 /** Public storefront-card fields derived from active Product variants/media and the active Store. */
 export const publicProductListItemResponseSchema = publicProductResponseSchema.extend({
   minPrice: productPriceSchema,
   maxPrice: productPriceSchema,
+  minCompareAtPrice: productPriceSchema.nullable(),
+  maxCompareAtPrice: productPriceSchema.nullable(),
   currency: productCurrencySchema,
+  ratingAvg: z.number().min(0).max(5),
+  ratingCount: z.number().int().nonnegative(),
+  inStock: z.boolean(),
   thumbnailFileId: uuidSchema.nullable(),
 });
 

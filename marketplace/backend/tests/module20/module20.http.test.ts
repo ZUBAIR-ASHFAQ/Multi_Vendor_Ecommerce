@@ -117,6 +117,26 @@ describe("Module 20 Reports HTTP/RBAC integration", () => {
     });
 
     const reportRunId = String(created.body.data.id);
+
+    await request(app)
+      .get("/api/v1/reports/runs?page=1&pageSize=6")
+      .set(bearer(sellerA.ownerToken))
+      .expect(200)
+      .expect((response) => {
+        expect(response.body.meta).toMatchObject({ page: 1, pageSize: 6, totalItems: 1, totalPages: 1 });
+        expect(response.body.data).toHaveLength(1);
+        expect(response.body.data[0]?.id).toBe(reportRunId);
+      });
+
+    await request(app)
+      .get("/api/v1/reports/runs?page=1&pageSize=6")
+      .set(bearer(sellerB.ownerToken))
+      .expect(200)
+      .expect((response) => {
+        expect(response.body.data).toEqual([]);
+        expect(response.body.meta.totalItems).toBe(0);
+      });
+
     await request(app)
       .get(`/api/v1/reports/runs/${reportRunId}`)
       .set(bearer(sellerA.ownerToken))

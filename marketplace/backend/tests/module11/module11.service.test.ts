@@ -159,6 +159,13 @@ function repositoryStub(overrides: Partial<Record<keyof OrdersRepository, unknow
     listCustomerOrderSellerOrders: vi.fn().mockResolvedValue([]),
     listCustomerOrderItemPreviews: vi.fn().mockResolvedValue([]),
     listCustomerOrderVisibleShipments: vi.fn().mockResolvedValue([]),
+    getSellerOrderFulfillmentMetricsInScope: vi.fn().mockResolvedValue({
+      commercialQuantity: 1,
+      allocatedQuantity: 0,
+      deliveredQuantity: 0,
+      hasCreatedShipment: false,
+      hasShippedShipment: false,
+    }),
     listOrderAddressesByOrderId: vi.fn().mockResolvedValue([]),
     listOrderStatusHistory: vi.fn().mockResolvedValue([]),
     findOrderById: vi.fn(),
@@ -651,6 +658,49 @@ describe("Module 11 Orders service rules", () => {
       sellerIds: [sellerA, sellerB].sort(),
     });
     expect(listSellerOrdersByOrderId).toHaveBeenCalledWith(order.id);
+  });
+
+  it("maps seller Shipment facts to the operational fulfillment stage without client lifecycle authority", async () => {
+    const order = orderRow({ paymentStatus: "captured", orderStatus: "processing" });
+    const sellerOrder = sellerOrderRow(order.id, { status: "processing" });
+    const context = sellerContext(
+      sellerOrder.sellerId,
+      sellerOrder.storeId,
+      ORDERS_PERMISSION.SELLER_READ,
+    );
+    const listSellerOrdersInScope = vi.fn().mockResolvedValue({
+      items: [{
+        order,
+        sellerOrder,
+        fulfillment: {
+          commercialQuantity: 2,
+          allocatedQuantity: 2,
+          deliveredQuantity: 0,
+          hasCreatedShipment: true,
+          hasShippedShipment: false,
+        },
+      }],
+      totalItems: 1,
+    });
+    const repository = repositoryStub({ listSellerOrdersInScope });
+    const service = new OrdersService({ repository });
+
+    const result = await service.listSellerOrders(context, {
+      page: 1,
+      pageSize: 20,
+      queue: "ready_to_ship",
+      sort: "createdAt",
+      order: "desc",
+    });
+
+    expect(result.items[0]).toMatchObject({
+      id: sellerOrder.id,
+      fulfillmentStage: "ready_to_ship",
+    });
+    expect(listSellerOrdersInScope).toHaveBeenCalledWith(
+      { sellerIds: [sellerOrder.sellerId], storeIds: [sellerOrder.storeId] },
+      expect.objectContaining({ queue: "ready_to_ship" }),
+    );
   });
 
   it("keeps seller acceptance scoped and treats an already-processing Seller Order as an exact retry", async () => {

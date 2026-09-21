@@ -20,6 +20,7 @@ export interface SellerOrdersParams {
   pageSize: number;
   storeId?: string;
   status?: "pending_payment" | "pending_acceptance" | "processing" | "cancelled";
+  queue?: "needs_action" | "unfulfilled" | "ready_to_ship" | "shipped" | "delivered" | "cancelled";
   sort?: "createdAt" | "sellerOrderNo";
   order?: "asc" | "desc";
 }

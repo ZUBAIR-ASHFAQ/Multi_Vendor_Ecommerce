@@ -193,10 +193,12 @@ describe("Module 15 Reviews & Ratings React feature", () => {
 
     await renderRoute("/stores/store-one");
     expect(await screen.findByRole("heading", { name: "Store One" })).toBeInTheDocument();
+    expect(await screen.findByLabelText("Rated 4.5 out of 5 from 8 reviews")).toBeInTheDocument();
+
     await userEvent.setup().click(screen.getByRole("tab", { name: "Reviews" }));
     expect(await screen.findByRole("heading", { name: "Store Reviews" })).toBeInTheDocument();
-    expect(screen.getByText("4.5")).toBeInTheDocument();
-    expect(screen.getByText("8 reviews")).toBeInTheDocument();
+    expect(screen.getAllByText("4.5").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("8 reviews").length).toBeGreaterThan(0);
   });
 
   it("creates a Review with only Order Item and authored fields, then exposes the returned edit form", async () => {

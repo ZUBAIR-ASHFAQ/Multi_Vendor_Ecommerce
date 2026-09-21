@@ -10,6 +10,8 @@ export interface MarketplaceProductCardValue {
   name: string;
   minPrice: string;
   maxPrice: string;
+  minCompareAtPrice?: string | null;
+  maxCompareAtPrice?: string | null;
   currency: string;
   eyebrow?: string | null;
   secondaryLabel?: string | null;
@@ -24,6 +26,15 @@ function priceLabel(product: MarketplaceProductCardValue): string {
   const minimum = formatMoney(product.minPrice, product.currency);
   if (product.minPrice === product.maxPrice) return minimum;
   return `${minimum} – ${formatMoney(product.maxPrice, product.currency)}`;
+}
+
+
+/** Formats a compare-at price/range only when the server supplied a meaningful discounted-variant range. */
+function compareAtPriceLabel(product: MarketplaceProductCardValue): string | null {
+  if (!product.minCompareAtPrice || !product.maxCompareAtPrice) return null;
+  const minimum = formatMoney(product.minCompareAtPrice, product.currency);
+  if (product.minCompareAtPrice === product.maxCompareAtPrice) return minimum;
+  return `${minimum} – ${formatMoney(product.maxCompareAtPrice, product.currency)}`;
 }
 
 /** Shared marketplace Product card used by both browse and Search surfaces. */
@@ -42,6 +53,7 @@ export function MarketplaceProductCard({
   const hasRating = product.ratingAvg !== undefined && product.ratingCount !== undefined;
   const ratingAverage = product.ratingAvg ?? 0;
   const ratingCount = product.ratingCount ?? 0;
+  const compareAtLabel = compareAtPriceLabel(product);
 
   return (
     <article className="marketplace-product-card">
@@ -101,7 +113,10 @@ export function MarketplaceProductCard({
         ) : null}
 
         <div className="marketplace-product-footer">
-          <strong>{priceLabel(product)}</strong>
+          <div className="marketplace-product-pricing">
+            <strong>{priceLabel(product)}</strong>
+            {compareAtLabel ? <del>{compareAtLabel}</del> : null}
+          </div>
           <Link to="/products/$slug" params={{ slug: product.slug }}>View product →</Link>
         </div>
 

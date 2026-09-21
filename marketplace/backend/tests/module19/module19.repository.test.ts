@@ -41,6 +41,7 @@ describe("Module 19 PostgreSQL Search repository", () => {
       storeId: seller.storeId,
       categoryId: String(category.id),
       label: "WirelessHeadphones",
+      compareAtPrice: "125.00",
     });
     const draft = await createProductViaHttp(seller.ownerToken, {
       storeId: seller.storeId,
@@ -90,6 +91,10 @@ describe("Module 19 PostgreSQL Search repository", () => {
       searchProductsQuerySchema.parse({ q: "headphones", page: "1", pageSize: "20" }),
     );
     expect(exact.items.map((item) => item.productId)).toEqual([published.product.id]);
+    expect(exact.items[0]).toMatchObject({
+      minCompareAtPrice: "125.00",
+      maxCompareAtPrice: "125.00",
+    });
 
     const fuzzy = await repository.searchProducts(
       searchProductsQuerySchema.parse({ q: "wireless headphons", page: "1", pageSize: "20" }),

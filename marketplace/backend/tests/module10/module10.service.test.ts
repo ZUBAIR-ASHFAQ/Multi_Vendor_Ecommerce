@@ -119,6 +119,7 @@ function persistedQuote(customerUserId: string, expiresAt: Date): CheckoutQuoteR
     shippingAddressId: randomUUID(),
     billingAddressId: randomUUID(),
     couponCode: null,
+    source: "cart",
     currency: "PKR",
     subtotal: "100.0000",
     discountTotal: "0.0000",
@@ -209,6 +210,58 @@ describe("Module 10 Checkout service rules", () => {
       statusCode: 409,
     });
     expect(transactionRunner).not.toHaveBeenCalled();
+  });
+
+  it("uses the direct Buy Now variant and quantity without loading the customer Cart", async () => {
+    const context = customerContext();
+    const variantId = randomUUID();
+    const address = checkoutAddress(context.actorId!);
+    const cart = { getCheckoutCart: vi.fn() };
+    const inventory: CheckoutInventoryReadIntegration = {
+      getCheckoutAvailability: vi.fn().mockResolvedValue([
+        {
+          variantId,
+          requestedQuantity: 3,
+          availableQuantity: 1,
+          sufficient: false,
+        },
+      ]),
+    };
+    const service = new CheckoutService({
+      customers: { resolveActiveOwnedAddress: vi.fn().mockResolvedValue(address) },
+      cart,
+      products: {
+        resolveVariantForCheckout: vi.fn().mockResolvedValue({
+          productId: randomUUID(),
+          variantId,
+          sellerId: randomUUID(),
+          storeId: randomUUID(),
+          categoryId: randomUUID(),
+          skuSnapshot: "BUY-NOW",
+          nameSnapshot: "Buy Now Product",
+          variantTitleSnapshot: "Direct",
+          unitPrice: "100.0000",
+          currency: "PKR",
+        }),
+      },
+      inventory,
+      transactionRunner: vi.fn(),
+    });
+
+    await expect(
+      service.createQuote(context, {
+        shippingAddressId: address.id,
+        shippingSelections: [{ storeId: randomUUID(), shippingMethodId: randomUUID() }],
+        buyNowItem: { variantId, quantity: 3 },
+      }),
+    ).rejects.toMatchObject({
+      code: CHECKOUT_ERROR_CODE.STOCK_CHANGED,
+      statusCode: 409,
+    });
+    expect(cart.getCheckoutCart).not.toHaveBeenCalled();
+    expect(inventory.getCheckoutAvailability).toHaveBeenCalledWith([
+      { variantId, quantity: 3 },
+    ]);
   });
 
   it("fails closed when the Cart currency is no longer supported before Promotion persistence is read", async () => {

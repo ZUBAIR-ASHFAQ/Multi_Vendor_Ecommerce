@@ -5,7 +5,7 @@ import {
   uuidSchema,
 } from "../../common/schemas/primitives.schema.js";
 import { productCurrencySchema } from "../products/products.schema.js";
-import { CHECKOUT_LIMITS } from "./checkout.constants.js";
+import { CHECKOUT_LIMITS, CHECKOUT_SOURCE_VALUES } from "./checkout.constants.js";
 
 /** Returns true when a canonical decimal string fits one PostgreSQL NUMERIC precision/scale pair. */
 function decimalFitsNumeric(value: string, precision: number, scale: number): boolean {
@@ -70,6 +70,17 @@ export const checkoutAttemptIdParamsSchema = z
   })
   .strict();
 
+/** Quote source is persisted internally so Buy Now never falls back to the customer's unrelated Cart. */
+export const checkoutSourceSchema = z.enum(CHECKOUT_SOURCE_VALUES);
+
+/** One direct single-item intent used only by Buy Now; Product, price and stock remain server-derived. */
+export const checkoutBuyNowItemInputSchema = z
+  .object({
+    variantId: uuidSchema,
+    quantity: z.number().int().min(1).max(CHECKOUT_LIMITS.MAX_ITEM_QUANTITY),
+  })
+  .strict();
+
 /** One client shipping choice; seller ownership and amount remain server-derived. */
 export const checkoutShippingSelectionInputSchema = z
   .object({
@@ -85,6 +96,7 @@ export const createCheckoutQuoteBodySchema = z
     billingAddressId: uuidSchema.optional(),
     couponCode: checkoutCouponCodeSchema.optional(),
     shippingSelections: z.array(checkoutShippingSelectionInputSchema).min(1),
+    buyNowItem: checkoutBuyNowItemInputSchema.optional(),
   })
   .strict()
   .superRefine((value, ctx) => {

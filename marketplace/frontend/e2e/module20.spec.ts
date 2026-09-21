@@ -354,7 +354,7 @@ test.describe("Module 20 Reports & Analytics E2E", () => {
     expect(body).toMatchObject({ success: false, error: { code: "REPORT_SCOPE_FORBIDDEN" } });
   });
 
-  test("live OpenAPI exposes exactly the nine approved Reports operations", async () => {
+  test("live OpenAPI exposes the approved Reports paths and methods", async () => {
     const response = await apiContext.get(`${apiOrigin}/openapi.json`);
     expect(response.status()).toBe(200);
     const document = (await response.json()) as {
@@ -369,7 +369,7 @@ test.describe("Module 20 Reports & Analytics E2E", () => {
       ["/api/v1/reports/refunds", ["get"]],
       ["/api/v1/reports/commissions", ["get"]],
       ["/api/v1/reports/payouts", ["get"]],
-      ["/api/v1/reports/runs", ["post"]],
+      ["/api/v1/reports/runs", ["get", "post"]],
       ["/api/v1/reports/runs/{id}", ["get"]],
     ]);
 

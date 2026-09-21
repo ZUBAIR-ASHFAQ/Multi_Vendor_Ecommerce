@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const HTTP_METHODS = new Set(["get", "post", "put", "patch", "delete"]);
-const IMPLEMENTED_OPERATION_COUNT = 170;
+const IMPLEMENTED_OPERATION_COUNT = 171;
 
 /** Reads one UTF-8 project file and fails with a useful message when it is missing. */
 function readProjectFile(relativePath) {
@@ -700,6 +700,7 @@ const moduleContracts = [
       "GET /refunds",
       "GET /commissions",
       "GET /payouts",
+      "GET /runs",
       "POST /runs",
       "GET /runs/:id",
     ],
@@ -711,6 +712,7 @@ const moduleContracts = [
       "GET /api/v1/reports/refunds",
       "GET /api/v1/reports/commissions",
       "GET /api/v1/reports/payouts",
+      "GET /api/v1/reports/runs",
       "POST /api/v1/reports/runs",
       "GET /api/v1/reports/runs/{id}",
     ],
@@ -1581,7 +1583,7 @@ function verifyApprovedExtensions() {
   }
 }
 
-/** Locks the complete implemented business HTTP surface, including public media, to 170 operations. */
+/** Locks the complete implemented business HTTP surface, including durable report history, to 171 operations. */
 function verifyImplementedOperationCount() {
   const operationCount = moduleContracts.reduce(
     (total, contract) => total + contract.openApi.length,

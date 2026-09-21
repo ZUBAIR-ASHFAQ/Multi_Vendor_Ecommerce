@@ -29,6 +29,17 @@ export const CHECKOUT_ERROR_CODE = {
 } as const;
 
 
+/** Persisted quote source keeps normal Cart checkout and single-item Buy Now revalidation distinct. */
+export const CHECKOUT_SOURCE = {
+  CART: "cart",
+  BUY_NOW: "buy_now",
+} as const;
+
+export const CHECKOUT_SOURCE_VALUES = Object.values(CHECKOUT_SOURCE) as [
+  (typeof CHECKOUT_SOURCE)[keyof typeof CHECKOUT_SOURCE],
+  ...(typeof CHECKOUT_SOURCE)[keyof typeof CHECKOUT_SOURCE][],
+];
+
 /** Checkout-attempt lifecycle values Module 10 is allowed to write. */
 export const CHECKOUT_ATTEMPT_STATUS = {
   CONFIRMED: "confirmed",
@@ -71,4 +82,5 @@ export const CHECKOUT_LIMITS = {
   COUPON_CODE_MAX_LENGTH: 120,
   SHIPPING_METHOD_CODE_MAX_LENGTH: 120,
   SHIPPING_METHOD_NAME_MAX_LENGTH: 200,
+  MAX_ITEM_QUANTITY: 99,
 } as const;

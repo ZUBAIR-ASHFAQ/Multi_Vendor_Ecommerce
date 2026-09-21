@@ -248,6 +248,16 @@ describe("Module 11 Orders repository boundaries", () => {
       order: "desc",
     });
     expect(sellerList.items.map((row) => row.sellerOrder.id)).toEqual([sellerOrderId]);
+    expect(sellerList.items[0]?.fulfillment).toEqual({
+      commercialQuantity: line.quantity,
+      allocatedQuantity: 0,
+      deliveredQuantity: 0,
+      hasCreatedShipment: false,
+      hasShippedShipment: false,
+    });
+    await expect(repository.getSellerOrderFulfillmentMetricsInScope(sellerOrderId, sellerScope)).resolves.toEqual(
+      sellerList.items[0]?.fulfillment,
+    );
 
     await expect(repository.listOrderItemsByOrderId(orderId)).resolves.toEqual([
       expect.objectContaining({ id: item?.id, inventoryReservationId: fixture.reservationId }),

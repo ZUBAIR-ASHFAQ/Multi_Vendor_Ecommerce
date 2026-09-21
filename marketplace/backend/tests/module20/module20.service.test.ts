@@ -18,6 +18,7 @@ import {
 } from "../../src/modules/reports/reports.service.js";
 import {
   payoutsReportQuerySchema,
+  reportRunListQuerySchema,
   salesReportQuerySchema,
 } from "../../src/modules/reports/reports.schema.js";
 import {
@@ -96,6 +97,7 @@ function repositoryDouble(overrides: Partial<Record<keyof ReportsRepository, unk
     listPayoutRows: vi.fn().mockResolvedValue({ items: [], totalItems: 0 }),
     sumSellerPayable: vi.fn().mockResolvedValue([]),
     sumPaidPayouts: vi.fn().mockResolvedValue([]),
+    listReportRunsByRequester: vi.fn().mockResolvedValue({ items: [], totalItems: 0 }),
     findReportRunById: vi.fn().mockResolvedValue(null),
     ...overrides,
   } as unknown as ReportsRepository;
@@ -212,6 +214,27 @@ describe("Module 20 Reports service business boundaries", () => {
 
     expect(sellerCatalog.map((item) => item.code)).toEqual([REPORT_CODE.SALES]);
     expect(adminCatalog.map((item) => item.code)).toEqual([REPORT_CODE.AUDIT_LOG, REPORT_CODE.SALES]);
+  });
+
+  it("lists only the authenticated requester's durable export history with bounded pagination", async () => {
+    const ownerUserId = randomUUID();
+    const ownRun = reportRun({ requestedBy: ownerUserId });
+    const listReportRunsByRequester = vi.fn().mockResolvedValue({ items: [ownRun], totalItems: 1 });
+    const service = new ReportsService({
+      repository: repositoryDouble({ listReportRunsByRequester }),
+      documents: documentsDouble(),
+    });
+    const query = reportRunListQuerySchema.parse({ page: 1, pageSize: 6 });
+
+    const result = await service.listReportRuns(
+      reportsAdminContext(ownerUserId, [REPORTS_PERMISSION.EXPORT]),
+      query,
+    );
+
+    expect(listReportRunsByRequester).toHaveBeenCalledWith(ownerUserId, query);
+    expect(result.meta).toEqual({ page: 1, pageSize: 6, totalItems: 1, totalPages: 1 });
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0]).toMatchObject({ id: ownRun.id, reportCode: REPORT_CODE.SALES, download: null });
   });
 
   it("returns a signed download only to the report requester after completion", async () => {

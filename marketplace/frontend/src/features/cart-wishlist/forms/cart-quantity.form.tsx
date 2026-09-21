@@ -15,6 +15,10 @@ export function CartQuantityForm({
   error,
   onSubmit,
   compact = false,
+  disabled = false,
+  secondarySubmitLabel,
+  secondaryIsPending = false,
+  onSecondarySubmit,
 }: {
   initialQuantity: number;
   submitLabel: string;
@@ -22,6 +26,10 @@ export function CartQuantityForm({
   error: unknown;
   onSubmit: (quantity: number) => Promise<void>;
   compact?: boolean;
+  disabled?: boolean;
+  secondarySubmitLabel?: string;
+  secondaryIsPending?: boolean;
+  onSecondarySubmit?: (quantity: number) => Promise<void>;
 }) {
   const form = useForm({
     defaultValues: { quantity: initialQuantity } satisfies CartQuantityFormValues,
@@ -60,6 +68,7 @@ export function CartQuantityForm({
                 onBlur={field.handleBlur}
                 onChange={(event) => field.handleChange(Number(event.target.value))}
                 aria-invalid={Boolean(fieldError)}
+                disabled={disabled}
               />
               {fieldError ? (
                 <span className="mt-1 block text-xs text-red-600">{fieldError}</span>
@@ -69,9 +78,26 @@ export function CartQuantityForm({
         }}
       </form.Field>
       <FormError error={error} />
-      <Button size="sm" disabled={isPending}>
-        {isPending ? "Saving..." : submitLabel}
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" disabled={disabled || isPending || secondaryIsPending}>
+          {isPending ? "Saving..." : submitLabel}
+        </Button>
+        {secondarySubmitLabel && onSecondarySubmit ? (
+          <form.Subscribe selector={(state) => ({ quantity: state.values.quantity, canSubmit: state.canSubmit })}>
+            {({ quantity, canSubmit }) => (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={disabled || isPending || secondaryIsPending || !canSubmit}
+                onClick={() => void onSecondarySubmit(quantity)}
+              >
+                {secondaryIsPending ? "Opening Checkout..." : secondarySubmitLabel}
+              </Button>
+            )}
+          </form.Subscribe>
+        ) : null}
+      </div>
     </form>
   );
 }

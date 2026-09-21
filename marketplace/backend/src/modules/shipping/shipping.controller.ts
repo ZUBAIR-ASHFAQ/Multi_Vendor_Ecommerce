@@ -20,7 +20,7 @@ export class ShippingController {
   /** Stores the already-composed Shipping service used by every HTTP handler. */
   constructor(private readonly shippingService: ShippingService) {}
 
-  /** Returns server-derived shipping options for the authenticated customer's current Cart. */
+  /** Returns server-derived shipping options for the authenticated customer's Cart or one Buy Now item. */
   getCheckoutShippingOptions = async (
     request: Request,
     response: Response,

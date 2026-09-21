@@ -4,12 +4,19 @@ export interface CheckoutShippingSelectionInput {
   shippingMethodId: string;
 }
 
+/** Direct single-item intent used by Buy Now without mutating the customer Cart. */
+export interface CheckoutBuyNowItemInput {
+  variantId: string;
+  quantity: number;
+}
+
 /** Strict request body accepted by POST /checkout/quote. */
 export interface CreateCheckoutQuoteInput {
   shippingAddressId: string;
   billingAddressId?: string;
   couponCode?: string;
   shippingSelections: CheckoutShippingSelectionInput[];
+  buyNowItem?: CheckoutBuyNowItemInput;
 }
 
 /** One current Shipping Core option available to one seller/store shipment group. */

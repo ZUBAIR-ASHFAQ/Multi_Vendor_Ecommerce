@@ -17,6 +17,7 @@ import type {
   RefundsReportParams,
   ReportExportCommand,
   ReportPage,
+  ReportRunListParams,
   SalesReportParams,
   SellersReportParams,
 } from "../types/reports.types";
@@ -70,6 +71,10 @@ export const reportsApi = {
   /** Reads one bounded page of Seller payout/liability reporting. */
   getPayouts: (params: PayoutsReportParams) =>
     page(apiClient.get("/reports/payouts", { params }), (value) => payoutsReportResponseSchema.parse(value)),
+
+  /** Lists durable requester-owned report exports from the server. */
+  listRuns: (params: ReportRunListParams) =>
+    page(apiClient.get("/reports/runs", { params }), (value) => reportRunSchema.array().parse(value)),
 
   /** Queues one authorized CSV/PDF report run. */
   createRun: (input: ReportExportCommand) =>

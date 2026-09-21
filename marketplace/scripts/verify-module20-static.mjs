@@ -427,7 +427,7 @@ function verifyFinalReleasePass() {
     "REPORT_SCOPE_FORBIDDEN",
     "Download export",
     "report-run ownership",
-    "exactly the nine approved Reports operations",
+    "approved Reports paths and methods",
   ]) {
     requireText(e2eSpec, proof, "Module 20 Playwright suite");
   }

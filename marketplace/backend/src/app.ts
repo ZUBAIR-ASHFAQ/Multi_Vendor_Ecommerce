@@ -363,15 +363,29 @@ function createComposedApplication(): ComposedApplication {
   const catalogTaxonomyController = new CatalogTaxonomyController(
     catalogTaxonomyService,
   );
+  let inventoryService: InventoryService;
+  let reviewsService: ReviewsService;
   const productsService = new ProductsService({
     taxonomy: catalogTaxonomyService,
     sellers: sellersService,
     currencies: administrationService,
     documents: documentsService,
+    inventory: {
+      /** Resolves public stock presentation only after Inventory composition is complete. */
+      async getPublicVariantAvailability(variantIds) {
+        return inventoryService.getPublicVariantAvailability(variantIds);
+      },
+    },
+    ratings: {
+      /** Resolves public card ratings only after Reviews composition is complete. */
+      async getPublishedRatingAggregates(productIds) {
+        return reviewsService.getPublishedRatingAggregates(productIds);
+      },
+    },
     moderationRequired: appConfig.productModerationRequired,
   });
   const productsController = new ProductsController(productsService);
-  const inventoryService = new InventoryService({ products: productsService });
+  inventoryService = new InventoryService({ products: productsService });
   const inventoryController = new InventoryController(inventoryService);
   const cartWishlistService = new CartWishlistService({
     products: productsService,
@@ -402,7 +416,7 @@ function createComposedApplication(): ComposedApplication {
     inventoryUsingTransaction: (transaction) => InventoryService.using(transaction),
   });
   const shippingController = new ShippingController(shippingService);
-  const reviewsService = new ReviewsService({
+  reviewsService = new ReviewsService({
     ordersUsingTransaction: (transaction) => OrdersService.using(transaction),
     shippingUsingTransaction: (transaction) => ShippingService.using(transaction),
     sellers: sellersService,

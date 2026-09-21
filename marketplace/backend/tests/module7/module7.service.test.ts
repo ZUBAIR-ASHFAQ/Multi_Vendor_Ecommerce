@@ -54,6 +54,7 @@ function repositoryStub(
     listMovementsByVariantInSellerScope: vi
       .fn()
       .mockResolvedValue({ items: [], totalItems: 0 }),
+    listAvailabilityByVariantIds: vi.fn().mockResolvedValue([]),
     ...overrides,
   } as unknown as InventoryRepository;
 }
@@ -96,6 +97,31 @@ describe("Module 7 service authorization and boundary guards", () => {
       availableQty: 8,
     });
     expect(result.meta).toMatchObject({ page: 1, pageSize: 20, totalItems: 1, totalPages: 1 });
+  });
+
+  it("returns only public-safe stock bits for a bounded set of variants", async () => {
+    const inStockVariantId = randomUUID();
+    const outOfStockVariantId = randomUUID();
+    const missingVariantId = randomUUID();
+    const repository = repositoryStub({
+      listAvailabilityByVariantIds: vi.fn().mockResolvedValue([
+        { variantId: inStockVariantId, onHandQty: 5, reservedQty: 2 },
+        { variantId: outOfStockVariantId, onHandQty: 3, reservedQty: 3 },
+      ]),
+    });
+    const service = new InventoryService({ repository });
+
+    const result = await service.getPublicVariantAvailability([
+      inStockVariantId,
+      outOfStockVariantId,
+      missingVariantId,
+    ]);
+
+    expect(result).toEqual(new Map([
+      [inStockVariantId, true],
+      [outOfStockVariantId, false],
+      [missingVariantId, false],
+    ]));
   });
 
   it("rejects seller Inventory reads when seller-scoped permission is absent", async () => {

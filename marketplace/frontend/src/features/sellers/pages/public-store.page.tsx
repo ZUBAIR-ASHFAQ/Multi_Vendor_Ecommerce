@@ -12,6 +12,7 @@ import { usePublicProductsQuery } from "@/features/products/hooks/use-products";
 import type { PublicProductListParams } from "@/features/products/types/products.types";
 import { usePublicMediaQuery } from "@/features/public-media/hooks/use-public-media";
 import { StoreReviewsSection } from "@/features/reviews/components/public-reviews-section";
+import { useStoreReviewsQuery } from "@/features/reviews/hooks/use-reviews";
 import { usePublicStoreQuery } from "../hooks/use-sellers";
 import type { PublicStore } from "../types/sellers.types";
 
@@ -36,6 +37,7 @@ function StorefrontContent({ store }: { store: PublicStore }) {
     direction: "desc",
   });
   const products = usePublicProductsQuery(params);
+  const storeRating = useStoreReviewsQuery(store.id, { page: 1, pageSize: 1 });
   const productItems = products.data?.items ?? [];
   const publicMedia = usePublicMediaQuery([
     store.logoFileId,
@@ -55,6 +57,7 @@ function StorefrontContent({ store }: { store: PublicStore }) {
     },
   });
   const productCount = products.data?.meta.totalItems;
+  const rating = storeRating.data?.rating;
 
   return (
     <div className="public-storefront-page">
@@ -84,8 +87,20 @@ function StorefrontContent({ store }: { store: PublicStore }) {
             <dd>{productCount ?? "—"}</dd>
           </div>
           <div>
-            <dt>Currency</dt>
-            <dd>{store.defaultCurrency}</dd>
+            <dt>Rating</dt>
+            <dd aria-live="polite">
+              {storeRating.isPending
+                ? "Loading…"
+                : storeRating.isError || !rating
+                  ? "Unavailable"
+                  : rating.ratingCount === 0
+                    ? "New store"
+                    : (
+                        <span aria-label={`Rated ${rating.ratingAvg.toFixed(1)} out of 5 from ${rating.ratingCount} ${rating.ratingCount === 1 ? "review" : "reviews"}`}>
+                          {rating.ratingAvg.toFixed(1)} <span aria-hidden="true">★</span> · {rating.ratingCount} {rating.ratingCount === 1 ? "review" : "reviews"}
+                        </span>
+                      )}
+            </dd>
           </div>
           <div>
             <dt>Support</dt>

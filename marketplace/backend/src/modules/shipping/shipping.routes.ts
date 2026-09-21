@@ -300,14 +300,14 @@ export const shippingOpenApiPaths = {
       summary: "Calculate eligible Checkout shipping options",
       operationId: "getCheckoutShippingOptions",
       description: [
-        "Derives store/seller shipment groups from the authenticated customer's current Cart",
-        "and returns active flat-rate methods for the owned active address and Cart currency.",
+        "Derives store/seller shipment groups from the authenticated customer's Cart or Buy Now item",
+        "and returns active flat-rate methods for the owned active address and authoritative item currency.",
       ].join(" "),
       security: [{ bearerAuth: [] }],
       parameters: queryParameters(shippingOptionsQuerySchema),
       responses: {
         "200": {
-          description: "Eligible shipping options returned for every current Cart store group.",
+          description: "Eligible shipping options returned for every current Checkout store group.",
           content: {
             "application/json": {
               schema: success(openApiSchema(shippingOptionsResponseSchema)),

@@ -141,9 +141,10 @@ describe("Module 13 Shipping Configuration Core service", () => {
     const products: ShippingProductIntegration = {
       resolvePublicProductSellerStoreScope: vi.fn().mockImplementation(async (productId) =>
         productId === productA
-          ? { productId, sellerId: sellerA, storeId: storeA, categoryId: randomUUID() }
-          : { productId, sellerId: sellerB, storeId: storeB, categoryId: randomUUID() },
+          ? { productId, sellerId: sellerA, storeId: storeA }
+          : { productId, sellerId: sellerB, storeId: storeB },
       ),
+      resolveVariantForCheckout: vi.fn(),
     };
     const currencies: ShippingCurrencyIntegration = {
       isSupportedCurrency: vi.fn().mockResolvedValue(true),
@@ -173,6 +174,56 @@ describe("Module 13 Shipping Configuration Core service", () => {
       "A-PLATFORM",
       "B-SELLER-A",
     ]);
+  });
+
+  it("derives Buy Now shipping from the selected variant without loading the customer Cart", async () => {
+    const context = customerContext();
+    const addressId = randomUUID();
+    const variantId = randomUUID();
+    const sellerId = randomUUID();
+    const storeId = randomUUID();
+    const customers: ShippingCustomerIntegration = {
+      assertActiveOwnedAddress: vi.fn().mockResolvedValue(undefined),
+    };
+    const cart: ShippingCartIntegration = { getCheckoutCart: vi.fn() };
+    const products: ShippingProductIntegration = {
+      resolvePublicProductSellerStoreScope: vi.fn(),
+      resolveVariantForCheckout: vi.fn().mockResolvedValue({
+        productId: randomUUID(),
+        variantId,
+        sellerId,
+        storeId,
+        categoryId: randomUUID(),
+        skuSnapshot: "BUY-NOW",
+        nameSnapshot: "Buy Now Product",
+        variantTitleSnapshot: "Direct",
+        unitPrice: "100.0000",
+        currency: "PKR",
+      }),
+    };
+    const currencies: ShippingCurrencyIntegration = {
+      isSupportedCurrency: vi.fn().mockResolvedValue(true),
+    };
+    const method = shippingMethod({
+      ownerType: "seller",
+      sellerId,
+      code: "BUY-NOW",
+      rate: "9.0000",
+    });
+    const repository = repositoryStub([method]);
+    const service = new ShippingService({ repository, customers, cart, products, currencies });
+
+    const result = await service.getCheckoutShippingOptions(context, {
+      addressId,
+      variantId,
+      quantity: 2,
+    });
+
+    expect(cart.getCheckoutCart).not.toHaveBeenCalled();
+    expect(products.resolveVariantForCheckout).toHaveBeenCalledWith(variantId);
+    expect(repository.listCheckoutEligibleMethods).toHaveBeenCalledWith("PKR", [sellerId]);
+    expect(result.groups).toHaveLength(1);
+    expect(result.groups[0]?.storeId).toBe(storeId);
   });
 
   it("rejects a stale Cart before reading shipping methods", async () => {

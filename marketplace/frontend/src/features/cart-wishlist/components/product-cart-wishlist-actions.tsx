@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/features/auth/components/form-error";
 import { ApiClientError } from "@/lib/api-error";
@@ -11,11 +11,16 @@ import {
 /** Renders Cart/Wishlist actions for one public Product variant without trusting storefront state as checkout truth. */
 export function ProductCartWishlistActions({
   productId,
+  productSlug,
   variantId,
+  cartDisabled = false,
 }: {
   productId: string;
+  productSlug: string;
   variantId: string;
+  cartDisabled?: boolean;
 }) {
+  const navigate = useNavigate();
   const addCart = useAddCartItemMutation();
   const addWishlist = useAddWishlistItemMutation();
 
@@ -27,6 +32,14 @@ export function ProductCartWishlistActions({
   /** Saves the selected variant to the default Wishlist so it can later move to Cart directly. */
   function saveToWishlist(): void {
     addWishlist.mutate({ productId, variantId });
+  }
+
+  /** Opens a single-item Checkout intent without adding or removing anything from the customer Cart. */
+  async function buyNow(quantity: number): Promise<void> {
+    await navigate({
+      to: "/checkout",
+      search: { buyNowVariantId: variantId, buyNowQuantity: quantity, productSlug },
+    });
   }
 
   const authRequired = [addCart.error, addWishlist.error].some(
@@ -41,6 +54,9 @@ export function ProductCartWishlistActions({
         isPending={addCart.isPending}
         error={addCart.error}
         compact
+        disabled={cartDisabled}
+        secondarySubmitLabel="Buy Now"
+        onSecondarySubmit={buyNow}
         onSubmit={addToCart}
       />
       <div className="space-y-2">

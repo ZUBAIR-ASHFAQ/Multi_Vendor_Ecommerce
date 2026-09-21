@@ -15,6 +15,7 @@ import {
   checkoutQuoteIdParamsSchema,
   checkoutQuoteWithLinesContractSchema,
   checkoutStateHashSchema,
+  createCheckoutQuoteBodySchema,
 } from "../../src/modules/checkout/checkout.schema.js";
 
 describe("Module 10 Checkout source-supported contracts", () => {
@@ -43,6 +44,21 @@ describe("Module 10 Checkout source-supported contracts", () => {
       CONFIRM_QUOTE: "/api/v1/checkout/quote/:id/confirm",
       READ_ATTEMPT_STATUS: "/api/v1/checkout/:attemptId/status",
     });
+  });
+
+  it("accepts an optional single-item Buy Now intent without changing the four Checkout routes", () => {
+    const input = {
+      shippingAddressId: randomUUID(),
+      shippingSelections: [{ storeId: randomUUID(), shippingMethodId: randomUUID() }],
+      buyNowItem: { variantId: randomUUID(), quantity: 2 },
+    };
+    expect(createCheckoutQuoteBodySchema.parse(input)).toEqual(input);
+    expect(() =>
+      createCheckoutQuoteBodySchema.parse({
+        ...input,
+        buyNowItem: { ...input.buyNowItem, quantity: 100 },
+      }),
+    ).toThrow();
   });
 
   it("keeps Checkout money exact for the persisted NUMERIC(18,4) boundary", () => {

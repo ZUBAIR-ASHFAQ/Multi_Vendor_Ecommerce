@@ -93,6 +93,7 @@ function sellerOrder() {
     status: "processing",
     paymentStatus: "captured",
     fulfillmentStatus: "partially_fulfilled",
+    fulfillmentStage: "ready_to_ship",
     createdAt: now,
     shippingMethod: {
       id: shippingMethodId,

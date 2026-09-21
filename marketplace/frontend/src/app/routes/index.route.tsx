@@ -17,6 +17,14 @@ function productPrice(product: SearchProductCard): string {
   return `${minimum} – ${formatMoney(product.maxPrice, product.currency)}`;
 }
 
+/** Formats the safe compare-at range returned for discounted active variants. */
+function productCompareAtPrice(product: SearchProductCard): string | null {
+  if (!product.minCompareAtPrice || !product.maxCompareAtPrice) return null;
+  const minimum = formatMoney(product.minCompareAtPrice, product.currency);
+  if (product.minCompareAtPrice === product.maxCompareAtPrice) return minimum;
+  return `${minimum} – ${formatMoney(product.maxCompareAtPrice, product.currency)}`;
+}
+
 /** Premium public storefront landing page backed by the existing public catalog and Search contracts. */
 function FoundationHomePage() {
   const categories = useCategoriesQuery();
@@ -135,6 +143,7 @@ function FoundationHomePage() {
           <div className="storefront-product-grid">
             {productItems.map((product) => {
               const image = product.thumbnailFileId ? mediaById.get(product.thumbnailFileId) : undefined;
+              const compareAtLabel = productCompareAtPrice(product);
               return (
                 <article key={product.productId} className="storefront-product-card">
                   <Link
@@ -164,7 +173,10 @@ function FoundationHomePage() {
                         : "New to the marketplace"}
                     </div>
                     <div className="storefront-product-bottom">
-                      <strong>{productPrice(product)}</strong>
+                      <div>
+                        <strong>{productPrice(product)}</strong>
+                        {compareAtLabel ? <del>{compareAtLabel}</del> : null}
+                      </div>
                       <Link
                         to="/products/$slug"
                         params={{ slug: product.slug }}

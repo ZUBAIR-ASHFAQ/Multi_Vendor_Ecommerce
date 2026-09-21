@@ -130,7 +130,12 @@ export function PublicProductsPage() {
                       description: product.description,
                       minPrice: product.minPrice,
                       maxPrice: product.maxPrice,
+                      minCompareAtPrice: product.minCompareAtPrice,
+                      maxCompareAtPrice: product.maxCompareAtPrice,
                       currency: product.currency,
+                      ratingAvg: product.ratingAvg,
+                      ratingCount: product.ratingCount,
+                      inStock: product.inStock,
                     }}
                     imageUrl={image?.url}
                     imageMimeType={image?.mimeType}

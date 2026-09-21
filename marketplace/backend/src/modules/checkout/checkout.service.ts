@@ -50,6 +50,7 @@ import {
   CHECKOUT_LIMITS,
   CHECKOUT_OUTBOX_EVENT,
   CHECKOUT_PERMISSION,
+  CHECKOUT_SOURCE,
   CHECKOUT_STATE_VERSION,
 } from "./checkout.constants.js";
 import {
@@ -129,7 +130,7 @@ export interface CheckoutShippingIntegration {
   /** Returns currently eligible Shipping Core methods for the authenticated customer's Cart and address. */
   getCheckoutShippingOptions(
     context: RequestContext,
-    query: { addressId: string },
+    query: { addressId: string; variantId?: string; quantity?: number },
   ): Promise<ShippingOptionsResponse>;
 }
 
@@ -194,6 +195,19 @@ export interface CheckoutServiceDependencies {
 interface RequestedShippingSelection {
   storeId: string;
   shippingMethodId: string;
+}
+
+/** One direct variant/quantity intent used by Buy Now without mutating the customer Cart. */
+interface CheckoutBuyNowIntent {
+  variantId: string;
+  quantity: number;
+}
+
+/** Server-resolved products plus quantities for either Cart Checkout or one Buy Now item. */
+interface ResolvedCheckoutIntent {
+  products: CheckoutProductVariant[];
+  quantityByVariant: ReadonlyMap<string, number>;
+  currency: string;
 }
 
 /** One complete server-rebuilt quote snapshot before persistence or confirmation comparison. */
@@ -322,7 +336,7 @@ export class CheckoutService {
     );
   }
 
-  /** Creates and persists one short-lived authoritative quote from the customer's current Cart and selections. */
+  /** Creates and persists one short-lived authoritative quote from the customer's Cart or Buy Now item and selections. */
   async createQuote(
     context: RequestContext,
     input: CreateCheckoutQuoteInput,
@@ -347,6 +361,7 @@ export class CheckoutService {
         shippingAddressId: snapshot.shippingAddress.id,
         billingAddressId: snapshot.billingAddress.id,
         couponCode: snapshot.couponCode,
+        source: normalizedInput.buyNowItem ? CHECKOUT_SOURCE.BUY_NOW : CHECKOUT_SOURCE.CART,
         currency: snapshot.currency,
         subtotal: snapshot.subtotal,
         discountTotal: snapshot.discountTotal,
@@ -513,6 +528,10 @@ export class CheckoutService {
           storeId: selection.storeId,
           shippingMethodId: selection.shippingMethodId,
         })),
+        buyNowItem:
+          quote.source === CHECKOUT_SOURCE.BUY_NOW
+            ? this.buyNowIntentFromStoredLines(storedLines)
+            : null,
       },
       "confirm",
     );
@@ -707,7 +726,7 @@ export class CheckoutService {
     };
   }
 
-  /** Rebuilds one quote from current Cart/Product/Inventory/Promotion/Shipping/Administration state. */
+  /** Rebuilds one quote from current Product/Inventory/Promotion/Shipping/Administration state and its persisted source. */
   private async buildAuthoritativeSnapshot(
     context: RequestContext,
     customerUserId: string,
@@ -716,6 +735,7 @@ export class CheckoutService {
       billingAddressId: string;
       couponCode: string | null;
       shippingSelections: RequestedShippingSelection[];
+      buyNowItem: CheckoutBuyNowIntent | null;
     },
     phase: SnapshotPhase,
   ): Promise<AuthoritativeCheckoutSnapshot> {
@@ -727,18 +747,12 @@ export class CheckoutService {
       input.billingAddressId === input.shippingAddressId
         ? shippingAddress
         : await this.resolveCheckoutAddress(context, input.billingAddressId);
-    const cart = await this.cart.getCheckoutCart(context);
-    if (cart.items.length === 0) {
-      throw checkoutError(ERROR_CODE.INVALID_REQUEST, "The cart is empty.", 422);
-    }
-    if (cart.hasUnavailableItems) throw this.priceChanged("A cart item is no longer purchasable.");
-
-    const products = await this.resolveCurrentProducts(cart);
-    const currency = this.requireSingleSupportedCurrency(cart, products);
+    const intent = await this.resolveCheckoutIntent(context, input.buyNowItem);
+    const { products, quantityByVariant, currency } = intent;
     const availability = await this.inventory.getCheckoutAvailability(
       products.map((product) => ({
         variantId: product.variantId,
-        quantity: this.cartQuantity(cart, product.variantId),
+        quantity: quantityByVariant.get(product.variantId) ?? 0,
       })),
     );
     if (availability.some((item) => !item.sufficient)) throw this.stockChanged();
@@ -747,7 +761,7 @@ export class CheckoutService {
       customerUserId,
       currency,
       input.couponCode,
-      cart,
+      quantityByVariant,
       products,
     );
     const shipping = await this.resolveShippingSelections(
@@ -756,9 +770,10 @@ export class CheckoutService {
       input.shippingSelections,
       currency,
       phase,
+      input.buyNowItem,
     );
     const taxRatePercent = await this.administration.getDefaultTaxRatePercent();
-    const lines = this.calculateLines(cart, products, promotion, taxRatePercent);
+    const lines = this.calculateLines(quantityByVariant, products, promotion, taxRatePercent);
     const subtotalValue = lines.reduce(
       (total, line) => total + decimalToScale4(line.unitPrice) * BigInt(line.qty),
       0n,
@@ -810,6 +825,39 @@ export class CheckoutService {
       shippingSelections: shipping,
       ...totals,
       stateHash,
+    };
+  }
+
+  /** Resolves either the current Cart or one direct Buy Now variant into the same authoritative pricing intent. */
+  private async resolveCheckoutIntent(
+    context: RequestContext,
+    buyNowItem: CheckoutBuyNowIntent | null,
+  ): Promise<ResolvedCheckoutIntent> {
+    if (buyNowItem) {
+      const product = await this.products.resolveVariantForCheckout(buyNowItem.variantId);
+      if (!product) {
+        throw this.priceChanged("The selected Buy Now item is no longer purchasable.");
+      }
+      return {
+        products: [product],
+        quantityByVariant: new Map([[product.variantId, buyNowItem.quantity]]),
+        currency: product.currency.trim().toUpperCase(),
+      };
+    }
+
+    const cart = await this.cart.getCheckoutCart(context);
+    if (cart.items.length === 0) {
+      throw checkoutError(ERROR_CODE.INVALID_REQUEST, "The cart is empty.", 422);
+    }
+    if (cart.hasUnavailableItems) {
+      throw this.priceChanged("A cart item is no longer purchasable.");
+    }
+
+    const products = await this.resolveCurrentProducts(cart);
+    return {
+      products,
+      quantityByVariant: new Map(cart.items.map((item) => [item.variantId, item.quantity])),
+      currency: this.requireSingleSupportedCurrency(cart, products),
     };
   }
 
@@ -874,11 +922,10 @@ export class CheckoutService {
     customerUserId: string,
     currency: string,
     couponCode: string | null,
-    cart: CartResponse,
+    quantityByVariant: ReadonlyMap<string, number>,
     products: CheckoutProductVariant[],
   ): Promise<CheckoutPromotionEvaluationResult> {
     await this.assertCurrencySupported(currency);
-    const quantityByVariant = new Map(cart.items.map((item) => [item.variantId, item.quantity]));
 
     try {
       return await this.promotions.calculateCheckoutDiscounts({
@@ -919,6 +966,7 @@ export class CheckoutService {
     requestedSelections: RequestedShippingSelection[],
     currency: string,
     phase: SnapshotPhase,
+    buyNowItem: CheckoutBuyNowIntent | null,
   ): Promise<CreateCheckoutQuoteShippingSelectionRecordInput[]> {
     const selectionByStore = new Map<string, RequestedShippingSelection>();
     for (const selection of requestedSelections) {
@@ -936,6 +984,9 @@ export class CheckoutService {
     try {
       options = await this.shipping.getCheckoutShippingOptions(context, {
         addressId: shippingAddressId,
+        ...(buyNowItem
+          ? { variantId: buyNowItem.variantId, quantity: buyNowItem.quantity }
+          : {}),
       });
     } catch (error) {
       if (
@@ -991,12 +1042,11 @@ export class CheckoutService {
 
   /** Calculates immutable quote lines with exact scale-4 discount and per-line tax arithmetic. */
   private calculateLines(
-    cart: CartResponse,
+    quantityByVariant: ReadonlyMap<string, number>,
     products: CheckoutProductVariant[],
     promotion: CheckoutPromotionEvaluationResult,
     taxRatePercent: string,
   ): CreateCheckoutQuoteLineRecordInput[] {
-    const quantityByVariant = new Map(cart.items.map((item) => [item.variantId, item.quantity]));
     const discountByVariant = new Map(
       promotion.allocations.map((allocation) => [
         allocation.variantId,
@@ -1009,7 +1059,7 @@ export class CheckoutService {
       .sort((left, right) => left.variantId.localeCompare(right.variantId))
       .map((product) => {
         const quantity = quantityByVariant.get(product.variantId) ?? 0;
-        if (quantity <= 0) throw this.priceChanged("A cart quantity changed.");
+        if (quantity <= 0) throw this.priceChanged("A Checkout quantity changed.");
         const unitPrice = decimalToScale4(product.unitPrice);
         const subtotal = unitPrice * BigInt(quantity);
         const discount = discountByVariant.get(product.variantId) ?? 0n;
@@ -1256,6 +1306,19 @@ export class CheckoutService {
 
   /** Normalizes optional Checkout inputs once so direct service callers receive the same behavior as HTTP/Zod callers. */
   private normalizeCreateQuoteInput(input: CreateCheckoutQuoteInput) {
+    if (
+      input.buyNowItem &&
+      (!Number.isInteger(input.buyNowItem.quantity) ||
+        input.buyNowItem.quantity < 1 ||
+        input.buyNowItem.quantity > CHECKOUT_LIMITS.MAX_ITEM_QUANTITY)
+    ) {
+      throw checkoutError(
+        ERROR_CODE.VALIDATION_FAILED,
+        `Buy Now quantity must be an integer between 1 and ${CHECKOUT_LIMITS.MAX_ITEM_QUANTITY}.`,
+        422,
+      );
+    }
+
     return {
       shippingAddressId: input.shippingAddressId,
       billingAddressId: input.billingAddressId ?? input.shippingAddressId,
@@ -1264,14 +1327,21 @@ export class CheckoutService {
         storeId: selection.storeId,
         shippingMethodId: selection.shippingMethodId,
       })),
+      buyNowItem: input.buyNowItem
+        ? { variantId: input.buyNowItem.variantId, quantity: input.buyNowItem.quantity }
+        : null,
     };
   }
 
-  /** Returns the Cart quantity for one resolved variant and fails closed if the Cart/Products views disagree. */
-  private cartQuantity(cart: CartResponse, variantId: string): number {
-    const item = cart.items.find((candidate) => candidate.variantId === variantId);
-    if (!item) throw this.priceChanged("Cart contents changed.");
-    return item.quantity;
+  /** Reconstructs the direct Buy Now intent from the immutable persisted quote line during confirmation. */
+  private buyNowIntentFromStoredLines(
+    storedLines: Awaited<ReturnType<CheckoutRepository["listQuoteLinesForCustomer"]>>,
+  ): CheckoutBuyNowIntent {
+    const line = storedLines[0];
+    if (!line || storedLines.length !== 1) {
+      throw this.priceChanged("The Buy Now quote items changed.");
+    }
+    return { variantId: line.variantId, quantity: line.qty };
   }
 
   /** Enforces customer actor identity and one Checkout permission before private service work. */

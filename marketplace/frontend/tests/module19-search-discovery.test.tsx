@@ -31,6 +31,8 @@ function searchResponse(thumbnailFileId: string | null = null) {
           brand: "Demo Audio",
           minPrice: "79.99",
           maxPrice: "99.99",
+          minCompareAtPrice: "109.99",
+          maxCompareAtPrice: "129.99",
           currency: "USD",
           ratingAvg: 0,
           ratingCount: 0,
@@ -85,6 +87,7 @@ describe("Module 19 Search & Discovery UI", () => {
     await renderRoute("/search?q=headphones");
     expect(await screen.findByRole("heading", { name: "Wireless Headphones" })).toBeInTheDocument();
     expect(screen.getByText("$79.99 – $99.99")).toBeInTheDocument();
+    expect(screen.getByText("$109.99 – $129.99").tagName).toBe("DEL");
     expect(screen.getByLabelText("No ratings yet")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Save Wireless Headphones to wishlist" })).toBeInTheDocument();
     expect(screen.getByText("In stock")).toBeInTheDocument();

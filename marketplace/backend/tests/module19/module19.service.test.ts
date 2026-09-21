@@ -89,6 +89,8 @@ describe("Module 19 service boundaries and retry-safe read behavior", () => {
             brand: null,
             minPrice: "99.00",
             maxPrice: "129.00",
+            minCompareAtPrice: "119.00",
+            maxCompareAtPrice: "149.00",
             currency: "PKR",
             ratingAvg: "4.50",
             ratingCount: 12,
@@ -112,7 +114,13 @@ describe("Module 19 service boundaries and retry-safe read behavior", () => {
     expect(repository.searchProducts).toHaveBeenCalledWith(
       expect.objectContaining({ q: "sneakers OR shoes OR trainers" }),
     );
-    expect(result.data.items[0]).toMatchObject({ productId, storeId, inStock: true });
+    expect(result.data.items[0]).toMatchObject({
+      productId,
+      storeId,
+      inStock: true,
+      minCompareAtPrice: "119.00",
+      maxCompareAtPrice: "149.00",
+    });
     expect(result.data.items[0]).not.toHaveProperty("sellerId");
     expect(result.data.items[0]).not.toHaveProperty("publicationStatus");
   });

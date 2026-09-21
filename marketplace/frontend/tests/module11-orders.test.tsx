@@ -191,6 +191,7 @@ function sellerOrder(overrides: Record<string, unknown> = {}) {
     status: "pending_acceptance",
     paymentStatus: "captured",
     fulfillmentStatus: "unfulfilled",
+    fulfillmentStage: "needs_acceptance",
     createdAt: now,
     ...overrides,
   };
@@ -301,6 +302,36 @@ describe("Module 11 Orders UI", () => {
     await renderRoute("/orders");
     expect(await screen.findByRole("heading", { name: "Access denied" })).toBeInTheDocument();
     expect(orderRequests).toBe(0);
+  });
+
+  it("filters the seller operational queue through the server and links fulfillment work directly to Shipping", async () => {
+    useActor(actor("seller", ["seller.orders.read", "seller.shipping.read"]));
+    const requestedQueues: Array<string | null> = [];
+    server.use(
+      http.get(`${env.VITE_API_BASE_URL}/seller/orders`, ({ request }) => {
+        requestedQueues.push(new URL(request.url).searchParams.get("queue"));
+        return HttpResponse.json({
+          success: true,
+          data: [sellerOrder({
+            status: "processing",
+            fulfillmentStage: "ready_to_ship",
+          })],
+          meta: { page: 1, pageSize: 20, totalItems: 1, totalPages: 1 },
+          requestId: "req-seller-order-queue",
+        });
+      }),
+    );
+
+    await renderRoute("/seller/orders");
+    expect(await screen.findByRole("heading", { name: "Seller Order queue" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Fulfill" })).toHaveAttribute(
+      "href",
+      `/seller/orders/${sellerOrderId}/shipping`,
+    );
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Ready to ship" }));
+    await waitFor(() => expect(requestedQueues).toContain("ready_to_ship"));
   });
 
   it("renders only seller-scoped Seller Orders and accepts one paid fulfillment unit without client status fields", async () => {

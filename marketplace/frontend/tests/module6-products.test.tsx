@@ -189,7 +189,12 @@ describe("Module 6 Product Management UI", () => {
               description: "Public description",
               minPrice: "19.99",
               maxPrice: "19.99",
+              minCompareAtPrice: "29.99",
+              maxCompareAtPrice: "29.99",
               currency: "USD",
+              ratingAvg: 4.5,
+              ratingCount: 12,
+              inStock: true,
               thumbnailFileId: fileId,
               publishedAt: "2026-09-06T10:00:00.000Z",
               createdAt: "2026-09-06T10:00:00.000Z",
@@ -232,6 +237,7 @@ describe("Module 6 Product Management UI", () => {
                 compareAtPrice: null,
                 currency: "USD",
                 weight: null,
+                inStock: false,
                 createdAt: "2026-09-06T10:00:00.000Z",
                 updatedAt: "2026-09-06T10:00:00.000Z",
               },
@@ -280,6 +286,8 @@ describe("Module 6 Product Management UI", () => {
     await renderRoute("/products");
     expect(await screen.findByRole("heading", { name: "Demo Product" })).toBeInTheDocument();
     expect(screen.getByText("$19.99")).toBeInTheDocument();
+    expect(screen.getByText("4.5 (12)")).toBeInTheDocument();
+    expect(screen.getByText("In stock")).toBeInTheDocument();
     expect(await screen.findByRole("img", { name: "Demo Product" })).toHaveAttribute(
       "src",
       "https://media.example.test/demo-product.jpg",
@@ -291,6 +299,8 @@ describe("Module 6 Product Management UI", () => {
       "https://media.example.test/demo-product.jpg",
     );
     expect(screen.getByRole("heading", { name: "Demo Store" })).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Out of stock");
+    expect(screen.getByRole("button", { name: "Add to Cart" })).toBeDisabled();
     expect(screen.getAllByText("Electronics").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Acme").length).toBeGreaterThan(0);
     expect(screen.getByRole("link", { name: "Visit store" })).toHaveAttribute("href", "/stores/demo-store");

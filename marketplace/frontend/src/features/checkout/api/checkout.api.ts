@@ -2,6 +2,7 @@ import { apiClient } from "@/lib/api-client";
 import type { ApiResponse } from "@/types/api";
 import type {
   CheckoutAttempt,
+  CheckoutBuyNowItemInput,
   CheckoutQuote,
   CheckoutShippingOptions,
   CreateCheckoutQuoteInput,
@@ -16,12 +17,19 @@ async function dataOf<T>(request: Promise<{ data: ApiResponse<T> }>): Promise<T>
 
 export const checkoutApi = {
   /** Loads current Shipping Core choices for one customer-owned delivery address. */
-  getShippingOptions: (addressId: string) =>
+  getShippingOptions: (addressId: string, buyNowItem?: CheckoutBuyNowItemInput) =>
     dataOf<CheckoutShippingOptions>(
-      apiClient.get("/checkout/shipping-options", { params: { addressId } }),
+      apiClient.get("/checkout/shipping-options", {
+        params: {
+          addressId,
+          ...(buyNowItem
+            ? { variantId: buyNowItem.variantId, quantity: buyNowItem.quantity }
+            : {}),
+        },
+      }),
     ),
 
-  /** Creates a fresh server-authoritative quote from Cart plus customer selections. */
+  /** Creates a fresh server-authoritative quote from Cart or one Buy Now item plus customer selections. */
   createQuote: (input: CreateCheckoutQuoteInput) =>
     dataOf<CheckoutQuote>(apiClient.post("/checkout/quote", input)),
 

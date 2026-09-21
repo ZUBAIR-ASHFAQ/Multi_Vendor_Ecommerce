@@ -154,6 +154,8 @@ export const searchProductCardResponseSchema = z
     brand: z.string().trim().min(1).max(200).nullable(),
     minPrice: productPriceSchema,
     maxPrice: productPriceSchema,
+    minCompareAtPrice: productPriceSchema.nullable(),
+    maxCompareAtPrice: productPriceSchema.nullable(),
     currency: productCurrencySchema,
     ratingAvg: z.number().min(0).max(5),
     ratingCount: z.number().int().nonnegative(),

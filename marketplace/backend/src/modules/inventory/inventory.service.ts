@@ -909,6 +909,18 @@ export class InventoryService {
       });
   }
 
+  /** Returns one public-safe availability bit per requested variant without exposing stock quantities. */
+  async getPublicVariantAvailability(variantIds: string[]): Promise<Map<string, boolean>> {
+    const uniqueVariantIds = [...new Set(variantIds)];
+    const rows = await this.repository.listAvailabilityByVariantIds(uniqueVariantIds);
+    const availableByVariant = new Map(uniqueVariantIds.map((variantId) => [variantId, false]));
+
+    for (const row of rows) {
+      availableByVariant.set(row.variantId, row.onHandQty - row.reservedQty > 0);
+    }
+    return availableByVariant;
+  }
+
   /** Returns a public-safe availability aggregate for trusted downstream Search synchronization. */
   async hasAvailableStockForVariants(variantIds: string[]): Promise<boolean> {
     return this.repository.hasAvailableStockForVariants(variantIds);

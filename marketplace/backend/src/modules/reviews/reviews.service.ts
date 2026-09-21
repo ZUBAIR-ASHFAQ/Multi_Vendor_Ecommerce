@@ -447,6 +447,28 @@ export class ReviewsService {
     };
   }
 
+  /** Exposes published Product aggregates in one bounded read for public catalog card enrichment. */
+  async getPublishedRatingAggregates(
+    productIds: string[],
+  ): Promise<Map<string, { average: number; count: number }>> {
+    const uniqueProductIds = [...new Set(productIds)];
+    const rows = await this.repository.listRatingAggregates(
+      REVIEW_RATING_ENTITY.PRODUCT,
+      uniqueProductIds,
+    );
+    const byProduct = new Map(
+      uniqueProductIds.map((productId) => [productId, { average: 0, count: 0 }]),
+    );
+
+    for (const row of rows) {
+      byProduct.set(row.entityId, {
+        average: Number(row.ratingAvg),
+        count: row.ratingCount,
+      });
+    }
+    return byProduct;
+  }
+
   /** Applies one idempotent moderation transition and refreshes aggregates when publication changes. */
   private async moderateReview(
     context: RequestContext,

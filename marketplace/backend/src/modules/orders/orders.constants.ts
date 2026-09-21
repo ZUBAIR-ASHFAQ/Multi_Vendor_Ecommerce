@@ -140,6 +140,27 @@ export const ORDER_CANCEL_REQUEST_VERSION = "orders-cancel-v1" as const;
 /** Allow-listed customer/admin Customer Order list sort fields. */
 export const ORDER_LIST_SORT_VALUES = ["createdAt", "orderNo"] as const;
 
+/** Operational seller-queue filters derived from Orders + Shipping state without adding lifecycle authority. */
+export const SELLER_ORDER_QUEUE_VALUES = [
+  "needs_action",
+  "unfulfilled",
+  "ready_to_ship",
+  "shipped",
+  "delivered",
+  "cancelled",
+] as const;
+
+/** Seller-specific fulfillment stage returned on queue rows for accurate operational display. */
+export const SELLER_ORDER_FULFILLMENT_STAGE_VALUES = [
+  "awaiting_payment",
+  "needs_acceptance",
+  "unfulfilled",
+  "ready_to_ship",
+  "shipped",
+  "delivered",
+  "cancelled",
+] as const;
+
 /** Allow-listed Seller Order list sort fields. */
 export const SELLER_ORDER_LIST_SORT_VALUES = ["createdAt", "sellerOrderNo"] as const;
 

@@ -89,6 +89,20 @@ export interface ProductCurrencyIntegration {
 }
 
 /** Small file boundary used to validate and inspect confirmed Product media without direct file-table access. */
+/** Narrow Inventory boundary used only for public Product availability presentation. */
+export interface ProductInventoryIntegration {
+  /** Returns one availability bit per requested variant without exposing exact quantities. */
+  getPublicVariantAvailability(variantIds: string[]): Promise<Map<string, boolean>>;
+}
+
+/** Narrow Reviews boundary used only for public Product-card rating presentation. */
+export interface ProductRatingIntegration {
+  /** Returns published rating aggregates for a bounded Product page. */
+  getPublishedRatingAggregates(
+    productIds: string[],
+  ): Promise<Map<string, { average: number; count: number }>>;
+}
+
 export interface ProductDocumentIntegration {
   /** Returns safe metadata for one readable confirmed file with the exact requested purpose. */
   getUsableFileForPurpose(
@@ -106,6 +120,8 @@ export interface ProductsServiceDependencies {
   sellers?: ProductSellerIntegration;
   currencies?: ProductCurrencyIntegration;
   documents?: ProductDocumentIntegration | null;
+  inventory?: ProductInventoryIntegration | null;
+  ratings?: ProductRatingIntegration | null;
   moderationRequired?: boolean;
 }
 
@@ -194,6 +210,8 @@ export class ProductsService {
   private readonly sellers: ProductSellerIntegration;
   private readonly currencies: ProductCurrencyIntegration;
   private readonly documents: ProductDocumentIntegration | null;
+  private readonly inventory: ProductInventoryIntegration | null;
+  private readonly ratings: ProductRatingIntegration | null;
   private readonly moderationRequired: boolean;
 
   /** Stores explicit dependencies without introducing a container or hidden framework abstraction. */
@@ -204,14 +222,36 @@ export class ProductsService {
     this.sellers = dependencies.sellers ?? new SellersService();
     this.currencies = dependencies.currencies ?? new AdministrationService();
     this.documents = dependencies.documents ?? null;
+    this.inventory = dependencies.inventory ?? null;
+    this.ratings = dependencies.ratings ?? null;
     this.moderationRequired = dependencies.moderationRequired ?? false;
   }
 
   /** Lists only public-safe published Products with standard pagination metadata. */
   async listPublicProducts(query: PublicProductListQuery): Promise<PaginatedPublicProductsResult> {
     const result = await this.repository.listPublicProducts(query);
+    const productIds = result.items.map((row) => row.product.id);
+    const variantRefs = await this.repository.listActiveVariantIdsByProductIds(productIds);
+    const variantIdsByProduct = new Map<string, string[]>();
+    for (const ref of variantRefs) {
+      const current = variantIdsByProduct.get(ref.productId) ?? [];
+      current.push(ref.variantId);
+      variantIdsByProduct.set(ref.productId, current);
+    }
+    const variantIds = variantRefs.map((ref) => ref.variantId);
+    const [availability, ratings] = await Promise.all([
+      this.requireInventoryIntegration().getPublicVariantAvailability(variantIds),
+      this.requireRatingIntegration().getPublishedRatingAggregates(productIds),
+    ]);
+
     return {
-      items: result.items.map((row) => this.toPublicProductListItemResponse(row)),
+      items: result.items.map((row) => {
+        const rating = ratings.get(row.product.id) ?? { average: 0, count: 0 };
+        const inStock = (variantIdsByProduct.get(row.product.id) ?? []).some(
+          (variantId) => availability.get(variantId) === true,
+        );
+        return this.toPublicProductListItemResponse(row, rating, inStock);
+      }),
       meta: paginationMeta(query, result.totalItems),
     };
   }
@@ -221,7 +261,10 @@ export class ProductsService {
     const storefront = await this.repository.findPublicProductStorefrontBySlug(slug);
     if (!storefront) throw this.productNotFound();
     const commerce = await this.loadPublicProductCommerceDetail(storefront.product);
-    return this.toPublicProductDetail(storefront, commerce);
+    const availability = await this.requireInventoryIntegration().getPublicVariantAvailability(
+      commerce.variants.map((variant) => variant.id),
+    );
+    return this.toPublicProductDetail(storefront, commerce, availability);
   }
 
   /** Finds one currently public Product by ID for trusted downstream commerce/read-model synchronization. */
@@ -1235,6 +1278,22 @@ export class ProductsService {
     }
   }
 
+  /** Returns the configured Inventory presentation boundary for public stock state. */
+  private requireInventoryIntegration(): ProductInventoryIntegration {
+    if (!this.inventory) {
+      throw new Error("Product public availability is not configured.");
+    }
+    return this.inventory;
+  }
+
+  /** Returns the configured Reviews presentation boundary for public catalog rating summaries. */
+  private requireRatingIntegration(): ProductRatingIntegration {
+    if (!this.ratings) {
+      throw new Error("Product public ratings are not configured.");
+    }
+    return this.ratings;
+  }
+
   /** Returns the configured Module 21 file boundary or fails clearly during incomplete application composition. */
   private requireDocumentsIntegration(): ProductDocumentIntegration {
     if (!this.documents) {
@@ -1341,12 +1400,19 @@ export class ProductsService {
   /** Maps one public list projection to the storefront-card response without exposing private Product fields. */
   private toPublicProductListItemResponse(
     row: PublicProductListRow,
+    rating: { average: number; count: number },
+    inStock: boolean,
   ): PublicProductListItemResponse {
     return {
       ...this.toPublicProductResponse(row.product),
       minPrice: row.minPrice,
       maxPrice: row.maxPrice,
+      minCompareAtPrice: row.minCompareAtPrice,
+      maxCompareAtPrice: row.maxCompareAtPrice,
       currency: row.currency,
+      ratingAvg: rating.average,
+      ratingCount: rating.count,
+      inStock,
       thumbnailFileId: row.thumbnailFileId,
     };
   }
@@ -1467,9 +1533,14 @@ export class ProductsService {
   private toPublicProductDetail(
     storefront: PublicProductStorefrontRow,
     commerce: PublicProductCommerceDetailResponse,
+    availability: Map<string, boolean>,
   ): PublicProductDetailResponse {
     return {
       ...commerce,
+      variants: commerce.variants.map((variant) => ({
+        ...variant,
+        inStock: availability.get(variant.id) === true,
+      })),
       store: {
         id: storefront.storeId,
         slug: storefront.storeSlug,

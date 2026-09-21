@@ -14,6 +14,7 @@ import {
   auditLogReportFilterSchema,
   createReportRunBodySchema,
   inventoryReportQuerySchema,
+  reportRunListQuerySchema,
   reportRunResponseSchema,
   salesReportQuerySchema,
   salesReportResponseSchema,
@@ -52,7 +53,7 @@ describe("Module 20 fixed contract values", () => {
     ]);
   });
 
-  it("freezes exactly the nine source-defined Module 20 paths", () => {
+  it("freezes the nine stable Module 20 paths while allowing GET and POST on the runs collection", () => {
     expect(Object.values(REPORTS_PATH)).toEqual([
       "/api/v1/reports/catalog",
       "/api/v1/reports/sales",
@@ -114,6 +115,14 @@ describe("Module 20 query and export boundaries", () => {
         to: "2026-09-16T00:00:00Z",
       }),
     ).toThrow();
+  });
+
+  it("bounds requester-owned report-run history pagination and rejects undocumented fields", () => {
+    expect(reportRunListQuerySchema.parse({ page: "2", pageSize: "6" })).toEqual({
+      page: 2,
+      pageSize: 6,
+    });
+    expect(() => reportRunListQuerySchema.parse({ requestedBy: ID })).toThrow();
   });
 
   it("parses false low-stock query values without JavaScript truthiness bugs", () => {

@@ -62,7 +62,12 @@ export interface ProductVariant {
 export interface PublicProductListItem extends PublicProduct {
   minPrice: string;
   maxPrice: string;
+  minCompareAtPrice: string | null;
+  maxCompareAtPrice: string | null;
   currency: string;
+  ratingAvg: number;
+  ratingCount: number;
+  inStock: boolean;
   thumbnailFileId: string | null;
 }
 
@@ -77,7 +82,9 @@ export interface SellerProductListItem extends Product {
   thumbnailFileId: string | null;
 }
 
-export interface PublicProductVariant extends Omit<ProductVariant, "status"> {}
+export interface PublicProductVariant extends Omit<ProductVariant, "status"> {
+  inStock: boolean;
+}
 
 export interface ProductAttributeValue {
   id: string;

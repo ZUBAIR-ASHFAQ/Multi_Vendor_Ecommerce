@@ -1,13 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { checkoutApi } from "../api/checkout.api";
-import type { CreateCheckoutQuoteInput } from "../types/checkout.types";
+import type { CheckoutBuyNowItemInput, CreateCheckoutQuoteInput } from "../types/checkout.types";
 import { checkoutQueryKeys } from "./checkout.query-keys";
 
 /** Loads current Shipping Core methods after the customer chooses a delivery address. */
-export function useCheckoutShippingOptionsQuery(addressId: string, enabled = true) {
+export function useCheckoutShippingOptionsQuery(
+  addressId: string,
+  enabled = true,
+  buyNowItem?: CheckoutBuyNowItemInput,
+) {
   return useQuery({
-    queryKey: checkoutQueryKeys.shippingOptions(addressId),
-    queryFn: () => checkoutApi.getShippingOptions(addressId),
+    queryKey: checkoutQueryKeys.shippingOptions(
+      addressId,
+      buyNowItem?.variantId,
+      buyNowItem?.quantity,
+    ),
+    queryFn: () => checkoutApi.getShippingOptions(addressId, buyNowItem),
     enabled: enabled && addressId.length > 0,
     retry: false,
   });

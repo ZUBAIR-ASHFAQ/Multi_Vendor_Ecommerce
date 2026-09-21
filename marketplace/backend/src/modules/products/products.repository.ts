@@ -140,6 +140,8 @@ export interface PublicProductListRow {
   product: ProductRow;
   minPrice: string;
   maxPrice: string;
+  minCompareAtPrice: string | null;
+  maxCompareAtPrice: string | null;
   currency: string;
   thumbnailFileId: string | null;
 }
@@ -296,6 +298,22 @@ export class ProductsRepository {
       where ${productVariants.productId} = ${products.id}
         and ${productVariants.status} = ${PRODUCT_STATUS.ACTIVE}
     )`;
+    const minCompareAtPrice = sql<string | null>`(
+      select min(${productVariants.compareAtPrice})
+      from ${productVariants}
+      where ${productVariants.productId} = ${products.id}
+        and ${productVariants.status} = ${PRODUCT_STATUS.ACTIVE}
+        and ${productVariants.compareAtPrice} is not null
+        and ${productVariants.compareAtPrice} > ${productVariants.price}
+    )`;
+    const maxCompareAtPrice = sql<string | null>`(
+      select max(${productVariants.compareAtPrice})
+      from ${productVariants}
+      where ${productVariants.productId} = ${products.id}
+        and ${productVariants.status} = ${PRODUCT_STATUS.ACTIVE}
+        and ${productVariants.compareAtPrice} is not null
+        and ${productVariants.compareAtPrice} > ${productVariants.price}
+    )`;
     const thumbnailFileId = sql<string | null>`(
       select ${productMedia.fileId}
       from ${productMedia}
@@ -310,6 +328,8 @@ export class ProductsRepository {
         product: products,
         minPrice,
         maxPrice,
+        minCompareAtPrice,
+        maxCompareAtPrice,
         currency: stores.defaultCurrency,
         thumbnailFileId,
       })
@@ -332,6 +352,28 @@ export class ProductsRepository {
       items,
       totalItems: Number(totalRow?.totalItems ?? 0),
     };
+  }
+
+  /** Reads active variant identities for a bounded public Product page without exposing private variant fields. */
+  async listActiveVariantIdsByProductIds(
+    productIds: string[],
+  ): Promise<Array<{ productId: string; variantId: string }>> {
+    const uniqueProductIds = [...new Set(productIds)];
+    if (uniqueProductIds.length === 0) return [];
+
+    return this.executor
+      .select({
+        productId: productVariants.productId,
+        variantId: productVariants.id,
+      })
+      .from(productVariants)
+      .where(
+        and(
+          inArray(productVariants.productId, uniqueProductIds),
+          eq(productVariants.status, PRODUCT_STATUS.ACTIVE),
+        ),
+      )
+      .orderBy(asc(productVariants.productId), asc(productVariants.id));
   }
 
   /** Reads only the Product seller/store/category scope needed by trusted downstream promotion configuration. */

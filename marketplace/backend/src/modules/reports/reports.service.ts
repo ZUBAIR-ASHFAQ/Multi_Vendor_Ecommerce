@@ -358,6 +358,19 @@ export class ReportsService {
     };
   }
 
+  /** Lists durable export history only for the authenticated requester. */
+  async listReportRuns(
+    context: RequestContext,
+    query: ReportRunListQuery,
+  ): Promise<ReportsPagedResult<ReportRunResponse[]>> {
+    const actorId = this.requireActor(context);
+    const page = await this.repository.listReportRunsByRequester(actorId, query);
+    return {
+      data: page.items.map((run) => this.toRunResponse(run, null)),
+      meta: paginationMeta(query, page.totalItems),
+    };
+  }
+
   /** Creates one authorized queued CSV/PDF run, audit event and durable request event atomically. */
   async createReportRun(context: RequestContext, input: CreateReportRunBody): Promise<ReportRunResponse> {
     const actorId = this.requireActor(context);

@@ -4,6 +4,7 @@ import {
   count,
   desc,
   eq,
+  inArray,
   sql,
   type SQL,
 } from "drizzle-orm";
@@ -460,6 +461,25 @@ export class ReviewsRepository {
       .limit(1);
 
     return row ?? null;
+  }
+
+  /** Reads materialized rating aggregates for a bounded set of Product/Seller IDs in one query. */
+  async listRatingAggregates(
+    entityType: ReviewRatingEntity,
+    entityIds: string[],
+  ): Promise<RatingAggregateRow[]> {
+    const uniqueEntityIds = [...new Set(entityIds)];
+    if (uniqueEntityIds.length === 0) return [];
+
+    return this.executor
+      .select()
+      .from(ratingAggregates)
+      .where(
+        and(
+          eq(ratingAggregates.entityType, entityType),
+          inArray(ratingAggregates.entityId, uniqueEntityIds),
+        ),
+      );
   }
 
   /** Shares the published-only page query used by Product and Store public list boundaries. */

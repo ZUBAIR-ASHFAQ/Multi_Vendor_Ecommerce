@@ -785,6 +785,8 @@ export class SearchDiscoveryService {
       brand: row.brand,
       minPrice: row.minPrice,
       maxPrice: row.maxPrice,
+      minCompareAtPrice: row.minCompareAtPrice,
+      maxCompareAtPrice: row.maxCompareAtPrice,
       currency: row.currency,
       ratingAvg: Number(row.ratingAvg),
       ratingCount: row.ratingCount,

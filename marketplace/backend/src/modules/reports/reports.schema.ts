@@ -426,6 +426,9 @@ export const payoutsReportResponseSchema = z
   })
   .strict();
 
+/** Bounded requester-owned export-history query. */
+export const reportRunListQuerySchema = paginationQuerySchema.strict();
+
 /** Path parameter for reading one asynchronous report run. */
 export const reportRunIdParamsSchema = z.object({ id: uuidSchema }).strict();
 
@@ -513,6 +516,7 @@ export type InventoryReportQuery = z.infer<typeof inventoryReportQuerySchema>;
 export type RefundsReportQuery = z.infer<typeof refundsReportQuerySchema>;
 export type CommissionsReportQuery = z.infer<typeof commissionsReportQuerySchema>;
 export type PayoutsReportQuery = z.infer<typeof payoutsReportQuerySchema>;
+export type ReportRunListQuery = z.infer<typeof reportRunListQuerySchema>;
 export type CreateReportRunBody = z.infer<typeof createReportRunBodySchema>;
 export type ReportDefinitionResponse = z.infer<typeof reportDefinitionResponseSchema>;
 export type SalesReportResponse = z.infer<typeof salesReportResponseSchema>;
