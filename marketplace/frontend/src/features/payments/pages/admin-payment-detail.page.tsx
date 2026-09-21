@@ -2,9 +2,14 @@ import { Link, useParams } from "@tanstack/react-router";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
+import { StatCard } from "@/components/ui/stat-card";
+import { Surface } from "@/components/ui/surface";
 import { AdminLayout } from "@/features/administration/components/admin-layout";
 import { RequirePagePermission } from "@/features/administration/components/permission-gate";
 import { ApiClientError } from "@/lib/api-error";
+import { formatDateTime } from "@/lib/dates";
+import { formatMoney } from "@/lib/money";
 import { PaymentStatusBadge } from "../components/payment-status-badge";
 import { PaymentTimeline } from "../components/payment-timeline";
 import { useAdminPaymentDetailQuery } from "../hooks/use-payments";
@@ -14,10 +19,7 @@ import { PAYMENTS_PERMISSION } from "../payments.constants";
 function AdminPaymentDetailContent({ paymentId }: { paymentId: string }) {
   const payment = useAdminPaymentDetailQuery(paymentId);
 
-  if (payment.isPending) {
-    return <LoadingState label="Loading Payment detail..." />;
-  }
-
+  if (payment.isPending) return <LoadingState label="Loading payment detail..." />;
   if (payment.isError) {
     return (
       <ErrorState
@@ -33,37 +35,44 @@ function AdminPaymentDetailContent({ paymentId }: { paymentId: string }) {
 
   return (
     <div className="space-y-5">
-      <section className="rounded-xl border bg-white p-5 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Finance · Payment detail</p>
-            <h1 className="mt-1 text-2xl font-bold">{value.providerPaymentId ?? value.paymentId}</h1>
-            <p className="mt-1 break-all text-sm text-slate-600">Order {value.orderId}</p>
-          </div>
-          <PaymentStatusBadge status={value.status} />
-        </div>
+      <PageHeader
+        eyebrow="Finance · Payment detail"
+        title={value.providerPaymentId ?? value.paymentId}
+        description={<>Order <span className="break-all font-mono text-xs">{value.orderId}</span></>}
+        actions={(
+          <>
+            <PaymentStatusBadge status={value.status} />
+            <Button variant="outline" asChild><Link to="/admin/payments">Back to payments</Link></Button>
+          </>
+        )}
+      />
 
-        <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
-          <div><dt className="font-semibold">Authorized</dt><dd>{value.amountAuthorized} {value.currency}</dd></div>
-          <div><dt className="font-semibold">Captured</dt><dd>{value.amountCaptured} {value.currency}</dd></div>
-          <div><dt className="font-semibold">Refunded</dt><dd>{value.amountRefunded} {value.currency}</dd></div>
-          <div><dt className="font-semibold">Refundable</dt><dd>{value.refundableAmount} {value.currency}</dd></div>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Authorized" value={formatMoney(value.amountAuthorized, value.currency)} />
+        <StatCard label="Captured" value={formatMoney(value.amountCaptured, value.currency)} />
+        <StatCard label="Refunded" value={formatMoney(value.amountRefunded, value.currency)} />
+        <StatCard label="Refundable" value={formatMoney(value.refundableAmount, value.currency)} />
+      </div>
+
+      <Surface>
+        <h2 className="text-lg font-semibold text-foreground">Reconciliation context</h2>
+        <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
+          <div><dt className="font-semibold text-foreground-muted">Provider</dt><dd>{value.provider}</dd></div>
+          <div><dt className="font-semibold text-foreground-muted">Provider reference</dt><dd className="break-all">{value.providerPaymentId ?? "Not assigned"}</dd></div>
+          <div><dt className="font-semibold text-foreground-muted">Created</dt><dd>{formatDateTime(value.createdAt)}</dd></div>
+          <div><dt className="font-semibold text-foreground-muted">Updated</dt><dd>{formatDateTime(value.updatedAt)}</dd></div>
         </dl>
-      </section>
+      </Surface>
 
-      <section className="rounded-xl border bg-white p-5 shadow-sm">
-        <h2 className="text-xl font-bold">Transaction timeline</h2>
-        <p className="mt-1 text-sm text-slate-600">
-          Append-only provider references are shown for reconciliation. Refund actions are owned by trusted backend orchestration.
+      <Surface>
+        <h2 className="text-xl font-semibold text-foreground">Transaction timeline</h2>
+        <p className="mt-1 text-sm leading-6 text-foreground-muted">
+          Append-only provider references are shown for reconciliation. Refund actions remain owned by trusted backend orchestration.
         </p>
         <div className="mt-4">
           <PaymentTimeline transactions={value.transactions} currency={value.currency} />
         </div>
-      </section>
-
-      <Button variant="outline" asChild>
-        <Link to="/admin/payments">Back to Payment search</Link>
-      </Button>
+      </Surface>
     </div>
   );
 }

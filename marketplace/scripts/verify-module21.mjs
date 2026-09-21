@@ -5,8 +5,8 @@ import path from "node:path";
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const rootDirectory = path.resolve(scriptDirectory, "..");
-const backendDirectory = path.join(rootDirectory, "marketplace-backend");
-const frontendDirectory = path.join(rootDirectory, "marketplace-frontend");
+const backendDirectory = path.join(rootDirectory, "backend");
+const frontendDirectory = path.join(rootDirectory, "frontend");
 const composeFile = path.join(backendDirectory, "docker-compose.test.yml");
 
 const databaseUrl = "postgresql://marketplace_test:marketplace_test@127.0.0.1:55432/marketplace_test";

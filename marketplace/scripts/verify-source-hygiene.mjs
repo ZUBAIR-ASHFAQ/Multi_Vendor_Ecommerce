@@ -3,8 +3,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const backendRoot = path.join(root, "marketplace-backend");
-const frontendRoot = path.join(root, "marketplace-frontend");
+const backendRoot = path.join(root, "backend");
+const frontendRoot = path.join(root, "frontend");
 
 const ignoredDirectoryNames = new Set(["node_modules", "dist", "coverage", ".git"]);
 const sourceExtensions = new Set([".ts", ".tsx"]);

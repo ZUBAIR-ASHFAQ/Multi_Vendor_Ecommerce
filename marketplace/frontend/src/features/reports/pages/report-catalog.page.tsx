@@ -2,10 +2,15 @@ import { Link } from "@tanstack/react-router";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
+import { Surface } from "@/components/ui/surface";
+import type { AuthenticatedUser } from "@/features/auth/types/auth.types";
 import { ApiClientError } from "@/lib/api-error";
+import { RecentReportExports } from "../components/recent-report-exports";
 import { ReportsLayout } from "../components/reports-layout";
 import { useReportsCatalogQuery } from "../hooks/use-reports";
-import { REPORT_CODE, REPORT_LABELS, type ReportCode } from "../reports.constants";
+import { REPORT_CODE, REPORT_LABELS, REPORTS_PERMISSION, type ReportCode } from "../reports.constants";
 
 type ReportDestination =
   | "/audit"
@@ -37,7 +42,7 @@ function reportRoute(code: ReportCode): ReportDestination {
 }
 
 /** Renders the permission-filtered Reports catalog returned by the server. */
-function ReportCatalogContent() {
+function ReportCatalogContent({ user }: { user: AuthenticatedUser }) {
   const catalog = useReportsCatalogQuery();
 
   if (catalog.isPending) return <LoadingState label="Loading report catalog..." />;
@@ -53,39 +58,43 @@ function ReportCatalogContent() {
   }
 
   return (
-    <div className="space-y-5">
-      <section className="rounded-xl border bg-white p-5 shadow-sm">
-        <h1 className="text-2xl font-bold">Report catalog</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Only reports allowed by your server-derived permissions are listed here.
-        </p>
-      </section>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Reports & Analytics"
+        title="Report catalog"
+        description="Run permission-safe operational and financial reports from server-authoritative source data."
+      />
 
       {catalog.data.length === 0 ? (
-        <section className="rounded-xl border bg-white p-5 text-sm text-slate-500 shadow-sm">
-          No reports are available for your account.
-        </section>
+        <EmptyState
+          title="No reports available"
+          description="Your current permissions do not expose any report definitions."
+        />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {catalog.data.map((report) => (
-            <section key={report.code} className="rounded-xl border bg-white p-5 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{report.domain}</p>
-              <h2 className="mt-1 text-lg font-bold">{REPORT_LABELS[report.code]}</h2>
-              <p className="mt-2 text-sm text-slate-600">
-                Export formats: {report.outputFormats.map((format) => format.toUpperCase()).join(", ")}
+            <Surface key={report.code} className="flex h-full flex-col" variant="elevated">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground-muted">
+                {report.domain}
               </p>
-              <Button className="mt-4" variant="outline" asChild>
+              <h2 className="mt-2 text-xl font-semibold text-foreground">{REPORT_LABELS[report.code]}</h2>
+              <p className="mt-2 flex-1 text-sm leading-6 text-foreground-muted">
+                Available as {report.outputFormats.map((format) => format.toUpperCase()).join(" and ")} exports.
+              </p>
+              <Button className="mt-5 w-fit" variant="outline" asChild>
                 <Link to={reportRoute(report.code)}>Open report</Link>
               </Button>
-            </section>
+            </Surface>
           ))}
         </div>
       )}
+
+      {user.permissions.includes(REPORTS_PERMISSION.EXPORT) ? <RecentReportExports userId={user.id} /> : null}
     </div>
   );
 }
 
 /** Protects the catalog with the shared authenticated Reports layout. */
 export function ReportCatalogPage() {
-  return <ReportsLayout>{() => <ReportCatalogContent />}</ReportsLayout>;
+  return <ReportsLayout>{(user) => <ReportCatalogContent user={user} />}</ReportsLayout>;
 }

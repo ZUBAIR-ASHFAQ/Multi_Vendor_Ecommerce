@@ -50,7 +50,7 @@ function verifyApprovedPatch() {
 /** Confirms the Module 14 service owns business decisions while calling only narrow prerequisite service boundaries. */
 function verifyReturnsService() {
   const service = read(
-    "marketplace-backend/src/modules/returns-refunds/returns-refunds.service.ts",
+    "backend/src/modules/returns-refunds/returns-refunds.service.ts",
   );
 
   for (const expected of [
@@ -110,29 +110,29 @@ function verifyReturnsService() {
 /** Confirms each prerequisite exposes only the minimum system-only behavior needed by Return orchestration. */
 function verifyPrerequisiteBoundaries() {
   const administrationConstants = read(
-    "marketplace-backend/src/modules/administration/administration.constants.ts",
+    "backend/src/modules/administration/administration.constants.ts",
   );
   const administrationService = read(
-    "marketplace-backend/src/modules/administration/administration.service.ts",
+    "backend/src/modules/administration/administration.service.ts",
   );
-  const orders = read("marketplace-backend/src/modules/orders/orders.service.ts");
+  const orders = read("backend/src/modules/orders/orders.service.ts");
   const shippingRepository = read(
-    "marketplace-backend/src/modules/shipping/shipping.repository.ts",
+    "backend/src/modules/shipping/shipping.repository.ts",
   );
-  const shipping = read("marketplace-backend/src/modules/shipping/shipping.service.ts");
-  const payments = read("marketplace-backend/src/modules/payments/payments.service.ts");
+  const shipping = read("backend/src/modules/shipping/shipping.service.ts");
+  const payments = read("backend/src/modules/payments/payments.service.ts");
   const inventoryConstants = read(
-    "marketplace-backend/src/modules/inventory/inventory.constants.ts",
+    "backend/src/modules/inventory/inventory.constants.ts",
   );
   const inventoryRepository = read(
-    "marketplace-backend/src/modules/inventory/inventory.repository.ts",
+    "backend/src/modules/inventory/inventory.repository.ts",
   );
-  const inventory = read("marketplace-backend/src/modules/inventory/inventory.service.ts");
+  const inventory = read("backend/src/modules/inventory/inventory.service.ts");
   const commissionSchema = read(
-    "marketplace-backend/src/modules/commissions/commissions.schema.ts",
+    "backend/src/modules/commissions/commissions.schema.ts",
   );
   const commissions = read(
-    "marketplace-backend/src/modules/commissions/commissions.service.ts",
+    "backend/src/modules/commissions/commissions.service.ts",
   );
 
   requireText(administrationConstants, 'RETURNS_WINDOW_DAYS: "returns.window_days"', "Administration settings");

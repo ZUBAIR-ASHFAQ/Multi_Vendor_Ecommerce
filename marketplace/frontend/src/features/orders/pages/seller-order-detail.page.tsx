@@ -44,14 +44,14 @@ function SellerOrderDetailContent({
 
   return (
     <div className="space-y-5">
-      <section className="rounded-xl border bg-white p-5 shadow-sm">
+      <section className="rounded-xl border bg-white p-4 shadow-sm sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <Link className="text-sm underline underline-offset-4" to="/seller/orders">← Seller Order queue</Link>
             <h1 className="mt-2 text-2xl font-bold">{order.data.sellerOrderNo}</h1>
             <p className="mt-1 text-sm text-slate-500">Parent {order.data.orderNo}</p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
             <OrderStatus value={order.data.status} />
             {canReadShipping ? (
               <Button asChild variant="outline">

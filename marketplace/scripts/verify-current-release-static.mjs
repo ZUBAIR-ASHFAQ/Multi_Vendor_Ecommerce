@@ -63,7 +63,7 @@ function verifyCleanup() {
   }
 
   const e2eWorkflow = readFileSync(
-    path.join(root, "marketplace-frontend", ".github", "workflows", "e2e.yml"),
+    path.join(root, "frontend", ".github", "workflows", "e2e.yml"),
     "utf8",
   );
   if (!e2eWorkflow.includes("npm run deps:verify-lock") || !e2eWorkflow.includes("run: npm ci")) {
@@ -73,7 +73,7 @@ function verifyCleanup() {
     throw new Error("The E2E release workflow must not fall back to npm install.");
   }
 
-  for (const project of ["marketplace-backend", "marketplace-frontend"]) {
+  for (const project of ["backend", "frontend"]) {
     const packageJson = JSON.parse(
       readFileSync(path.join(root, project, "package.json"), "utf8").replace(/^\uFEFF/, ""),
     );
@@ -107,7 +107,7 @@ function verifyDependencyInstallPolicy() {
     }
   }
 
-  for (const project of ["marketplace-backend", "marketplace-frontend"]) {
+  for (const project of ["backend", "frontend"]) {
     const projectRoot = path.join(root, project);
     const packageJson = JSON.parse(
       readFileSync(path.join(projectRoot, "package.json"), "utf8").replace(/^\uFEFF/, ""),
@@ -144,8 +144,8 @@ function verifyDependencyInstallPolicy() {
 function main() {
   verifyCleanup();
   verifyDependencyInstallPolicy();
-  runProjectGate("marketplace-backend");
-  runProjectGate("marketplace-frontend");
+  runProjectGate("backend");
+  runProjectGate("frontend");
 
   const gates = [
     "verify-module2-static.mjs",

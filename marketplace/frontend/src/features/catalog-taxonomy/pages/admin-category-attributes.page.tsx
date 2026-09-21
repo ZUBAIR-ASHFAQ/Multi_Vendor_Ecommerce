@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
+import { PageHeader } from "@/components/ui/page-header";
+import { SectionHeader } from "@/components/ui/section-header";
+import { StatusPill } from "@/components/ui/status-pill";
+import { Surface } from "@/components/ui/surface";
 import { CATALOG_PERMISSION } from "../catalog-taxonomy.constants";
 import { CatalogTaxonomyLayout, RequireCatalogPermission } from "../components/catalog-taxonomy-layout";
 import { flattenCategoryTree } from "../components/category-tree";
@@ -50,12 +54,18 @@ function AdminCategoryAttributesContent() {
   }
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-xl border bg-white p-5 shadow-sm">
-        <h1 className="text-2xl font-bold">Category-to-attribute mapping</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Load the current category mapping, edit the complete desired state, then submit one replacement command.
-        </p>
+    <div className="space-y-5">
+      <PageHeader
+        eyebrow="Catalog · Category mapping"
+        title="Category attribute mapping"
+        description="Review the current mapping, edit the complete desired state, and submit one deliberate replacement command."
+      />
+
+      <Surface>
+        <SectionHeader
+          title="Mapping editor"
+          description="Category hierarchy and reusable attribute definitions remain sourced from the existing catalog APIs."
+        />
         <div className="mt-5">
           <CategoryAttributeReplacementForm
             categories={flattenCategoryTree(categories.data)}
@@ -71,15 +81,20 @@ function AdminCategoryAttributesContent() {
             onSubmit={replaceMapping}
           />
         </div>
-      </section>
+      </Surface>
 
       {replace.data ? (
-        <section className="rounded-xl border bg-white p-5 shadow-sm">
-          <h2 className="font-bold">Last accepted replacement</h2>
-          <p className="mt-1 text-sm text-slate-600">
-            Server returned {replace.data.length} mapped attribute{replace.data.length === 1 ? "" : "s"}.
-          </p>
-        </section>
+        <Surface>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="font-semibold text-foreground">Last accepted replacement</h2>
+              <p className="mt-1 text-sm text-foreground-muted">
+                Server returned {replace.data.length} mapped attribute{replace.data.length === 1 ? "" : "s"}.
+              </p>
+            </div>
+            <StatusPill tone="positive">Saved</StatusPill>
+          </div>
+        </Surface>
       ) : null}
     </div>
   );

@@ -45,6 +45,9 @@ import {
 import {
   OrdersRepository,
   type CreateOrderStatusHistoryRecordInput,
+  type CustomerOrderListItemPreviewRow,
+  type CustomerOrderListSellerOrderRow,
+  type CustomerOrderListShipmentRow,
   type OrderPaymentBoundaryRow,
   type OrderReviewEligibilityRow,
   type OrderSellerScope,
@@ -57,6 +60,7 @@ import {
   type CancelOrderInput,
   type CreateOrderFromCheckoutInput,
   type CustomerOrderDetail,
+  type CustomerOrderListItem,
   type CustomerOrderListQuery,
   type CustomerOrderSummary,
   type OrderItemResponse,
@@ -135,7 +139,7 @@ export interface CreatedOrderResult {
 
 /** Paginated Customer Order list before the HTTP envelope is applied. */
 export interface PaginatedCustomerOrdersResult {
-  items: CustomerOrderSummary[];
+  items: CustomerOrderListItem[];
   meta: PaginationMeta;
 }
 
@@ -835,8 +839,19 @@ export class OrdersService {
     const customerUserId = this.requireActor(context);
     assertPermission(context, ORDERS_PERMISSION.READ_OWN);
     const result = await this.repository.listOrdersForCustomer(customerUserId, query);
+    const orderIds = result.items.map((order) => order.id);
+    const [sellerOrderRows, itemRows, shipmentRows] = await Promise.all([
+      this.repository.listCustomerOrderSellerOrders(orderIds),
+      this.repository.listCustomerOrderItemPreviews(orderIds),
+      this.repository.listCustomerOrderVisibleShipments(orderIds),
+    ]);
     return {
-      items: result.items.map((order) => this.toCustomerOrderSummary(order)),
+      items: this.toCustomerOrderListItems(
+        result.items,
+        sellerOrderRows,
+        itemRows,
+        shipmentRows,
+      ),
       meta: paginationMeta(query, result.totalItems),
     };
   }
@@ -2197,6 +2212,60 @@ export class OrdersService {
       placedAt: order.placedAt?.toISOString() ?? null,
       createdAt: order.createdAt.toISOString(),
     };
+  }
+
+  /** Builds bounded seller/store and immutable item previews for one customer Order-history page. */
+  private toCustomerOrderListItems(
+    orders: OrderRow[],
+    sellerOrderRows: CustomerOrderListSellerOrderRow[],
+    itemRows: CustomerOrderListItemPreviewRow[],
+    shipmentRows: CustomerOrderListShipmentRow[],
+  ): CustomerOrderListItem[] {
+    const itemsBySellerOrder = new Map<string, CustomerOrderListItemPreviewRow[]>();
+    for (const item of itemRows) {
+      const current = itemsBySellerOrder.get(item.sellerOrderId) ?? [];
+      current.push(item);
+      itemsBySellerOrder.set(item.sellerOrderId, current);
+    }
+
+    const latestShipmentBySellerOrder = new Map<
+      string,
+      CustomerOrderListShipmentRow["status"]
+    >();
+    for (const shipment of shipmentRows) {
+      latestShipmentBySellerOrder.set(shipment.sellerOrderId, shipment.status);
+    }
+
+    const sellerOrdersByOrder = new Map<string, CustomerOrderListSellerOrderRow[]>();
+    for (const sellerOrder of sellerOrderRows) {
+      const current = sellerOrdersByOrder.get(sellerOrder.orderId) ?? [];
+      current.push(sellerOrder);
+      sellerOrdersByOrder.set(sellerOrder.orderId, current);
+    }
+
+    return orders.map((order) => ({
+      ...this.toCustomerOrderSummary(order),
+      sellerOrders: (sellerOrdersByOrder.get(order.id) ?? []).map((sellerOrder) => {
+        const sellerItems = itemsBySellerOrder.get(sellerOrder.sellerOrderId) ?? [];
+        return {
+          id: sellerOrder.sellerOrderId,
+          storeId: sellerOrder.storeId,
+          storeName: sellerOrder.storeName,
+          status: sellerOrder.status as CustomerOrderListItem["sellerOrders"][number]["status"],
+          latestShipmentStatus:
+            latestShipmentBySellerOrder.get(sellerOrder.sellerOrderId) ?? null,
+          itemCount: sellerItems.length,
+          items: sellerItems
+            .slice(0, ORDERS_LIMITS.CUSTOMER_LIST_ITEM_PREVIEW_MAX)
+            .map((item) => ({
+              id: item.orderItemId,
+              name: item.name,
+              variantTitle: item.variantTitle,
+              quantity: item.quantity,
+            })),
+        };
+      }),
+    }));
   }
 
   /** Converts one scoped Seller Order + parent row into the seller queue response. */

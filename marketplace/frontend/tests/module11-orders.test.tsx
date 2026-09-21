@@ -65,6 +65,24 @@ function orderSummary(overrides: Record<string, unknown> = {}) {
     orderStatus: "pending_payment",
     placedAt: null,
     createdAt: now,
+    sellerOrders: [
+      {
+        id: sellerOrderId,
+        storeId,
+        storeName: "Store A",
+        status: "pending_acceptance",
+        latestShipmentStatus: "shipped",
+        itemCount: 1,
+        items: [
+          {
+            id: orderItemId,
+            name: "Immutable Order Product",
+            variantTitle: "Default",
+            quantity: 2,
+          },
+        ],
+      },
+    ],
     ...overrides,
   };
 }
@@ -187,7 +205,7 @@ async function renderRoute(path: string): Promise<void> {
 
 describe("Module 11 Orders UI", () => {
   it("renders customer parent Order history without treating Seller Orders as the customer list model", async () => {
-    useActor(actor("customer", ["orders.read_own"]));
+    useActor(actor("customer", ["orders.read_own", "shipping.read_own_order"]));
     let requestedUrl = "";
     server.use(
       http.get(`${env.VITE_API_BASE_URL}/orders`, ({ request }) => {
@@ -205,6 +223,12 @@ describe("Module 11 Orders UI", () => {
     expect(await screen.findByRole("heading", { name: "Your Orders" })).toBeInTheDocument();
     expect(screen.getByText(orderNo)).toBeInTheDocument();
     expect(screen.queryByText(sellerOrderNo)).not.toBeInTheDocument();
+    expect(screen.getByText("Store A")).toBeInTheDocument();
+    expect(screen.getByText("Immutable Order Product · Default")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Track package" })).toHaveAttribute(
+      "href",
+      `/orders/${orderId}/shipping`,
+    );
 
     const user = userEvent.setup();
     await user.selectOptions(screen.getByLabelText("Customer Order status filter"), "confirmed");
@@ -252,6 +276,8 @@ describe("Module 11 Orders UI", () => {
     await user.type(screen.getByLabelText("Cancellation quantity"), "1");
     await user.type(screen.getByLabelText("Cancellation reason"), "Customer changed quantity");
     await user.click(screen.getByRole("button", { name: "Cancel eligible quantity" }));
+    expect(screen.getByRole("alertdialog", { name: "Cancel eligible order quantity?" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Confirm cancellation" }));
 
     await waitFor(() => expect(cancelBody).not.toBeNull());
     expect(cancelBody).toEqual({
@@ -384,7 +410,7 @@ describe("Module 11 Orders UI", () => {
     );
 
     await renderRoute("/admin/orders");
-    expect(await screen.findByRole("heading", { name: "Order support" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Order support queue" })).toBeInTheDocument();
     const user = userEvent.setup();
     await user.type(screen.getByLabelText("Order number"), orderNo);
     await user.selectOptions(screen.getByLabelText("Order status"), "pending_payment");
@@ -395,9 +421,10 @@ describe("Module 11 Orders UI", () => {
       expect(url.searchParams.get("orderStatus")).toBe("pending_payment");
     });
 
-    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    await user.click(screen.getByRole("button", { name: "Cancel order" }));
     await user.type(screen.getByLabelText("Cancellation reason"), "Support cancellation");
     await user.click(screen.getByRole("button", { name: "Cancel eligible quantity" }));
+    await user.click(screen.getByRole("button", { name: "Confirm cancellation" }));
     await waitFor(() => expect(cancelBody).toEqual({ reason: "Support cancellation" }));
     expect(cancelKey.length).toBeGreaterThan(10);
   });
@@ -423,6 +450,6 @@ describe("Module 11 Orders UI", () => {
     await renderRoute("/orders");
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("Orders are unavailable.");
-    expect(alert).toHaveTextContent("Request ID: req-orders-error");
+    expect(alert).toHaveTextContent("Technical reference: req-orders-error");
   });
 });

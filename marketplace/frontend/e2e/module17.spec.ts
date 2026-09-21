@@ -990,31 +990,34 @@ test.describe("Module 17 Seller Wallet & Payouts E2E", () => {
         const requested = ((await requestResponse.json()) as ApiEnvelope<Payout>).data;
 
         await adminBrowser.page.goto("/admin/payouts");
-        await expect(adminBrowser.page.getByRole("heading", { name: "Finance payout queue" })).toBeVisible();
-        const payoutCard = adminBrowser.page.locator("article").filter({ hasText: requested.payoutNo });
-        await expect(payoutCard).toBeVisible();
+        await expect(adminBrowser.page.getByRole("heading", { name: "Payout operations queue" })).toBeVisible();
+        const payoutRow = adminBrowser.page.getByRole("row").filter({ hasText: requested.payoutNo });
+        await expect(payoutRow).toBeVisible();
+        await payoutRow.getByRole("button", { name: "Review" }).click();
 
         const approvePromise = adminBrowser.page.waitForResponse(
           (response) =>
             response.url().endsWith(`/api/v1/admin/payouts/${requested.id}/approve`) &&
             response.request().method() === "POST",
         );
-        await payoutCard.getByRole("button", { name: "Approve & Reserve" }).click();
+        await adminBrowser.page.getByRole("button", { name: "Approve & reserve" }).click();
+        await adminBrowser.page.getByRole("button", { name: "Confirm payout approval" }).click();
         expect((await approvePromise).status()).toBe(200);
-        await expect(payoutCard.getByText("Approved", { exact: true }).first()).toBeVisible();
+        await expect(adminBrowser.page.getByText("Approved", { exact: true }).first()).toBeVisible();
 
         const sendPromise = adminBrowser.page.waitForResponse(
           (response) =>
             response.url().endsWith(`/api/v1/admin/payouts/${requested.id}/send`) &&
             response.request().method() === "POST",
         );
-        await payoutCard.getByRole("button", { name: "Send Payout" }).click();
+        await adminBrowser.page.getByRole("button", { name: "Send payout" }).click();
+        await adminBrowser.page.getByRole("button", { name: "Confirm payout send" }).click();
         const sendResponse = await sendPromise;
         expect(sendResponse.status()).toBe(200);
         paidPayout = ((await sendResponse.json()) as ApiEnvelope<Payout>).data;
         expect(paidPayout).toMatchObject({ status: "paid", amount: "40.0000" });
         expect(paidPayout.providerRef).toBe(`e2e-payout-${paidPayout.id}`);
-        await expect(payoutCard.getByText("Paid", { exact: true }).first()).toBeVisible();
+        await expect(adminBrowser.page.getByText("Paid", { exact: true }).first()).toBeVisible();
       } finally {
         await Promise.all([sellerBrowser.close(), adminBrowser.close()]);
       }

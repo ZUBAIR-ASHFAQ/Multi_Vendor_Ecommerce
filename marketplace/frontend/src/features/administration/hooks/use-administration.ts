@@ -61,18 +61,31 @@ export function usePlatformSettingsQuery(enabled = true) {
   });
 }
 
-/** Creates one Administration mutation and invalidates the affected admin/auth cache groups. */
+type AdminInvalidationGroup = "users" | "roles" | "settings";
+
+/** Returns every cache prefix owned by one administration mutation group. */
+function adminInvalidationKeys(group: AdminInvalidationGroup): readonly (readonly string[])[] {
+  if (group === "users") return [["admin", "users"], ["admin", "user"]];
+  if (group === "roles") {
+    return [["admin", "roles"], ["admin", "role"], ["admin", "permissions"]];
+  }
+  return [["admin", "settings"]];
+}
+
+/** Creates one Administration mutation and invalidates the affected list/detail/auth cache groups. */
 function useAdminMutation<TInput, TResult>(
   mutationFn: (input: TInput) => Promise<TResult>,
-  invalidate: Array<"users" | "roles" | "settings">,
+  invalidate: AdminInvalidationGroup[],
 ) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn,
     onSuccess: async () => {
-      for (const key of invalidate) {
-        await queryClient.invalidateQueries({ queryKey: ["admin", key] });
+      for (const group of invalidate) {
+        for (const queryKey of adminInvalidationKeys(group)) {
+          await queryClient.invalidateQueries({ queryKey });
+        }
       }
       await queryClient.invalidateQueries({ queryKey: authQueryKeys.me });
     },

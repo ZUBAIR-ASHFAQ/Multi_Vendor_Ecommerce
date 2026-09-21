@@ -4,8 +4,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const backendDirectory = path.join(root, "marketplace-backend");
-const frontendDirectory = path.join(root, "marketplace-frontend");
+const backendDirectory = path.join(root, "backend");
+const frontendDirectory = path.join(root, "frontend");
 const skipInstall = process.argv.includes("--skip-install");
 
 /** Returns the platform-specific executable name for npm commands. */

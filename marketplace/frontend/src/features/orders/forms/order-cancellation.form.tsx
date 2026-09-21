@@ -1,4 +1,6 @@
 import { useForm } from "@tanstack/react-form";
+import { useState } from "react";
+import { ConfirmationDialog } from "@/components/feedback/confirmation-dialog";
 import { Button } from "@/components/ui/button";
 import {
   firstFieldError,
@@ -25,6 +27,7 @@ export function OrderCancellationForm({
   error: unknown;
   onSubmit: (input: CancelOrderInput, idempotencyKey: string) => Promise<void>;
 }) {
+  const [pendingCancellation, setPendingCancellation] = useState<{ input: CancelOrderInput; idempotencyKey: string } | null>(null);
   const form = useForm({
     defaultValues: {
       orderItemId: "",
@@ -46,16 +49,12 @@ export function OrderCancellationForm({
       }
       if (parsed.reason) input.reason = parsed.reason;
 
-      try {
-        await onSubmit(input, crypto.randomUUID());
-        form.reset();
-      } catch {
-        // TanStack Query owns the normalized request error shown below.
-      }
+      setPendingCancellation({ input, idempotencyKey: crypto.randomUUID() });
     },
   });
 
   return (
+    <>
     <form
       className="space-y-3 rounded-xl border bg-white p-4"
       onSubmit={(event) => {
@@ -149,5 +148,24 @@ export function OrderCancellationForm({
         {isPending ? "Cancelling..." : "Cancel eligible quantity"}
       </Button>
     </form>
+    <ConfirmationDialog
+      open={pendingCancellation !== null}
+      title="Cancel eligible order quantity?"
+      description="This command changes the order lifecycle and may affect fulfillment. The server will apply only quantities that are still eligible to cancel."
+      confirmLabel="Confirm cancellation"
+      isPending={isPending}
+      onCancel={() => setPendingCancellation(null)}
+      onConfirm={() => {
+        if (!pendingCancellation) return;
+        void onSubmit(pendingCancellation.input, pendingCancellation.idempotencyKey)
+          .then(() => {
+            form.reset();
+            setPendingCancellation(null);
+          })
+          .catch(() => undefined)
+          .finally(() => setPendingCancellation(null));
+      }}
+    />
+    </>
   );
 }

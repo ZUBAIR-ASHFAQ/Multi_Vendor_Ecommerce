@@ -420,13 +420,15 @@ describe("Module 6 Product Management UI", () => {
 
     await renderRoute("/admin/products");
     const user = userEvent.setup();
-    expect(await screen.findByRole("heading", { name: "Product approvals" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Product approval queue" })).toBeInTheDocument();
     await user.click(await screen.findByRole("link", { name: "Review" }));
     expect(await screen.findByRole("heading", { name: "Moderation decision" })).toBeInTheDocument();
-    const rejectButton = screen.getByRole("button", { name: "Reject and return to seller" });
+    const rejectButton = screen.getByRole("button", { name: "Reject and return" });
     expect(rejectButton).toBeDisabled();
     await user.type(screen.getByLabelText("Rejection reason"), "Add a clear front image.");
     await user.click(rejectButton);
+    expect(screen.getByRole("alertdialog", { name: "Reject this product?" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Confirm rejection" }));
     await waitFor(() => expect(rejectionBody).toEqual({ reason: "Add a clear front image." }));
     expect(await screen.findByText(/This product is no longer awaiting a moderation decision/)).toBeInTheDocument();
   });

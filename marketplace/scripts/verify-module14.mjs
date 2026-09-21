@@ -11,7 +11,10 @@ function read(relativePath) {
   if (!fs.existsSync(absolutePath)) {
     throw new Error(`Required final Module 14 file is missing: ${relativePath}`);
   }
-  return fs.readFileSync(absolutePath, "utf8");
+  const source = fs.readFileSync(absolutePath, "utf8");
+  return relativePath.endsWith("package.json")
+    ? JSON.stringify(JSON.parse(source.replace(/^\uFEFF/u, "")), null, 2)
+    : source;
 }
 
 /** Requires one durable final-release fragment. */
@@ -37,7 +40,7 @@ function runGate(scriptName) {
 
 /** Confirms final Playwright proof covers the two required Return/refund paths and isolation/replay evidence. */
 function verifyPlaywrightProof() {
-  const e2e = read("marketplace-frontend/e2e/module14.spec.ts");
+  const e2e = read("frontend/e2e/module14.spec.ts");
   for (const expected of [
     "requests, seller-inspects, refunds, replays, restocks once, and preserves seller isolation",
     "refunds an approved Return without physical restock and replays the same money command",
@@ -54,7 +57,7 @@ function verifyPlaywrightProof() {
 
 /** Confirms post-browser reconciliation protects money, stock, Commission, lifecycle, and evidence invariants. */
 function verifyReleaseDataProof() {
-  const verifier = read("marketplace-backend/scripts/verify-module14-release-data.mjs");
+  const verifier = read("backend/scripts/verify-module14-release-data.mjs");
   for (const expected of [
     "Module 14 completed Return refunds",
     "Module 14 physical restock path",
@@ -72,9 +75,9 @@ function verifyReleaseDataProof() {
 
 /** Confirms package scripts and the permanent cross-repository runner execute Module 14 release proof. */
 function verifyReleaseWiring() {
-  const backendPackage = JSON.parse(read("marketplace-backend/package.json"));
-  const frontendPackage = JSON.parse(read("marketplace-frontend/package.json"));
-  const runner = read("marketplace-frontend/e2e/run-e2e-ci.mjs");
+  const backendPackage = JSON.parse(read("backend/package.json"));
+  const frontendPackage = JSON.parse(read("frontend/package.json"));
+  const runner = read("frontend/e2e/run-e2e-ci.mjs");
 
   if (
     backendPackage.scripts?.["test:module14:release-data"] !==
@@ -114,8 +117,8 @@ function verifyCleanup() {
 
   for (const relativePath of [
     "README.md",
-    "marketplace-backend/README.md",
-    "marketplace-frontend/README.md",
+    "backend/README.md",
+    "frontend/README.md",
   ]) {
     const source = read(relativePath);
     if (/Module 14[^\n]*(Pass 8[^\n]*deferred|E2E[^\n]*deferred)/i.test(source)) {

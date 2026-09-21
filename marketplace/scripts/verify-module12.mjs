@@ -5,8 +5,8 @@ import { fileURLToPath } from "node:url";
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const rootDirectory = path.resolve(scriptDirectory, "..");
-const backendDirectory = path.join(rootDirectory, "marketplace-backend");
-const frontendDirectory = path.join(rootDirectory, "marketplace-frontend");
+const backendDirectory = path.join(rootDirectory, "backend");
+const frontendDirectory = path.join(rootDirectory, "frontend");
 
 /** Returns the platform-specific executable name used for npm commands. */
 function executable(name) {

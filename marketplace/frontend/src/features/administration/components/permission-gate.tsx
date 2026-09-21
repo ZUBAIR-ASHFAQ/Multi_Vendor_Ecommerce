@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ErrorState } from "@/components/feedback/error-state";
+import { AccessDeniedState } from "@/components/feedback/system-state";
 import type { AuthenticatedUser } from "@/features/auth/types/auth.types";
 import { hasPermission } from "../administration.constants";
 
@@ -29,12 +29,7 @@ export function RequirePagePermission({
   children: ReactNode;
 }) {
   if (!hasPermission(user.permissions, permission)) {
-    return (
-      <ErrorState
-        title="Access denied"
-        message="Your account does not have permission to view this administration page."
-      />
-    );
+    return <AccessDeniedState message="Your account does not have permission to view this administration page." />;
   }
   return <>{children}</>;
 }

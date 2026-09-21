@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
+import { PageHeader } from "@/components/ui/page-header";
+import { StatCard } from "@/components/ui/stat-card";
+import { Surface } from "@/components/ui/surface";
 import { PaginationControls } from "@/features/administration/components/pagination-controls";
 import { ReportExportControls } from "@/features/reports/components/report-export-controls";
 import { REPORT_CODE } from "@/features/reports/reports.constants";
@@ -21,12 +24,19 @@ function AuditContent({ user }: { user: Parameters<typeof AuditFilterForm>[0]["u
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold">Audit log</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Search the append-only, server-redacted audit surface. Seller scope remains enforced by the API.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Operations · Audit"
+        title="Audit log"
+        description="Search append-only, server-redacted audit metadata. Seller scope and record visibility remain enforced by the API."
+      />
+
+      {audit.data ? (
+        <div className="grid gap-3 sm:grid-cols-3">
+          <StatCard label="Matching records" value={audit.data.meta.totalItems.toLocaleString()} />
+          <StatCard label="Visible on this page" value={audit.data.items.length.toLocaleString()} />
+          <StatCard label="Page" value={`${audit.data.meta.page} / ${Math.max(audit.data.meta.totalPages, 1)}`} />
+        </div>
+      ) : null}
 
       <AuditFilterForm
         user={user}
@@ -44,24 +54,23 @@ function AuditContent({ user }: { user: Parameters<typeof AuditFilterForm>[0]["u
         />
       ) : null}
 
-      <section className="rounded-xl border bg-white p-5 shadow-sm">
-        {audit.isPending && <LoadingState label="Loading audit records..." />}
-        {audit.isError && (
-          <ErrorState
-            title="Audit records could not be loaded"
-            message={audit.error instanceof Error ? audit.error.message : "Please try again."}
-            onRetry={() => void audit.refetch()}
-          />
-        )}
-        {audit.data && (
-          <>
-            <AuditTable items={audit.data.items} />
-            <div className="mt-4">
-              <PaginationControls meta={audit.data.meta} onPage={setPage} />
-            </div>
-          </>
-        )}
-      </section>
+      {audit.isPending ? <LoadingState label="Loading audit records..." /> : null}
+      {audit.isError ? (
+        <ErrorState
+          title="Audit records could not be loaded"
+          message={audit.error instanceof Error ? audit.error.message : "Please try again."}
+          onRetry={() => void audit.refetch()}
+        />
+      ) : null}
+
+      {audit.data ? (
+        <Surface padding="none" className="overflow-hidden">
+          <AuditTable items={audit.data.items} />
+          <div className="px-5 pb-5 md:px-6 md:pb-6">
+            <PaginationControls meta={audit.data.meta} onPage={setPage} />
+          </div>
+        </Surface>
+      ) : null}
     </div>
   );
 }

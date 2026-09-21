@@ -611,7 +611,7 @@ test.describe("Module 19 Search & Discovery E2E", () => {
     await page.goto(`/search?q=${encodeURIComponent(originalToken)}`);
     const alert = page.getByRole("alert");
     await expect(alert).toContainText("Search is temporarily unavailable.");
-    await expect(alert).toContainText("Request ID: e2e-search-request-123");
+    await expect(alert).toContainText("Technical reference: e2e-search-request-123");
   });
 
   test("reflects source name, price, and availability changes without making Search authoritative", async ({ page }) => {

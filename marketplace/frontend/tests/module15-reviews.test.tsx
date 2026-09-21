@@ -273,8 +273,10 @@ describe("Module 15 Reviews & Ratings React feature", () => {
 
     await renderRoute("/admin/reviews");
 
-    expect(await screen.findByRole("heading", { name: "Review moderation" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Review moderation queue" })).toBeInTheDocument();
     expect(await screen.findByText("Excellent purchase")).toBeInTheDocument();
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Moderate" }));
     expect(requestedStatus).toBe("pending");
     expect(requestedSort).toBe("created_desc");
     expect(screen.getByText(productId)).toBeInTheDocument();
@@ -325,6 +327,8 @@ describe("Module 15 Reviews & Ratings React feature", () => {
     const user = userEvent.setup();
     await user.type(screen.getByLabelText("Hide Review reason"), "Contains prohibited content");
     await user.click(screen.getByRole("button", { name: "Hide Review" }));
+    expect(screen.getByRole("alertdialog", { name: "Hide this Review?" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Confirm hide" }));
     await waitFor(() => expect(hiddenBody).toEqual({ reason: "Contains prohibited content" }));
     expect(hiddenBody).not.toHaveProperty("status");
   });

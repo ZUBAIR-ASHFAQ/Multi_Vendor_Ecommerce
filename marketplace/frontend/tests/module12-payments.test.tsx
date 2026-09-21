@@ -155,7 +155,7 @@ describe("Module 12 Payments UI", () => {
     );
 
     await renderRoute("/admin/payments");
-    expect(await screen.findByRole("heading", { name: "Payment search" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Payment operations" })).toBeInTheDocument();
     expect(screen.getByText("pi_module12_test")).toBeInTheDocument();
 
     const user = userEvent.setup();

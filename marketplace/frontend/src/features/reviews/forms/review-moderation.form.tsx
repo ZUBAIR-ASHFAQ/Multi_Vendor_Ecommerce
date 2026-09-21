@@ -1,4 +1,6 @@
 import { useForm } from "@tanstack/react-form";
+import { useState } from "react";
+import { ConfirmationDialog } from "@/components/feedback/confirmation-dialog";
 import { Button } from "@/components/ui/button";
 import { firstFieldError, FormError } from "@/features/auth/components/form-error";
 import { reviewModerationFormSchema } from "../schemas/reviews.schemas";
@@ -16,11 +18,16 @@ export function ReviewModerationForm({
   error: unknown;
   onSubmit: (input: ModerateReviewInput) => Promise<void>;
 }) {
+  const [pendingInput, setPendingInput] = useState<ModerateReviewInput | null>(null);
   const form = useForm({
     defaultValues: { reason: "" },
     validators: { onChange: reviewModerationFormSchema },
     onSubmit: async ({ value }) => {
       const parsed = reviewModerationFormSchema.parse(value);
+      if (action === "hide") {
+        setPendingInput(parsed);
+        return;
+      }
       try {
         await onSubmit(parsed);
         form.reset();
@@ -31,6 +38,7 @@ export function ReviewModerationForm({
   });
 
   return (
+    <>
     <form
       className="space-y-3"
       onSubmit={(event) => {
@@ -59,5 +67,24 @@ export function ReviewModerationForm({
         {isPending ? "Saving..." : action === "hide" ? "Hide Review" : "Publish Review"}
       </Button>
     </form>
+    <ConfirmationDialog
+      open={action === "hide" && pendingInput !== null}
+      title="Hide this Review?"
+      description="The Review will be removed from public lists and published rating aggregates. The moderation reason remains part of the audit trail."
+      confirmLabel="Confirm hide"
+      isPending={isPending}
+      onCancel={() => setPendingInput(null)}
+      onConfirm={() => {
+        if (!pendingInput) return;
+        void onSubmit(pendingInput)
+          .then(() => {
+            form.reset();
+            setPendingInput(null);
+          })
+          .catch(() => undefined)
+          .finally(() => setPendingInput(null));
+      }}
+    />
+    </>
   );
 }

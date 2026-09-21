@@ -17,7 +17,10 @@ function resolve(relativePath) {
 
 /** Reads one UTF-8 project file. */
 function read(relativePath) {
-  return readFileSync(resolve(relativePath), "utf8");
+  const source = readFileSync(resolve(relativePath), "utf8");
+  return relativePath.endsWith("package.json")
+    ? JSON.stringify(JSON.parse(source.replace(/^\uFEFF/u, "")), null, 2)
+    : source;
 }
 
 /** Requires one file to exist in the final delivery. */
@@ -50,31 +53,31 @@ function collectFiles(directory, predicate) {
 /** Verifies the final Module 21 implementation, release wiring, E2E assets and cleanup boundary. */
 function main() {
   const required = [
-    "marketplace-backend/src/modules/documents-audit/documents-audit.repository.ts",
-    "marketplace-backend/src/modules/documents-audit/documents-audit.service.ts",
-    "marketplace-backend/src/modules/documents-audit/documents-audit.schema.ts",
-    "marketplace-backend/src/modules/documents-audit/documents-audit.constants.ts",
-    "marketplace-backend/src/modules/documents-audit/documents-audit.routes.ts",
-    "marketplace-backend/src/modules/documents-audit/documents-audit.controller.ts",
-    "marketplace-backend/src/modules/documents-audit/documents-audit.routes.ts",
-    "marketplace-backend/src/database/schema/audit.ts",
-    "marketplace-backend/drizzle/0004_documents_audit_core.sql",
-    "marketplace-backend/drizzle/0005_documents_audit_integrity.sql",
-    "marketplace-backend/tests/module21/module21.integration.test.ts",
-    "marketplace-backend/tests/module21/module21.service.test.ts",
-    "marketplace-backend/tests/module21/module21.test-helpers.ts",
-    "marketplace-backend/src/database/seeds/module21-e2e.seed.ts",
-    "marketplace-backend/scripts/prepare-module21-e2e-storage.mjs",
-    "marketplace-frontend/src/features/documents-audit/pages/documents.page.tsx",
-    "marketplace-frontend/src/features/documents-audit/pages/audit.page.tsx",
-    "marketplace-frontend/src/features/documents-audit/pages/audit-detail.page.tsx",
-    "marketplace-frontend/tests/module21-documents-audit.test.tsx",
-    "marketplace-frontend/e2e/module21.spec.ts",
+    "backend/src/modules/documents-audit/documents-audit.repository.ts",
+    "backend/src/modules/documents-audit/documents-audit.service.ts",
+    "backend/src/modules/documents-audit/documents-audit.schema.ts",
+    "backend/src/modules/documents-audit/documents-audit.constants.ts",
+    "backend/src/modules/documents-audit/documents-audit.routes.ts",
+    "backend/src/modules/documents-audit/documents-audit.controller.ts",
+    "backend/src/modules/documents-audit/documents-audit.routes.ts",
+    "backend/src/database/schema/audit.ts",
+    "backend/drizzle/0004_documents_audit_core.sql",
+    "backend/drizzle/0005_documents_audit_integrity.sql",
+    "backend/tests/module21/module21.integration.test.ts",
+    "backend/tests/module21/module21.service.test.ts",
+    "backend/tests/module21/module21.test-helpers.ts",
+    "backend/src/database/seeds/module21-e2e.seed.ts",
+    "backend/scripts/prepare-module21-e2e-storage.mjs",
+    "frontend/src/features/documents-audit/pages/documents.page.tsx",
+    "frontend/src/features/documents-audit/pages/audit.page.tsx",
+    "frontend/src/features/documents-audit/pages/audit-detail.page.tsx",
+    "frontend/tests/module21-documents-audit.test.tsx",
+    "frontend/e2e/module21.spec.ts",
     "scripts/verify-module21.mjs",
   ];
   required.forEach(requireFile);
 
-  requireText("marketplace-backend/src/modules/documents-audit/documents-audit.routes.ts", [
+  requireText("backend/src/modules/documents-audit/documents-audit.routes.ts", [
     '"/uploads/sign"',
     '"/uploads/:id/confirm"',
     '"/:id/link"',
@@ -89,7 +92,7 @@ function main() {
     "DOCUMENTS_READ",
     "AUDIT_READ",
   ]);
-  requireText("marketplace-backend/src/modules/documents-audit/documents-audit.controller.ts", [
+  requireText("backend/src/modules/documents-audit/documents-audit.controller.ts", [
     "signUploadBodySchema.parse",
     "confirmUploadParamsSchema.parse",
     "linkFileBodySchema.parse",
@@ -105,15 +108,15 @@ function main() {
     "this.service.listAuditLogs",
     "this.service.getAuditLog",
   ]);
-  requireText("marketplace-backend/src/app.ts", [
+  requireText("backend/src/app.ts", [
     'app.use(`${API_V1_PREFIX}/documents`, documentsRouter)',
     'app.use(`${API_V1_PREFIX}/audit`, auditRouter)',
   ]);
-  requireText("marketplace-backend/src/http/openapi/openapi.document.ts", [
+  requireText("backend/src/http/openapi/openapi.document.ts", [
     "documentsAuditOpenApiPaths",
     "...documentsAuditOpenApiPaths",
   ]);
-  requireText("marketplace-backend/src/modules/documents-audit/documents-audit.service.ts", [
+  requireText("backend/src/modules/documents-audit/documents-audit.service.ts", [
     "createObjectKey",
     "getObjectMetadata",
     "FILE_SCOPE_FORBIDDEN",
@@ -127,32 +130,32 @@ function main() {
     "FILE_LINKED",
     "FILE_UNLINKED",
   ]);
-  requireText("marketplace-backend/src/modules/documents-audit/documents-audit.repository.ts", [
+  requireText("backend/src/modules/documents-audit/documents-audit.repository.ts", [
     "findFileOwnedByUser",
     "markPendingFileFailed",
     "findFileLinkedToResource",
     "innerJoin(fileLinks",
     "auditScopeCondition",
   ]);
-  requireText("marketplace-backend/src/config/env.ts", [
+  requireText("backend/src/config/env.ts", [
     'STORAGE_PROVIDER: z.enum(["s3", "r2", "s3_compatible"])',
   ]);
-  requireText("marketplace-backend/src/modules/documents-audit/documents-audit.runtime.ts", [
+  requireText("backend/src/modules/documents-audit/documents-audit.runtime.ts", [
     "storageProvider: env.STORAGE_PROVIDER",
   ]);
-  requireText("marketplace-backend/drizzle/0004_documents_audit_core.sql", [
+  requireText("backend/drizzle/0004_documents_audit_core.sql", [
     "files",
     "file_links",
     "audit_logs",
     "audit_logs_prevent_update_delete",
   ]);
-  requireText("marketplace-backend/drizzle/0005_documents_audit_integrity.sql", [
+  requireText("backend/drizzle/0005_documents_audit_integrity.sql", [
     'ADD COLUMN "purpose"',
     'files_purpose_check',
     'file_links_purpose_check',
     'audit_logs_actor_type_check',
   ]);
-  requireText("marketplace-frontend/e2e/module21.spec.ts", [
+  requireText("frontend/e2e/module21.spec.ts", [
     "signed upload, account link, authorized download, and unlink",
     "another user's private file is hidden exactly like a missing file",
     'expect(hidden.status()).toBe(404)',
@@ -163,7 +166,7 @@ function main() {
     "seller audit reads stay inside the server-derived seller scope",
     "must-never-appear-in-audit-output",
   ]);
-  const module21E2e = read("marketplace-frontend/e2e/module21.spec.ts");
+  const module21E2e = read("frontend/e2e/module21.spec.ts");
   assertCondition(
     !module21E2e.includes("`${apiBase}/admin/permissions"),
     "Module 21 E2E must derive permission IDs from approved role-list data.",
@@ -172,12 +175,12 @@ function main() {
     !module21E2e.includes("context.post(`${apiBase}/admin/users`"),
     "Module 21 E2E must not recreate users through the removed Administration create-user API.",
   );
-  requireText("marketplace-backend/docker-compose.test.yml", [
+  requireText("backend/docker-compose.test.yml", [
     "minio-test:",
     'profiles: ["module21"]',
     '"59000:9000"',
   ]);
-  requireText("marketplace-backend/package.json", [
+  requireText("backend/package.json", [
     '"db:seed:module21-e2e"',
     '"storage:prepare:module21-e2e"',
     '"test:module21"',
@@ -201,14 +204,14 @@ function main() {
     'logStage("Post-E2E database integrity")',
     'logStage("Container build regression")',
   ]);
-  requireText("marketplace-backend/tests/module21/module21.service.test.ts", [
+  requireText("backend/tests/module21/module21.service.test.ts", [
     "rejects invalid upload policy inputs before file metadata is persisted",
     "returns an already confirmed upload without re-reading provider metadata",
     "uses the same not-found result for missing and unrelated private files",
     "fails closed when resource policy passes but the repository link no longer exists",
     "forces seller audit reads to the exact server-derived seller permission scope",
   ]);
-  requireText("marketplace-backend/tests/module21/module21.integration.test.ts", [
+  requireText("backend/tests/module21/module21.integration.test.ts", [
     "Promise.all",
     "emptySellerScope",
     "covers all seven HTTP routes with real auth, RBAC, validation, redaction, and unlink behavior",
@@ -216,22 +219,22 @@ function main() {
     "keeps seller audit list and detail reads inside the server-derived seller scope",
     "append-only audit storage",
   ]);
-  requireText("marketplace-frontend/package.json", [
+  requireText("frontend/package.json", [
     '"test:e2e:module21"',
     '"test:module21"',
   ]);
 
-  requireText("marketplace-backend/src/modules/documents-audit/documents-audit.schema.ts", [
+  requireText("backend/src/modules/documents-audit/documents-audit.schema.ts", [
     "AUDIT_SORT_VALUES",
     "DOCUMENT_AUDIT_PATTERN",
     "export type SignUploadInput",
     "export type AuditListQuery",
   ]);
-  requireText("marketplace-backend/src/modules/documents-audit/documents-audit.constants.ts", [
+  requireText("backend/src/modules/documents-audit/documents-audit.constants.ts", [
     'AUDIT_EXPORT: "audit.export"',
     'AUDIT_EXPORT_REQUESTED: "audit.export_requested"',
   ]);
-  requireText("marketplace-backend/src/modules/documents-audit/documents-audit.routes.ts", [
+  requireText("backend/src/modules/documents-audit/documents-audit.routes.ts", [
     "DOCUMENT_PURPOSE_VALUES",
     "DOCUMENT_FILE_STATUS_VALUES",
     "DOCUMENT_AUDIT_LIMITS",
@@ -253,48 +256,48 @@ function main() {
     '"/api/v1/audit/{id}"',
     "...serviceUnavailableFailure",
   ]);
-  requireText("marketplace-frontend/src/features/documents-audit/documents-audit.constants.ts", [
+  requireText("frontend/src/features/documents-audit/documents-audit.constants.ts", [
     'AUDIT_EXPORT: "audit.export"',
     "AUDIT_SORT_OPTIONS",
     "DOCUMENT_PURPOSE_OPTIONS",
     "hasDocumentPermission",
   ]);
-  requireText("marketplace-frontend/src/features/documents-audit/schemas/documents-audit.schemas.ts", [
+  requireText("frontend/src/features/documents-audit/schemas/documents-audit.schemas.ts", [
     "DOCUMENT_PURPOSE_VALUES",
     "AUDIT_SORT_VALUES",
     "DOCUMENT_AUDIT_LIMITS",
     "actorUserId: optionalUuidText",
   ]);
-  requireText("marketplace-frontend/src/features/documents-audit/forms/audit-filter-form.tsx", [
+  requireText("frontend/src/features/documents-audit/forms/audit-filter-form.tsx", [
     'name="actorUserId"',
     'aria-label="Audit actor user ID"',
     "actorUserId: optionalText(value.actorUserId)",
     "AUDIT_SORT_OPTIONS.map",
   ]);
-  requireText("marketplace-frontend/src/features/documents-audit/forms/file-upload-form.tsx", [
+  requireText("frontend/src/features/documents-audit/forms/file-upload-form.tsx", [
     "useUploadDocumentMutation",
     "TanStack Query owns the normalized mutation error",
     "FormError",
   ]);
-  requireText("marketplace-frontend/src/features/documents-audit/pages/audit-detail.page.tsx", [
+  requireText("frontend/src/features/documents-audit/pages/audit-detail.page.tsx", [
     "onRetry={() => void audit.refetch()}",
   ]);
   assertCondition(
-    !read("marketplace-frontend/src/features/documents-audit/components/module-permission-gate.tsx").includes("function ModulePermissionGate"),
+    !read("frontend/src/features/documents-audit/components/module-permission-gate.tsx").includes("function ModulePermissionGate"),
     "Unused ModulePermissionGate wrapper must not be recreated.",
   );
-  requireText("marketplace-frontend/tests/module21-documents-audit.test.tsx", [
+  requireText("frontend/tests/module21-documents-audit.test.tsx", [
     "shows a safe storage-upload error without leaving the documents page",
     "searches audit metadata with actor filtering and opens redacted audit detail",
     "No audit records matched the filters.",
     "shows a clear permission state when the actor cannot use document workflows",
   ]);
   assertCondition(
-    !existsSync(resolve("marketplace-backend/src/modules/documents-audit/documents-audit.types.ts")),
+    !existsSync(resolve("backend/src/modules/documents-audit/documents-audit.types.ts")),
     "Redundant Module 21 backend inferred-types file must not be recreated.",
   );
 
-  const migrations = readdirSync(resolve("marketplace-backend/drizzle"))
+  const migrations = readdirSync(resolve("backend/drizzle"))
     .filter((name) => /^\d{4}_.+\.sql$/.test(name))
     .sort();
   assertCondition(
@@ -302,10 +305,10 @@ function main() {
     "Module 21 integrity migration must remain in the append-only migration history.",
   );
 
-  const routeSource = read("marketplace-backend/src/modules/documents-audit/documents-audit.routes.ts");
+  const routeSource = read("backend/src/modules/documents-audit/documents-audit.routes.ts");
   assertCondition(!/router\.(patch|put|delete)\(\s*["']\/?audit/i.test(routeSource), "Audit mutation routes are forbidden.");
 
-  const repositorySource = read("marketplace-backend/src/modules/documents-audit/documents-audit.repository.ts");
+  const repositorySource = read("backend/src/modules/documents-audit/documents-audit.repository.ts");
   assertCondition(
     !repositorySource.includes("listFileLinksByResource"),
     "Unused Module 21 resource-link list repository helper must not be recreated.",
@@ -315,7 +318,7 @@ function main() {
     "Unused Module 21 linked-file list repository helper must not be recreated.",
   );
 
-  const controllerSource = read("marketplace-backend/src/modules/documents-audit/documents-audit.controller.ts");
+  const controllerSource = read("backend/src/modules/documents-audit/documents-audit.controller.ts");
   assertCondition(!controllerSource.includes("DocumentsAuditRepository"), "Module 21 controller must not access repositories directly.");
   assertCondition(!controllerSource.includes("../../common/audit/"), "Module 21 controller must not import the audit writer directly.");
   assertCondition(!controllerSource.includes("../../common/outbox/"), "Module 21 controller must not import outbox services directly.");
@@ -324,18 +327,18 @@ function main() {
   assertCondition(passScripts.length === 0, `Temporary Module 21 pass verifiers remain: ${passScripts.join(", ")}`);
   assertCondition(!existsSync(resolve("docs/MODULE_21_CHANGE_MAP.md")), "Temporary Module 21 change map must be removed in the final pass.");
 
-  const moduleFiles = collectFiles("marketplace-backend/src/modules/documents-audit", (name) => name.endsWith(".ts"));
+  const moduleFiles = collectFiles("backend/src/modules/documents-audit", (name) => name.endsWith(".ts"));
   assertCondition(moduleFiles.length >= 8, "Documents/Audit backend module is unexpectedly incomplete.");
-  const featureFiles = collectFiles("marketplace-frontend/src/features/documents-audit", (name) => name.endsWith(".ts") || name.endsWith(".tsx"));
+  const featureFiles = collectFiles("frontend/src/features/documents-audit", (name) => name.endsWith(".ts") || name.endsWith(".tsx"));
   assertCondition(featureFiles.length >= 12, "Documents/Audit frontend feature is unexpectedly incomplete.");
 
   const finalModuleSources = [
     ...moduleFiles,
     ...featureFiles,
-    "marketplace-backend/tests/module21/module21.integration.test.ts",
-    "marketplace-backend/tests/module21/module21.service.test.ts",
-    "marketplace-frontend/tests/module21-documents-audit.test.tsx",
-    "marketplace-frontend/e2e/module21.spec.ts",
+    "backend/tests/module21/module21.integration.test.ts",
+    "backend/tests/module21/module21.service.test.ts",
+    "frontend/tests/module21-documents-audit.test.tsx",
+    "frontend/e2e/module21.spec.ts",
   ];
   for (const relativePath of finalModuleSources) {
     assertCondition(

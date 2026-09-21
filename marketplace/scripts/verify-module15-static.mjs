@@ -8,7 +8,10 @@ const root = fileURLToPath(new URL("../", import.meta.url));
 function read(relativePath) {
   const absolutePath = join(root, relativePath);
   if (!existsSync(absolutePath)) throw new Error(`Required Module 15 file is missing: ${relativePath}`);
-  return readFileSync(absolutePath, "utf8");
+  const source = readFileSync(absolutePath, "utf8");
+  return relativePath.endsWith("package.json")
+    ? JSON.stringify(JSON.parse(source.replace(/^\uFEFF/u, "")), null, 2)
+    : source;
 }
 
 /** Requires one stable source fragment that proves an intended release behavior. */
@@ -43,7 +46,7 @@ function verifyCleanup() {
 
 /** Confirms the final browser flow proves verified purchase, Helpful, moderation, ratings, Search, and isolation. */
 function verifyPlaywrightWorkflow() {
-  const e2e = read("marketplace-frontend/e2e/module15.spec.ts");
+  const e2e = read("frontend/e2e/module15.spec.ts");
   for (const proof of [
     'test.describe("Module 15 Reviews & Ratings E2E"',
     "Write Review",
@@ -53,7 +56,7 @@ function verifyPlaywrightWorkflow() {
     '"hide"',
     '"publish"',
     '"/admin/reviews"',
-    '"Review moderation"',
+    '"Review moderation queue"',
     "waitForSearchRating",
     "Excellent verified purchase",
     "verifiedPurchase: true",
@@ -67,7 +70,7 @@ function verifyPlaywrightWorkflow() {
 
 /** Confirms post-browser verification is read-only and reconciles Review, aggregate, and Search truth. */
 function verifyReleaseDataGate() {
-  const releaseData = read("marketplace-backend/scripts/verify-module15-release-data.mjs");
+  const releaseData = read("backend/scripts/verify-module15-release-data.mjs");
   for (const proof of [
     "Module 15 E2E verified Review",
     "Module 15 Helpful vote",
@@ -87,8 +90,8 @@ function verifyReleaseDataGate() {
 
 /** Confirms the approved eight-operation surface includes Patch 0011 without generic CRUD expansion. */
 function verifyApprovedApiSurface() {
-  const routes = read("marketplace-backend/src/modules/reviews/reviews.routes.ts");
-  const frontendApi = read("marketplace-frontend/src/features/reviews/api/reviews.api.ts");
+  const routes = read("backend/src/modules/reviews/reviews.routes.ts");
+  const frontendApi = read("frontend/src/features/reviews/api/reviews.api.ts");
   requireText(routes, '"/api/v1/admin/reviews"', "Module 15 routes");
   requireText(frontendApi, 'apiClient.get("/admin/reviews"', "Module 15 frontend API");
   rejectText(routes, "router.delete(", "Module 15 routes");
@@ -99,8 +102,8 @@ function verifyApprovedApiSurface() {
 
 /** Confirms package scripts keep durable backend/frontend Module 15 release commands only. */
 function verifyPackageScripts() {
-  const backend = JSON.parse(read("marketplace-backend/package.json"));
-  const frontend = JSON.parse(read("marketplace-frontend/package.json"));
+  const backend = JSON.parse(read("backend/package.json"));
+  const frontend = JSON.parse(read("frontend/package.json"));
   const backendScripts = {
     "test:module15:migrations": "node scripts/verify-module15-migrations.mjs",
     "test:module15:contracts": "vitest run tests/module15/module15.schemas.test.ts",
@@ -131,7 +134,7 @@ function verifyPackageScripts() {
 
 /** Confirms the permanent cross-repository E2E runner carries Module 15 through reconciliation. */
 function verifyE2eRunner() {
-  const runner = read("marketplace-frontend/e2e/run-e2e-ci.mjs");
+  const runner = read("frontend/e2e/run-e2e-ci.mjs");
   for (const proof of [
     '"e2e/module15.spec.ts"',
     '"test:module15"',
@@ -147,8 +150,8 @@ function verifyE2eRunner() {
 
 /** Confirms CI and final verifiers use durable Module 15 commands. */
 function verifyReleaseWiring() {
-  const backendCi = read("marketplace-backend/.github/workflows/ci.yml");
-  const frontendCi = read("marketplace-frontend/.github/workflows/ci.yml");
+  const backendCi = read("backend/.github/workflows/ci.yml");
+  const frontendCi = read("frontend/.github/workflows/ci.yml");
   const finalVerifier = read("scripts/verify-module15.mjs");
   requireText(backendCi, "npm run test:module15:migrations", "Backend CI");
   requireText(backendCi, "npm run test:module15:specs", "Backend CI");
@@ -164,7 +167,7 @@ function verifyReleaseWiring() {
 
 /** Confirms the immutable Module 15 migration remains in the append-only history after later modules advance the head. */
 function verifyMigrationFreeze() {
-  const migrations = readdirSync(join(root, "marketplace-backend", "drizzle"))
+  const migrations = readdirSync(join(root, "backend", "drizzle"))
     .filter((name) => /^\d{4}_.+\.sql$/u.test(name))
     .sort();
   if (!migrations.includes("0031_reviews_ratings.sql")) {

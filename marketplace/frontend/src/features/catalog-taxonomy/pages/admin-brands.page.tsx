@@ -1,5 +1,10 @@
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
+import { SectionHeader } from "@/components/ui/section-header";
+import { StatusPill } from "@/components/ui/status-pill";
+import { Surface } from "@/components/ui/surface";
 import { CATALOG_PERMISSION } from "../catalog-taxonomy.constants";
 import { CatalogTaxonomyLayout, RequireCatalogPermission } from "../components/catalog-taxonomy-layout";
 import { BrandForm } from "../forms/brand-form";
@@ -28,39 +33,52 @@ function AdminBrandsContent() {
   }
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-xl border bg-white p-5 shadow-sm">
-        <h1 className="text-2xl font-bold">Brand manager</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Create normalized brand definitions. The current approved API does not define brand
-          update/delete routes, so this screen does not invent them.
-        </p>
+    <div className="space-y-5">
+      <PageHeader
+        eyebrow="Catalog · Brands"
+        title="Brands"
+        description="Create normalized marketplace brand definitions using the existing create-only catalog contract."
+      />
+
+      <Surface>
+        <SectionHeader
+          title="Create brand"
+          description="The current API does not expose brand update or delete commands, so this screen intentionally does not invent them."
+        />
         <div className="mt-5">
           <BrandForm isPending={create.isPending} error={create.error} onSubmit={createBrand} />
         </div>
-      </section>
+      </Surface>
 
-      <section className="rounded-xl border bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-bold">Brands</h2>
+      <Surface padding="none" className="overflow-hidden">
+        <div className="border-b border-border px-5 py-4 md:px-6">
+          <SectionHeader title="Brand directory" description={`${brands.data.length} brand${brands.data.length === 1 ? "" : "s"} currently visible.`} />
+        </div>
         {brands.data.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-500">No brands exist yet.</p>
+          <div className="p-5 md:p-6">
+            <EmptyState title="No brands exist yet." description="Create the first brand above to populate the catalog directory." />
+          </div>
         ) : (
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead><tr><th className="pb-2">Name</th><th className="pb-2">Slug</th><th className="pb-2">Status</th></tr></thead>
-              <tbody>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px] text-left text-sm">
+              <thead className="border-b border-border bg-surface-muted text-xs font-semibold uppercase tracking-[0.08em] text-foreground-muted">
+                <tr><th className="px-4 py-3">Name</th><th className="px-4 py-3">Slug</th><th className="px-4 py-3">Status</th></tr>
+              </thead>
+              <tbody className="divide-y divide-border">
                 {brands.data.map((brand) => (
-                  <tr key={brand.id} className="border-t">
-                    <td className="py-3 font-medium">{brand.name}</td>
-                    <td className="py-3 text-slate-600">{brand.slug}</td>
-                    <td className="py-3">{brand.status}</td>
+                  <tr key={brand.id} className="hover:bg-surface-muted/60">
+                    <td className="px-4 py-3 font-medium text-foreground">{brand.name}</td>
+                    <td className="px-4 py-3 text-foreground-muted">/{brand.slug}</td>
+                    <td className="px-4 py-3">
+                      <StatusPill tone={brand.status === "active" ? "positive" : "neutral"}>{brand.status}</StatusPill>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         )}
-      </section>
+      </Surface>
     </div>
   );
 }

@@ -1,5 +1,8 @@
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { SectionHeader } from "@/components/ui/section-header";
+import { Surface } from "@/components/ui/surface";
 import {
   REPORT_FILTER_PRESET_STORAGE_KEY,
   type ReportCode,
@@ -49,15 +52,15 @@ export function SavedReportFilters({
   );
 
   return (
-    <section className="rounded-xl border bg-white p-4 shadow-sm">
-      <p className="font-semibold">Saved filters</p>
-      <p className="mt-1 text-xs text-slate-500">
-        These presets stay on this browser. The approved nine-route Reports API does not expose server saved-filter commands.
-      </p>
+    <Surface>
+      <SectionHeader
+        title="Saved filters"
+        description="These presets stay on this browser; report authorization and data scoping remain server-controlled."
+      />
       <div className="mt-3 flex flex-wrap gap-2">
-        <input
+        <Input
           aria-label="Saved report filter name"
-          className="min-w-56 rounded-md border px-3 py-2 text-sm"
+          className="min-w-56"
           maxLength={80}
           placeholder="Preset name"
           value={name}
@@ -87,7 +90,7 @@ export function SavedReportFilters({
       </div>
 
       {reportPresets.length === 0 ? (
-        <p className="mt-3 text-sm text-slate-500">No saved filters for this report.</p>
+        <p className="mt-3 text-sm text-foreground-muted">No saved filters for this report.</p>
       ) : (
         <div className="mt-3 flex flex-wrap gap-2">
           {reportPresets.map((preset) => (
@@ -117,6 +120,6 @@ export function SavedReportFilters({
           ))}
         </div>
       )}
-    </section>
+    </Surface>
   );
 }

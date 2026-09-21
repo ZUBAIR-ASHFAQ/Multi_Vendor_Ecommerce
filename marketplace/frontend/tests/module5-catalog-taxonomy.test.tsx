@@ -159,6 +159,8 @@ describe("Module 5 Catalog Taxonomy UI", () => {
 
     await renderRoute("/admin/catalog/categories");
     await screen.findByText("Electronics");
+    expect(screen.getByLabelText("Administration navigation")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Catalog taxonomy navigation")).not.toBeInTheDocument();
     const user = userEvent.setup();
     await user.type(screen.getByLabelText("Category name"), "Laptops");
     await user.type(screen.getByLabelText("Category slug"), "Laptops");

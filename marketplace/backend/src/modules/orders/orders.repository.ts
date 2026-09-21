@@ -30,6 +30,8 @@ import {
   type OrderStatusHistoryRow,
   type SellerOrderRow,
 } from "../../database/schema/orders.js";
+import { stores } from "../../database/schema/sellers.js";
+import { shipments } from "../../database/schema/shipping.js";
 import type { DatabaseExecutor } from "../../database/types.js";
 import type {
   AdminOrderListQuery,
@@ -152,6 +154,31 @@ export interface SellerOrderWithParentRow {
 export interface PaginatedOrderRows {
   items: OrderRow[];
   totalItems: number;
+}
+
+/** Customer-list Seller Order identity plus the current public store name used only for display. */
+export interface CustomerOrderListSellerOrderRow {
+  orderId: string;
+  sellerOrderId: string;
+  storeId: string;
+  storeName: string;
+  status: string;
+}
+
+/** Immutable Order Item fields required by the bounded customer Order-history preview. */
+export interface CustomerOrderListItemPreviewRow {
+  orderId: string;
+  sellerOrderId: string;
+  orderItemId: string;
+  name: string;
+  variantTitle: string | null;
+  quantity: number;
+}
+
+/** Customer-visible latest Shipment state used only to decide whether tracking is available. */
+export interface CustomerOrderListShipmentRow {
+  sellerOrderId: string;
+  status: "shipped" | "delivered";
 }
 
 /** Paginated Seller Order rows returned only inside one server-derived seller/store scope. */
@@ -447,6 +474,73 @@ export class OrdersRepository {
       .where(where);
 
     return { items, totalItems: Number(totalRow?.totalItems ?? 0) };
+  }
+
+  /** Loads Seller Order/store display rows for one already customer-scoped page of parent Orders. */
+  async listCustomerOrderSellerOrders(
+    orderIds: string[],
+  ): Promise<CustomerOrderListSellerOrderRow[]> {
+    if (orderIds.length === 0) return [];
+
+    return this.executor
+      .select({
+        orderId: sellerOrders.orderId,
+        sellerOrderId: sellerOrders.id,
+        storeId: sellerOrders.storeId,
+        storeName: stores.name,
+        status: sellerOrders.status,
+      })
+      .from(sellerOrders)
+      .innerJoin(stores, eq(stores.id, sellerOrders.storeId))
+      .where(inArray(sellerOrders.orderId, orderIds))
+      .orderBy(asc(sellerOrders.orderId), asc(stores.name), asc(sellerOrders.id));
+  }
+
+  /** Loads immutable item snapshots for one customer-scoped Order page without issuing per-Order queries. */
+  async listCustomerOrderItemPreviews(
+    orderIds: string[],
+  ): Promise<CustomerOrderListItemPreviewRow[]> {
+    if (orderIds.length === 0) return [];
+
+    return this.executor
+      .select({
+        orderId: orderItems.orderId,
+        sellerOrderId: orderItems.sellerOrderId,
+        orderItemId: orderItems.id,
+        name: orderItems.nameSnapshot,
+        variantTitle: orderItems.variantTitleSnapshot,
+        quantity: orderItems.qty,
+      })
+      .from(orderItems)
+      .where(inArray(orderItems.orderId, orderIds))
+      .orderBy(asc(orderItems.orderId), asc(orderItems.sellerOrderId), asc(orderItems.id));
+  }
+
+  /** Loads only customer-visible Shipment states for one customer-scoped Order page. */
+  async listCustomerOrderVisibleShipments(
+    orderIds: string[],
+  ): Promise<CustomerOrderListShipmentRow[]> {
+    if (orderIds.length === 0) return [];
+
+    const rows = await this.executor
+      .select({
+        sellerOrderId: shipments.sellerOrderId,
+        status: shipments.status,
+      })
+      .from(shipments)
+      .innerJoin(sellerOrders, eq(sellerOrders.id, shipments.sellerOrderId))
+      .where(
+        and(
+          inArray(sellerOrders.orderId, orderIds),
+          inArray(shipments.status, ["shipped", "delivered"]),
+        ),
+      )
+      .orderBy(asc(shipments.createdAt), asc(shipments.id));
+
+    return rows.map((row) => ({
+      sellerOrderId: row.sellerOrderId,
+      status: row.status as CustomerOrderListShipmentRow["status"],
+    }));
   }
 
   /** Locks one Customer-owned parent Order before cancellation revalidation and mutation. */

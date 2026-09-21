@@ -97,7 +97,10 @@ export const products = pgTable(
     ),
     check(
       "products_moderation_reason_check",
-      sql`(${table.publicationStatus} = 'rejected' and ${table.moderationReason} is not null and length(btrim(${table.moderationReason})) > 0) or (${table.publicationStatus} <> 'rejected')`,
+      sql`(${table.publicationStatus} = 'rejected'
+        and ${table.moderationReason} is not null
+        and length(btrim(${table.moderationReason})) > 0)
+        or (${table.publicationStatus} <> 'rejected')`,
     ),
     index("products_moderation_queue_idx").on(
       table.publicationStatus,

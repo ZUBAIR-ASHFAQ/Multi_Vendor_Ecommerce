@@ -19,10 +19,10 @@ function requireText(source, expected, label) {
 /** Verifies that Pass 2 freezes only the approved Module 14 boundary constants and schemas. */
 function verifyContracts() {
   const constants = read(
-    "marketplace-backend/src/modules/returns-refunds/returns-refunds.constants.ts",
+    "backend/src/modules/returns-refunds/returns-refunds.constants.ts",
   );
   const schemas = read(
-    "marketplace-backend/src/modules/returns-refunds/returns-refunds.schema.ts",
+    "backend/src/modules/returns-refunds/returns-refunds.schema.ts",
   );
 
   for (const value of [

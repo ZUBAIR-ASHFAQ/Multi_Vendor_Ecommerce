@@ -31,6 +31,7 @@ export interface PublicMediaFileRecord {
  * document repository does not acquire reverse dependencies on Product/Store persistence.
  */
 export class PublicMediaRepository {
+  /** Uses the shared database executor by default while allowing transaction/test injection. */
   constructor(private readonly executor: DatabaseExecutor = db) {}
 
   /** Returns only confirmed Product-media files attached to a currently public Product source. */

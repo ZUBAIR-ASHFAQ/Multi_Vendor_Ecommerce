@@ -2,6 +2,10 @@ import { Link, useParams } from "@tanstack/react-router";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
+import { SectionHeader } from "@/components/ui/section-header";
+import { StatusPill } from "@/components/ui/status-pill";
+import { Surface } from "@/components/ui/surface";
 import { formatDateTime } from "@/lib/dates";
 import { DocumentsAuditLayout } from "../components/documents-audit-layout";
 import { RequireModulePermission } from "../components/module-permission-gate";
@@ -35,53 +39,67 @@ function AuditDetailContent({ auditId }: { auditId: string }) {
 
   return (
     <div className="space-y-5">
-      <section className="rounded-xl border bg-white p-5 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Audit entry</p>
-            <h1 className="mt-1 text-2xl font-bold">{audit.data.action}</h1>
-            <p className="mt-1 text-sm text-slate-600">{formatDateTime(audit.data.createdAt)}</p>
+      <PageHeader
+        eyebrow="Operations · Audit record"
+        title={audit.data.action}
+        description={formatDateTime(audit.data.createdAt)}
+        actions={(
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusPill tone="info">Append-only record</StatusPill>
+            <Button asChild variant="outline">
+              <Link to="/audit">Back to audit</Link>
+            </Button>
           </div>
-          <Button asChild variant="outline">
-            <Link to="/audit">Back to audit</Link>
-          </Button>
-        </div>
+        )}
+      />
 
-        <dl className="mt-5 grid gap-4 md:grid-cols-2">
-          <div>
-            <dt className="text-xs uppercase text-slate-500">Resource</dt>
-            <dd className="mt-1 break-all">
-              {audit.data.resourceType} · {audit.data.resourceId ?? "—"}
-            </dd>
+      <Surface>
+        <SectionHeader
+          title="Record metadata"
+          description="This audit record is read-only. Values shown here are the server-redacted representation returned by the audit API."
+        />
+        <dl className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="rounded-control bg-surface-muted p-3">
+            <dt className="text-xs font-semibold uppercase tracking-wide text-foreground-muted">Resource type</dt>
+            <dd className="mt-1 break-all text-foreground">{audit.data.resourceType}</dd>
           </div>
-          <div>
-            <dt className="text-xs uppercase text-slate-500">Actor</dt>
-            <dd className="mt-1 break-all">
-              {audit.data.actorType} · {audit.data.actorUserId ?? "system"}
-            </dd>
+          <div className="rounded-control bg-surface-muted p-3">
+            <dt className="text-xs font-semibold uppercase tracking-wide text-foreground-muted">Resource ID</dt>
+            <dd className="mt-1 break-all font-mono text-sm text-foreground">{audit.data.resourceId ?? "—"}</dd>
           </div>
-          <div>
-            <dt className="text-xs uppercase text-slate-500">Seller</dt>
-            <dd className="mt-1 break-all">{audit.data.sellerId ?? "—"}</dd>
+          <div className="rounded-control bg-surface-muted p-3">
+            <dt className="text-xs font-semibold uppercase tracking-wide text-foreground-muted">Actor type</dt>
+            <dd className="mt-1 text-foreground">{audit.data.actorType.replaceAll("_", " ")}</dd>
           </div>
-          <div>
-            <dt className="text-xs uppercase text-slate-500">Request ID</dt>
-            <dd className="mt-1 break-all">{audit.data.requestId ?? "—"}</dd>
+          <div className="rounded-control bg-surface-muted p-3">
+            <dt className="text-xs font-semibold uppercase tracking-wide text-foreground-muted">Actor user ID</dt>
+            <dd className="mt-1 break-all font-mono text-sm text-foreground">{audit.data.actorUserId ?? "system"}</dd>
+          </div>
+          <div className="rounded-control bg-surface-muted p-3">
+            <dt className="text-xs font-semibold uppercase tracking-wide text-foreground-muted">Seller ID</dt>
+            <dd className="mt-1 break-all font-mono text-sm text-foreground">{audit.data.sellerId ?? "—"}</dd>
+          </div>
+          <div className="rounded-control bg-surface-muted p-3">
+            <dt className="text-xs font-semibold uppercase tracking-wide text-foreground-muted">Request ID</dt>
+            <dd className="mt-1 break-all font-mono text-sm text-foreground">{audit.data.requestId ?? "—"}</dd>
           </div>
         </dl>
-      </section>
+      </Surface>
 
-      <section className="grid gap-5 lg:grid-cols-2">
-        <article className="rounded-xl border bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-bold">Before</h2>
-          <pre className="mt-3 overflow-auto rounded-md bg-slate-950 p-4 text-xs text-slate-100">{snapshotText(audit.data.before)}</pre>
-        </article>
-        <article className="rounded-xl border bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-bold">After</h2>
-          <pre className="mt-3 overflow-auto rounded-md bg-slate-950 p-4 text-xs text-slate-100">{snapshotText(audit.data.after)}</pre>
-        </article>
+      <section className="grid gap-5 lg:grid-cols-2" aria-label="Read-only audit snapshots">
+        <Surface>
+          <SectionHeader title="Before" description="Redacted state captured before the audited action." />
+          <pre className="mt-4 max-h-[32rem] overflow-auto rounded-control bg-slate-950 p-4 text-xs leading-5 text-slate-100" aria-label="Before snapshot">
+            {snapshotText(audit.data.before)}
+          </pre>
+        </Surface>
+        <Surface>
+          <SectionHeader title="After" description="Redacted state captured after the audited action." />
+          <pre className="mt-4 max-h-[32rem] overflow-auto rounded-control bg-slate-950 p-4 text-xs leading-5 text-slate-100" aria-label="After snapshot">
+            {snapshotText(audit.data.after)}
+          </pre>
+        </Surface>
       </section>
-
     </div>
   );
 }

@@ -32,12 +32,13 @@ function canOpenReports(user: AuthenticatedUser): boolean {
     .some((permission) => user.permissions.includes(permission));
 }
 
+/** Returns whether the current admin actor owns one permission. */
 function permitted(user: AuthenticatedUser, permission: string): boolean {
   return hasPermission(user.permissions, permission);
 }
 
 /** Premium admin control-center navigation filtered by server-provided permissions. */
-function AdminNavigation({ user }: { user: AuthenticatedUser }) {
+export function AdminNavigation({ user }: { user: AuthenticatedUser }) {
   const navigate = useNavigate();
   const logout = useLogoutMutation();
 
@@ -61,8 +62,13 @@ function AdminNavigation({ user }: { user: AuthenticatedUser }) {
   ].some((permission) => permitted(user, permission));
   const canUseFinance = permitted(user, COMMISSIONS_PERMISSION.ADMIN_READ)
     || permitted(user, WALLET_PAYOUT_PERMISSION.ADMIN_PAYOUTS_READ);
+  const canUseDocuments = [
+    DOCUMENT_AUDIT_PERMISSION.DOCUMENTS_UPLOAD,
+    DOCUMENT_AUDIT_PERMISSION.DOCUMENTS_READ,
+    DOCUMENT_AUDIT_PERMISSION.DOCUMENTS_LINK,
+  ].some((permission) => permitted(user, permission));
   const canUseOperations = canOpenReports(user)
-    || permitted(user, DOCUMENT_AUDIT_PERMISSION.DOCUMENTS_READ)
+    || canUseDocuments
     || permitted(user, DOCUMENT_AUDIT_PERMISSION.AUDIT_READ)
     || permitted(user, NOTIFICATIONS_PERMISSION.ADMIN_READ);
   const canUseAccess = [
@@ -134,7 +140,7 @@ function AdminNavigation({ user }: { user: AuthenticatedUser }) {
         <WorkspaceNavGroup label="Operations">
           {permitted(user, NOTIFICATIONS_PERMISSION.ADMIN_READ) ? <Link to="/admin/notification-deliveries" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Notification failures <span>›</span></Link> : null}
           {canOpenReports(user) ? <Link to="/reports" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Reports <span>›</span></Link> : null}
-          {permitted(user, DOCUMENT_AUDIT_PERMISSION.DOCUMENTS_READ) ? <Link to="/documents" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Documents <span>›</span></Link> : null}
+          {canUseDocuments ? <Link to="/documents" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Documents <span>›</span></Link> : null}
           {permitted(user, DOCUMENT_AUDIT_PERMISSION.AUDIT_READ) ? <Link to="/audit" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Audit <span>›</span></Link> : null}
         </WorkspaceNavGroup>
       ) : null}

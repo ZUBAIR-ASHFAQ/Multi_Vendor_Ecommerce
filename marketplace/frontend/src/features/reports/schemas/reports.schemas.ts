@@ -206,6 +206,14 @@ export const reportRunSchema = z.object({
   }).strict().nullable(),
 }).strict();
 
+/** Minimal browser-local reference to a requester-owned export run. */
+export const reportRunHistoryEntrySchema = reportRunSchema.pick({
+  id: true,
+  reportCode: true,
+  outputFormat: true,
+  createdAt: true,
+});
+
 /** Export command payload shape; report-specific filters are selected by UI helpers before submission. */
 export const reportExportCommandSchema = z.object({
   reportCode: z.enum(REPORT_CODE_VALUES),

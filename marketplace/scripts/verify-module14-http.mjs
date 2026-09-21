@@ -30,7 +30,7 @@ function rejectText(source, forbidden, label) {
 /** Confirms thin controllers validate boundaries and delegate all business decisions to the service. */
 function verifyController() {
   const controller = read(
-    "marketplace-backend/src/modules/returns-refunds/returns-refunds.controller.ts",
+    "backend/src/modules/returns-refunds/returns-refunds.controller.ts",
   );
   for (const expected of [
     "export class ReturnsRefundsController",
@@ -67,7 +67,7 @@ function verifyController() {
 /** Confirms the runtime and OpenAPI expose exactly the eight frozen Module 14 operations. */
 function verifyRoutesAndOpenApi() {
   const routes = read(
-    "marketplace-backend/src/modules/returns-refunds/returns-refunds.routes.ts",
+    "backend/src/modules/returns-refunds/returns-refunds.routes.ts",
   );
   for (const expected of [
     "export function createOrderReturnsRouter(",
@@ -112,7 +112,7 @@ function verifyRoutesAndOpenApi() {
 
 /** Confirms Module 14 is mounted through composed service boundaries rather than repository shortcuts. */
 function verifyApplicationComposition() {
-  const app = read("marketplace-backend/src/app.ts");
+  const app = read("backend/src/app.ts");
   for (const expected of [
     "ReturnsRefundsController",
     "ReturnsRefundsService",
@@ -137,7 +137,7 @@ function verifyApplicationComposition() {
 
 /** Confirms all Module 14 permissions are seeded into the intended existing system roles. */
 function verifyRbacComposition() {
-  const seed = read("marketplace-backend/src/database/seeds/platform-rbac.seed.ts");
+  const seed = read("backend/src/database/seeds/platform-rbac.seed.ts");
   for (const expected of [
     "RETURNS_PERMISSION_CATALOG",
     "...RETURNS_PERMISSION_CATALOG",
@@ -154,15 +154,15 @@ function verifyRbacComposition() {
 
 /** Confirms central OpenAPI registration and regression surface lock include Module 14. */
 function verifyCentralContracts() {
-  const openApi = read("marketplace-backend/src/http/openapi/openapi.document.ts");
+  const openApi = read("backend/src/http/openapi/openapi.document.ts");
   const regression = read(
-    "marketplace-backend/tests/regression/implemented-api-contracts.test.ts",
+    "backend/tests/regression/implemented-api-contracts.test.ts",
   );
   const schema = read(
-    "marketplace-backend/src/modules/returns-refunds/returns-refunds.schema.ts",
+    "backend/src/modules/returns-refunds/returns-refunds.schema.ts",
   );
   const moduleIndex = read(
-    "marketplace-backend/src/modules/returns-refunds/index.ts",
+    "backend/src/modules/returns-refunds/index.ts",
   );
 
   requireText(openApi, "returnsRefundsOpenApiPaths", "Central OpenAPI document");

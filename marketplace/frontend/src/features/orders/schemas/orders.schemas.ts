@@ -75,6 +75,30 @@ export const customerOrderSummarySchema = z.object({
   createdAt: isoDateTime,
 });
 
+/** Immutable item preview nested in the customer Order-history list. */
+export const customerOrderListItemPreviewSchema = z.object({
+  id: uuid,
+  name: z.string().min(1),
+  variantTitle: z.string().nullable(),
+  quantity: z.number().int().positive(),
+});
+
+/** One seller/store group shown directly on the customer Order-history card. */
+export const customerOrderListSellerOrderSchema = z.object({
+  id: uuid,
+  storeId: uuid,
+  storeName: z.string().min(1),
+  status: z.enum(SELLER_ORDER_STATUS),
+  latestShipmentStatus: z.enum(["shipped", "delivered"]).nullable(),
+  itemCount: z.number().int().nonnegative(),
+  items: z.array(customerOrderListItemPreviewSchema).max(3),
+});
+
+/** Customer-owned Order list row enriched with bounded seller/store previews. */
+export const customerOrderListItemSchema = customerOrderSummarySchema.extend({
+  sellerOrders: z.array(customerOrderListSellerOrderSchema),
+});
+
 /** Seller Order summary nested in a customer-facing parent Order. */
 export const customerSellerOrderSchema = z.object({
   id: uuid,
@@ -156,6 +180,7 @@ export const orderCancellationFormSchema = z.object({
 });
 
 export type CustomerOrderSummary = z.infer<typeof customerOrderSummarySchema>;
+export type CustomerOrderListItem = z.infer<typeof customerOrderListItemSchema>;
 export type CustomerOrderDetail = z.infer<typeof customerOrderDetailSchema>;
 export type SellerOrderListItem = z.infer<typeof sellerOrderListItemSchema>;
 export type SellerOrderDetail = z.infer<typeof sellerOrderDetailSchema>;

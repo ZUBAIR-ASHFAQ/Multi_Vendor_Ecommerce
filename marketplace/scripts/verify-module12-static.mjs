@@ -7,7 +7,10 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 
 /** Reads one UTF-8 project file for dependency-free structural verification. */
 function readProjectFile(relativePath) {
-  return readFileSync(join(root, relativePath), "utf8");
+  const source = readFileSync(join(root, relativePath), "utf8");
+  return relativePath.endsWith("package.json")
+    ? JSON.stringify(JSON.parse(source.replace(/^\uFEFF/u, "")), null, 2)
+    : source;
 }
 
 /** Requires one source fragment so contract drift fails loudly. */
@@ -73,48 +76,48 @@ function verifyPaymentsContractPatch() {
 /** Confirms the completed Module 12 release keeps every required backend, frontend, and E2E layer. */
 function verifyPassBoundary() {
   for (const path of [
-    "marketplace-backend/src/modules/payments/payments.constants.ts",
-    "marketplace-backend/src/modules/payments/payments.schema.ts",
-    "marketplace-backend/src/modules/payments/payments.repository.ts",
-    "marketplace-backend/src/modules/payments/payments.service.ts",
-    "marketplace-backend/src/modules/payments/payments.jobs.ts",
-    "marketplace-backend/src/modules/payments/payments.controller.ts",
-    "marketplace-backend/src/modules/payments/payments.routes.ts",
-    "marketplace-backend/src/modules/payments/index.ts",
-    "marketplace-backend/src/integrations/payments/payment-provider.contract.ts",
-    "marketplace-backend/src/integrations/payments/stripe/stripe-payment-provider.adapter.ts",
-    "marketplace-backend/tests/module12/module12.schemas.test.ts",
-    "marketplace-backend/tests/module12/module12.prerequisite-services.test.ts",
-    "marketplace-backend/tests/module12/module12.repository.test.ts",
-    "marketplace-backend/tests/module12/module12.service.test.ts",
-    "marketplace-backend/tests/module12/module12.provider.test.ts",
-    "marketplace-backend/tests/module12/module12.http.test.ts",
-    "marketplace-backend/tests/module12/module12.integration.test.ts",
-    "marketplace-backend/tests/module12/module12.test-helpers.ts",
-    "marketplace-backend/scripts/run-module12-tests.mjs",
-    "marketplace-frontend/src/features/payments/payments.constants.ts",
-    "marketplace-frontend/src/features/payments/api/payments.api.ts",
-    "marketplace-frontend/src/features/payments/hooks/use-payments.ts",
-    "marketplace-frontend/src/features/payments/components/checkout-payment.tsx",
-    "marketplace-frontend/src/features/payments/forms/payment-element-form.tsx",
-    "marketplace-frontend/src/features/payments/components/payment-timeline.tsx",
-    "marketplace-frontend/src/features/payments/forms/admin-payment-filter.form.tsx",
-    "marketplace-frontend/src/features/payments/pages/payment-status.page.tsx",
-    "marketplace-frontend/src/features/payments/pages/admin-payments.page.tsx",
-    "marketplace-frontend/src/features/payments/pages/admin-payment-detail.page.tsx",
-    "marketplace-frontend/src/features/payments/schemas/payments.schemas.ts",
-    "marketplace-frontend/src/features/payments/types/payments.types.ts",
-    "marketplace-frontend/src/app/routes/payments.routes.tsx",
-    "marketplace-frontend/tests/module12-payments.test.tsx",
-    "marketplace-frontend/e2e/module12.spec.ts",
-    "marketplace-frontend/e2e/support/fake-stripe-server.mjs",
-    "marketplace-backend/scripts/verify-module12-release-data.mjs",
+    "backend/src/modules/payments/payments.constants.ts",
+    "backend/src/modules/payments/payments.schema.ts",
+    "backend/src/modules/payments/payments.repository.ts",
+    "backend/src/modules/payments/payments.service.ts",
+    "backend/src/modules/payments/payments.jobs.ts",
+    "backend/src/modules/payments/payments.controller.ts",
+    "backend/src/modules/payments/payments.routes.ts",
+    "backend/src/modules/payments/index.ts",
+    "backend/src/integrations/payments/payment-provider.contract.ts",
+    "backend/src/integrations/payments/stripe/stripe-payment-provider.adapter.ts",
+    "backend/tests/module12/module12.schemas.test.ts",
+    "backend/tests/module12/module12.prerequisite-services.test.ts",
+    "backend/tests/module12/module12.repository.test.ts",
+    "backend/tests/module12/module12.service.test.ts",
+    "backend/tests/module12/module12.provider.test.ts",
+    "backend/tests/module12/module12.http.test.ts",
+    "backend/tests/module12/module12.integration.test.ts",
+    "backend/tests/module12/module12.test-helpers.ts",
+    "backend/scripts/run-module12-tests.mjs",
+    "frontend/src/features/payments/payments.constants.ts",
+    "frontend/src/features/payments/api/payments.api.ts",
+    "frontend/src/features/payments/hooks/use-payments.ts",
+    "frontend/src/features/payments/components/checkout-payment.tsx",
+    "frontend/src/features/payments/forms/payment-element-form.tsx",
+    "frontend/src/features/payments/components/payment-timeline.tsx",
+    "frontend/src/features/payments/forms/admin-payment-filter.form.tsx",
+    "frontend/src/features/payments/pages/payment-status.page.tsx",
+    "frontend/src/features/payments/pages/admin-payments.page.tsx",
+    "frontend/src/features/payments/pages/admin-payment-detail.page.tsx",
+    "frontend/src/features/payments/schemas/payments.schemas.ts",
+    "frontend/src/features/payments/types/payments.types.ts",
+    "frontend/src/app/routes/payments.routes.tsx",
+    "frontend/tests/module12-payments.test.tsx",
+    "frontend/e2e/module12.spec.ts",
+    "frontend/e2e/support/fake-stripe-server.mjs",
+    "backend/scripts/verify-module12-release-data.mjs",
     "scripts/verify-module12.mjs",
   ]) {
     requirePresent(path, "Module 12 completed artifact");
   }
 
-  const migrationDirectory = join(root, "marketplace-backend/drizzle");
+  const migrationDirectory = join(root, "backend/drizzle");
   const migrations = readdirSync(migrationDirectory).filter((name) => /^\d{4}_.+\.sql$/.test(name));
   if (!migrations.includes("0024_payments_persistence.sql")) {
     throw new Error("Module 12 release must retain migration 0024_payments_persistence.sql.");
@@ -126,8 +129,8 @@ function verifyPassBoundary() {
     throw new Error("Marketplace migrations must remain append-only and uniquely numbered.");
   }
 
-  const backendPackage = readProjectFile("marketplace-backend/package.json");
-  const frontendPackage = readProjectFile("marketplace-frontend/package.json");
+  const backendPackage = readProjectFile("backend/package.json");
+  const frontendPackage = readProjectFile("frontend/package.json");
   requireText(backendPackage, '"stripe":', "Backend Stripe runtime dependency");
   requireText(frontendPackage, '"@stripe/stripe-js":', "Frontend Stripe.js dependency");
   requireText(frontendPackage, '"@stripe/react-stripe-js":', "Frontend React Stripe.js dependency");
@@ -138,9 +141,9 @@ function verifyPassBoundary() {
 
 /** Confirms the approved Payment permissions, runtime routes, OpenAPI paths, and schemas remain intact. */
 function verifyPaymentContracts() {
-  const constants = readProjectFile("marketplace-backend/src/modules/payments/payments.constants.ts");
-  const routes = readProjectFile("marketplace-backend/src/modules/payments/payments.routes.ts");
-  const schema = readProjectFile("marketplace-backend/src/modules/payments/payments.schema.ts");
+  const constants = readProjectFile("backend/src/modules/payments/payments.constants.ts");
+  const routes = readProjectFile("backend/src/modules/payments/payments.routes.ts");
+  const schema = readProjectFile("backend/src/modules/payments/payments.schema.ts");
 
   for (const permission of [
     "payments.read_own",
@@ -188,9 +191,9 @@ function verifyPaymentContracts() {
 
 /** Confirms Stripe SDK types remain behind the provider-neutral adapter boundary. */
 function verifyProviderBoundary() {
-  const providerContractPath = "marketplace-backend/src/integrations/payments/payment-provider.contract.ts";
+  const providerContractPath = "backend/src/integrations/payments/payment-provider.contract.ts";
   const stripeAdapterPath =
-    "marketplace-backend/src/integrations/payments/stripe/stripe-payment-provider.adapter.ts";
+    "backend/src/integrations/payments/stripe/stripe-payment-provider.adapter.ts";
   const provider = readProjectFile(providerContractPath);
   const stripe = readProjectFile(stripeAdapterPath);
 
@@ -227,8 +230,8 @@ function verifyProviderBoundary() {
   }
 
   const sourceRoots = [
-    join(root, "marketplace-backend/src/modules/payments"),
-    join(root, "marketplace-backend/src/integrations/payments"),
+    join(root, "backend/src/modules/payments"),
+    join(root, "backend/src/integrations/payments"),
   ];
   for (const sourceRoot of sourceRoots) {
     for (const file of walkFiles(sourceRoot)) {
@@ -254,7 +257,7 @@ function walkFiles(directory) {
 
 /** Confirms Module 11 exposes only service boundaries required by Payments. */
 function verifyOrdersPaymentBoundary() {
-  const service = readProjectFile("marketplace-backend/src/modules/orders/orders.service.ts");
+  const service = readProjectFile("backend/src/modules/orders/orders.service.ts");
 
   for (const fragment of [
     "export interface OrderPaymentSnapshot",
@@ -269,14 +272,14 @@ function verifyOrdersPaymentBoundary() {
   }
 
   for (const file of [
-    "marketplace-backend/src/modules/payments/payments.constants.ts",
-    "marketplace-backend/src/modules/payments/payments.schema.ts",
-    "marketplace-backend/src/modules/payments/payments.repository.ts",
-    "marketplace-backend/src/modules/payments/payments.service.ts",
-    "marketplace-backend/src/modules/payments/payments.jobs.ts",
-    "marketplace-backend/src/modules/payments/payments.controller.ts",
-    "marketplace-backend/src/modules/payments/payments.routes.ts",
-    "marketplace-backend/src/modules/payments/index.ts",
+    "backend/src/modules/payments/payments.constants.ts",
+    "backend/src/modules/payments/payments.schema.ts",
+    "backend/src/modules/payments/payments.repository.ts",
+    "backend/src/modules/payments/payments.service.ts",
+    "backend/src/modules/payments/payments.jobs.ts",
+    "backend/src/modules/payments/payments.controller.ts",
+    "backend/src/modules/payments/payments.routes.ts",
+    "backend/src/modules/payments/index.ts",
   ]) {
     const content = readProjectFile(file);
     if (content.includes("orders.repository")) {
@@ -287,7 +290,7 @@ function verifyOrdersPaymentBoundary() {
 
 /** Confirms the Pass 3 repository primitives needed by service/refund reconciliation remain present. */
 function verifyPaymentsRepository() {
-  const repository = readProjectFile("marketplace-backend/src/modules/payments/payments.repository.ts");
+  const repository = readProjectFile("backend/src/modules/payments/payments.repository.ts");
 
   for (const method of [
     "createPayment(",
@@ -332,7 +335,7 @@ function verifyPaymentsRepository() {
 
 /** Confirms Pass 4 service implements authoritative intent, webhook, refund, expiry, and reconciliation logic. */
 function verifyPaymentsService() {
-  const service = readProjectFile("marketplace-backend/src/modules/payments/payments.service.ts");
+  const service = readProjectFile("backend/src/modules/payments/payments.service.ts");
 
   for (const method of [
     "async createPaymentIntent(",
@@ -391,10 +394,10 @@ function verifyPaymentsService() {
 
 /** Confirms the Payments worker is now composed with the shared service and closes cleanly. */
 function verifyPaymentsJobs() {
-  const constants = readProjectFile("marketplace-backend/src/modules/payments/payments.constants.ts");
-  const jobs = readProjectFile("marketplace-backend/src/modules/payments/payments.jobs.ts");
-  const app = readProjectFile("marketplace-backend/src/app.ts");
-  const server = readProjectFile("marketplace-backend/src/server.ts");
+  const constants = readProjectFile("backend/src/modules/payments/payments.constants.ts");
+  const jobs = readProjectFile("backend/src/modules/payments/payments.jobs.ts");
+  const app = readProjectFile("backend/src/app.ts");
+  const server = readProjectFile("backend/src/server.ts");
 
   for (const name of [
     "payments-reconciliation",
@@ -423,11 +426,11 @@ function verifyPaymentsJobs() {
 
 /** Confirms Pass 5 publishes exactly six thin HTTP operations with raw Stripe webhook handling. */
 function verifyPaymentsHttp() {
-  const controller = readProjectFile("marketplace-backend/src/modules/payments/payments.controller.ts");
-  const routes = readProjectFile("marketplace-backend/src/modules/payments/payments.routes.ts");
-  const app = readProjectFile("marketplace-backend/src/app.ts");
-  const openApi = readProjectFile("marketplace-backend/src/http/openapi/openapi.document.ts");
-  const seed = readProjectFile("marketplace-backend/src/database/seeds/platform-rbac.seed.ts");
+  const controller = readProjectFile("backend/src/modules/payments/payments.controller.ts");
+  const routes = readProjectFile("backend/src/modules/payments/payments.routes.ts");
+  const app = readProjectFile("backend/src/app.ts");
+  const openApi = readProjectFile("backend/src/http/openapi/openapi.document.ts");
+  const seed = readProjectFile("backend/src/database/seeds/platform-rbac.seed.ts");
 
   for (const method of [
     "createPaymentIntent = async",
@@ -495,11 +498,11 @@ function verifyPaymentsHttp() {
 
 /** Confirms backend-only Stripe runtime configuration and secret redaction are present. */
 function verifyStripeConfigurationAndRedaction() {
-  const envFile = readProjectFile("marketplace-backend/src/config/env.ts");
-  const envExample = readProjectFile("marketplace-backend/.env.example");
-  const logger = readProjectFile("marketplace-backend/src/common/logger/logger.ts");
-  const frontendEnv = existsSync(join(root, "marketplace-frontend/.env.example"))
-    ? readProjectFile("marketplace-frontend/.env.example")
+  const envFile = readProjectFile("backend/src/config/env.ts");
+  const envExample = readProjectFile("backend/.env.example");
+  const logger = readProjectFile("backend/src/common/logger/logger.ts");
+  const frontendEnv = existsSync(join(root, "frontend/.env.example"))
+    ? readProjectFile("frontend/.env.example")
     : "";
 
   for (const key of [
@@ -529,21 +532,21 @@ function verifyStripeConfigurationAndRedaction() {
 
 /** Confirms Pass 7 implements only the approved Stripe handoff/status/admin/timeline React surface. */
 function verifyPaymentsFrontend() {
-  const api = readProjectFile("marketplace-frontend/src/features/payments/api/payments.api.ts");
-  const hooks = readProjectFile("marketplace-frontend/src/features/payments/hooks/use-payments.ts");
-  const checkout = readProjectFile("marketplace-frontend/src/features/payments/components/checkout-payment.tsx");
-  const element = readProjectFile("marketplace-frontend/src/features/payments/forms/payment-element-form.tsx");
-  const statusPage = readProjectFile("marketplace-frontend/src/features/payments/pages/payment-status.page.tsx");
-  const adminPage = readProjectFile("marketplace-frontend/src/features/payments/pages/admin-payments.page.tsx");
-  const detailPage = readProjectFile("marketplace-frontend/src/features/payments/pages/admin-payment-detail.page.tsx");
-  const timeline = readProjectFile("marketplace-frontend/src/features/payments/components/payment-timeline.tsx");
-  const filter = readProjectFile("marketplace-frontend/src/features/payments/forms/admin-payment-filter.form.tsx");
-  const routes = readProjectFile("marketplace-frontend/src/app/routes/payments.routes.tsx");
-  const router = readProjectFile("marketplace-frontend/src/app/router/router.tsx");
-  const checkoutPage = readProjectFile("marketplace-frontend/src/features/checkout/pages/checkout.page.tsx");
-  const test = readProjectFile("marketplace-frontend/tests/module12-payments.test.tsx");
-  const envSource = readProjectFile("marketplace-frontend/src/lib/env.ts");
-  const envExample = readProjectFile("marketplace-frontend/.env.example");
+  const api = readProjectFile("frontend/src/features/payments/api/payments.api.ts");
+  const hooks = readProjectFile("frontend/src/features/payments/hooks/use-payments.ts");
+  const checkout = readProjectFile("frontend/src/features/payments/components/checkout-payment.tsx");
+  const element = readProjectFile("frontend/src/features/payments/forms/payment-element-form.tsx");
+  const statusPage = readProjectFile("frontend/src/features/payments/pages/payment-status.page.tsx");
+  const adminPage = readProjectFile("frontend/src/features/payments/pages/admin-payments.page.tsx");
+  const detailPage = readProjectFile("frontend/src/features/payments/pages/admin-payment-detail.page.tsx");
+  const timeline = readProjectFile("frontend/src/features/payments/components/payment-timeline.tsx");
+  const filter = readProjectFile("frontend/src/features/payments/forms/admin-payment-filter.form.tsx");
+  const routes = readProjectFile("frontend/src/app/routes/payments.routes.tsx");
+  const router = readProjectFile("frontend/src/app/router/router.tsx");
+  const checkoutPage = readProjectFile("frontend/src/features/checkout/pages/checkout.page.tsx");
+  const test = readProjectFile("frontend/tests/module12-payments.test.tsx");
+  const envSource = readProjectFile("frontend/src/lib/env.ts");
+  const envExample = readProjectFile("frontend/.env.example");
 
   for (const endpoint of [
     '`/payments/order/${orderId}/intent`',
@@ -605,14 +608,14 @@ function verifyPaymentsFrontend() {
 
 /** Confirms Pass 6 covers service/provider/Supertest/PostgreSQL/idempotency/refund/reconciliation behavior. */
 function verifyFocusedTests() {
-  const packageJson = readProjectFile("marketplace-backend/package.json");
-  const repositoryTest = readProjectFile("marketplace-backend/tests/module12/module12.repository.test.ts");
-  const serviceTest = readProjectFile("marketplace-backend/tests/module12/module12.service.test.ts");
-  const providerTest = readProjectFile("marketplace-backend/tests/module12/module12.provider.test.ts");
-  const httpTest = readProjectFile("marketplace-backend/tests/module12/module12.http.test.ts");
-  const integrationTest = readProjectFile("marketplace-backend/tests/module12/module12.integration.test.ts");
-  const runner = readProjectFile("marketplace-backend/scripts/run-module12-tests.mjs");
-  const loggerTest = readProjectFile("marketplace-backend/tests/unit/logger-redaction.test.ts");
+  const packageJson = readProjectFile("backend/package.json");
+  const repositoryTest = readProjectFile("backend/tests/module12/module12.repository.test.ts");
+  const serviceTest = readProjectFile("backend/tests/module12/module12.service.test.ts");
+  const providerTest = readProjectFile("backend/tests/module12/module12.provider.test.ts");
+  const httpTest = readProjectFile("backend/tests/module12/module12.http.test.ts");
+  const integrationTest = readProjectFile("backend/tests/module12/module12.integration.test.ts");
+  const runner = readProjectFile("backend/scripts/run-module12-tests.mjs");
+  const loggerTest = readProjectFile("backend/tests/unit/logger-redaction.test.ts");
 
   for (const script of [
     '"test:module12:service"',
@@ -707,14 +710,14 @@ function verifyFocusedTests() {
 
 /** Confirms the final browser/provider workflow and post-browser data gate prove Module 12 invariants. */
 function verifyPass8ReleaseGate() {
-  const e2e = readProjectFile("marketplace-frontend/e2e/module12.spec.ts");
-  const providerTestServer = readProjectFile("marketplace-frontend/e2e/support/fake-stripe-server.mjs");
-  const runner = readProjectFile("marketplace-frontend/e2e/run-e2e-ci.mjs");
-  const releaseData = readProjectFile("marketplace-backend/scripts/verify-module12-release-data.mjs");
+  const e2e = readProjectFile("frontend/e2e/module12.spec.ts");
+  const providerTestServer = readProjectFile("frontend/e2e/support/fake-stripe-server.mjs");
+  const runner = readProjectFile("frontend/e2e/run-e2e-ci.mjs");
+  const releaseData = readProjectFile("backend/scripts/verify-module12-release-data.mjs");
   const releaseVerifier = readProjectFile("scripts/verify-module12.mjs");
-  const env = readProjectFile("marketplace-backend/src/config/env.ts");
+  const env = readProjectFile("backend/src/config/env.ts");
   const adapter = readProjectFile(
-    "marketplace-backend/src/integrations/payments/stripe/stripe-payment-provider.adapter.ts",
+    "backend/src/integrations/payments/stripe/stripe-payment-provider.adapter.ts",
   );
 
   for (const proof of [
@@ -722,7 +725,7 @@ function verifyPass8ReleaseGate() {
     "redirect_status=succeeded",
     "await sendStripeWebhook(apiContext, rawWebhook, signature);",
     "/internal/payments/${intent.paymentId}/refund",
-    'getByRole("heading", { name: "Payment search" })',
+    'getByRole("heading", { name: "Payment operations" })',
     'getByRole("heading", { name: "Transaction timeline" })',
   ]) {
     requireText(e2e, proof, "Module 12 Playwright release proof");

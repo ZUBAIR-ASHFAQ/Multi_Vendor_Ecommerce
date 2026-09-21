@@ -23,7 +23,7 @@ function requireText(source, expected, label) {
 /** Confirms Pass 3 adds scoped Drizzle persistence without moving business decisions into the repository. */
 function verifyRepository() {
   const repository = read(
-    "marketplace-backend/src/modules/returns-refunds/returns-refunds.repository.ts",
+    "backend/src/modules/returns-refunds/returns-refunds.repository.ts",
   );
 
   for (const expected of [

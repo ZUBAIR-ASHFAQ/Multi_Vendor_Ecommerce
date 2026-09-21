@@ -11,7 +11,10 @@ function readProjectFile(relativePath) {
   if (!existsSync(absolutePath)) {
     throw new Error(`Required Module 8 file is missing: ${relativePath}`);
   }
-  return readFileSync(absolutePath, "utf8");
+  const source = readFileSync(absolutePath, "utf8");
+  return relativePath.endsWith("package.json")
+    ? JSON.stringify(JSON.parse(source.replace(/^\uFEFF/u, "")), null, 2)
+    : source;
 }
 
 /** Requires one permanent contract fragment inside a Module 8 implementation file. */
@@ -62,13 +65,13 @@ function verifyIndependentProjects() {
 /** Confirms Module 8 persistence and its append-only migration remain present. */
 function verifyDatabaseContract() {
   const schema = readProjectFile(
-    "marketplace-backend/src/database/schema/cart-wishlist.ts",
+    "backend/src/database/schema/cart-wishlist.ts",
   );
   const migration = readProjectFile(
-    "marketplace-backend/drizzle/0017_cart_wishlist.sql",
+    "backend/drizzle/0017_cart_wishlist.sql",
   );
   const verifier = readProjectFile(
-    "marketplace-backend/scripts/verify-module8-migrations.mjs",
+    "backend/scripts/verify-module8-migrations.mjs",
   );
 
   for (const tableName of ["carts", "cart_items", "wishlists", "wishlist_items"]) {
@@ -90,10 +93,10 @@ function verifyDatabaseContract() {
 /** Confirms the Module 8 Zod/errors/permissions contract remains narrow and server-owned. */
 function verifyContracts() {
   const constants = readProjectFile(
-    "marketplace-backend/src/modules/cart-wishlist/cart-wishlist.constants.ts",
+    "backend/src/modules/cart-wishlist/cart-wishlist.constants.ts",
   );
   const schemas = readProjectFile(
-    "marketplace-backend/src/modules/cart-wishlist/cart-wishlist.schema.ts",
+    "backend/src/modules/cart-wishlist/cart-wishlist.schema.ts",
   );
 
   for (const permission of ["cart.manage_own", "wishlist.manage_own"]) {
@@ -128,10 +131,10 @@ function verifyContracts() {
 /** Confirms repositories stay customer-scoped and services preserve Product/Inventory boundaries. */
 function verifyRepositoryAndServiceBoundaries() {
   const repository = readProjectFile(
-    "marketplace-backend/src/modules/cart-wishlist/cart-wishlist.repository.ts",
+    "backend/src/modules/cart-wishlist/cart-wishlist.repository.ts",
   );
   const service = readProjectFile(
-    "marketplace-backend/src/modules/cart-wishlist/cart-wishlist.service.ts",
+    "backend/src/modules/cart-wishlist/cart-wishlist.service.ts",
   );
 
   for (const method of [
@@ -161,9 +164,9 @@ function verifyRepositoryAndServiceBoundaries() {
 /** Confirms exactly the approved HTTP surface is mounted with no invented Cart lifecycle commands. */
 function verifyHttpContract() {
   const routes = readProjectFile(
-    "marketplace-backend/src/modules/cart-wishlist/cart-wishlist.routes.ts",
+    "backend/src/modules/cart-wishlist/cart-wishlist.routes.ts",
   );
-  const app = readProjectFile("marketplace-backend/src/app.ts");
+  const app = readProjectFile("backend/src/app.ts");
 
   for (const path of [
     '"/api/v1/cart"',
@@ -192,15 +195,15 @@ function verifyHttpContract() {
 
 /** Confirms Pass 6 backend tests and its repeatable local verification runner cannot disappear silently. */
 function verifyBackendTests() {
-  const backendPackage = JSON.parse(readProjectFile("marketplace-backend/package.json"));
-  const runner = readProjectFile("marketplace-backend/scripts/run-module8-tests.mjs");
+  const backendPackage = JSON.parse(readProjectFile("backend/package.json"));
+  const runner = readProjectFile("backend/scripts/run-module8-tests.mjs");
 
   for (const relativePath of [
-    "marketplace-backend/tests/module8/module8.schemas.test.ts",
-    "marketplace-backend/tests/module8/module8.repository.test.ts",
-    "marketplace-backend/tests/module8/module8.service.test.ts",
-    "marketplace-backend/tests/module8/module8.integration.test.ts",
-    "marketplace-backend/tests/module8/module8.test-helpers.ts",
+    "backend/tests/module8/module8.schemas.test.ts",
+    "backend/tests/module8/module8.repository.test.ts",
+    "backend/tests/module8/module8.service.test.ts",
+    "backend/tests/module8/module8.integration.test.ts",
+    "backend/tests/module8/module8.test-helpers.ts",
   ]) {
     readProjectFile(relativePath);
   }
@@ -227,13 +230,13 @@ function verifyBackendTests() {
 
 /** Confirms the released Module 8 React feature uses the approved routes and state-management stack. */
 function verifyFrontendFeature() {
-  const packageJson = JSON.parse(readProjectFile("marketplace-frontend/package.json"));
-  const routes = readProjectFile("marketplace-frontend/src/app/routes/cart-wishlist.routes.tsx");
-  const api = readProjectFile("marketplace-frontend/src/features/cart-wishlist/api/cart-wishlist.api.ts");
-  const hooks = readProjectFile("marketplace-frontend/src/features/cart-wishlist/hooks/use-cart-wishlist.ts");
-  const form = readProjectFile("marketplace-frontend/src/features/cart-wishlist/forms/cart-quantity.form.tsx");
-  const cartPage = readProjectFile("marketplace-frontend/src/features/cart-wishlist/pages/cart.page.tsx");
-  const tests = readProjectFile("marketplace-frontend/tests/module8-cart-wishlist.test.tsx");
+  const packageJson = JSON.parse(readProjectFile("frontend/package.json"));
+  const routes = readProjectFile("frontend/src/app/routes/cart-wishlist.routes.tsx");
+  const api = readProjectFile("frontend/src/features/cart-wishlist/api/cart-wishlist.api.ts");
+  const hooks = readProjectFile("frontend/src/features/cart-wishlist/hooks/use-cart-wishlist.ts");
+  const form = readProjectFile("frontend/src/features/cart-wishlist/forms/cart-quantity.form.tsx");
+  const cartPage = readProjectFile("frontend/src/features/cart-wishlist/pages/cart.page.tsx");
+  const tests = readProjectFile("frontend/tests/module8-cart-wishlist.test.tsx");
 
   requireText(routes, 'path: "/cart"', "Module 8 Cart page route");
   requireText(routes, 'path: "/wishlist"', "Module 8 Wishlist page route");
@@ -265,14 +268,14 @@ function verifyFrontendFeature() {
 
 /** Confirms Module 8 is part of the real Playwright and CI release gates. */
 function verifyE2EReleaseGate() {
-  const frontendPackage = JSON.parse(readProjectFile("marketplace-frontend/package.json"));
-  const backendPackage = JSON.parse(readProjectFile("marketplace-backend/package.json"));
-  const e2eSpec = readProjectFile("marketplace-frontend/e2e/module8.spec.ts");
-  const e2eRunner = readProjectFile("marketplace-frontend/e2e/run-e2e-ci.mjs");
-  const frontendCi = readProjectFile("marketplace-frontend/.github/workflows/ci.yml");
-  const backendCi = readProjectFile("marketplace-backend/.github/workflows/ci.yml");
+  const frontendPackage = JSON.parse(readProjectFile("frontend/package.json"));
+  const backendPackage = JSON.parse(readProjectFile("backend/package.json"));
+  const e2eSpec = readProjectFile("frontend/e2e/module8.spec.ts");
+  const e2eRunner = readProjectFile("frontend/e2e/run-e2e-ci.mjs");
+  const frontendCi = readProjectFile("frontend/.github/workflows/ci.yml");
+  const backendCi = readProjectFile("backend/.github/workflows/ci.yml");
   const releaseData = readProjectFile(
-    "marketplace-backend/scripts/verify-module8-release-data.mjs",
+    "backend/scripts/verify-module8-release-data.mjs",
   );
   const cumulativeRelease = readProjectFile("scripts/verify-module8.mjs");
 
@@ -315,7 +318,7 @@ function verifyE2EReleaseGate() {
 
 /** Confirms Pass 8 keeps every implemented browser workflow in one strict cumulative release gate. */
 function verifyPass8SourceGate() {
-  const e2eRunner = readProjectFile("marketplace-frontend/e2e/run-e2e-ci.mjs");
+  const e2eRunner = readProjectFile("frontend/e2e/run-e2e-ci.mjs");
   const cumulativeRelease = readProjectFile("scripts/verify-module8.mjs");
   const expectedSpecs = [
     "foundation.spec.ts",
@@ -331,7 +334,7 @@ function verifyPass8SourceGate() {
   ];
 
   for (const specName of expectedSpecs) {
-    const relativePath = `marketplace-frontend/e2e/${specName}`;
+    const relativePath = `frontend/e2e/${specName}`;
     const spec = readProjectFile(relativePath);
     requireText(e2eRunner, `"e2e/${specName}"`, "Cross-repository Playwright runner");
     requireText(cumulativeRelease, `"e2e/${specName}"`, "Cumulative release verifier");

@@ -2,15 +2,24 @@ import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
+import { Button } from "@/components/ui/button";
+import {
+  AdminQueueEmpty,
+  AdminQueueHeader,
+  AdminQueueTable,
+  AdminQueueTableHead,
+} from "@/features/administration/components/admin-queue";
 import { AdminLayout } from "@/features/administration/components/admin-layout";
 import { RequirePagePermission } from "@/features/administration/components/permission-gate";
 import { ApiClientError } from "@/lib/api-error";
+import { formatDateTime } from "@/lib/dates";
+import { formatMoney } from "@/lib/money";
+import { PaymentPagination } from "../components/payment-pagination";
+import { PaymentStatusBadge } from "../components/payment-status-badge";
 import { AdminPaymentFilterForm } from "../forms/admin-payment-filter.form";
 import { useAdminPaymentsQuery } from "../hooks/use-payments";
 import { PAYMENTS_PERMISSION } from "../payments.constants";
 import type { AdminPaymentsParams } from "../types/payments.types";
-import { PaymentPagination } from "../components/payment-pagination";
-import { PaymentStatusBadge } from "../components/payment-status-badge";
 
 /** Renders finance-safe Payment search results without exposing client secrets or refund commands. */
 function AdminPaymentsContent() {
@@ -24,6 +33,14 @@ function AdminPaymentsContent() {
 
   return (
     <div className="space-y-5">
+      <AdminQueueHeader
+        eyebrow="Commerce · Payments"
+        title="Payment operations"
+        description="Search provider-authoritative payment records and open reconciliation detail without exposing client secrets or adding browser-owned refund logic."
+        meta={payments.data?.meta}
+        visibleCount={payments.data?.items.length}
+      />
+
       <AdminPaymentFilterForm
         onApply={(filters) =>
           setParams((current) => ({
@@ -34,7 +51,7 @@ function AdminPaymentsContent() {
         }
       />
 
-      {payments.isPending ? <LoadingState label="Loading Payments..." /> : null}
+      {payments.isPending ? <LoadingState variant="table" label="Loading payments..." /> : null}
       {payments.isError ? (
         <ErrorState
           title="Payments could not be loaded"
@@ -44,58 +61,54 @@ function AdminPaymentsContent() {
         />
       ) : null}
 
+      {payments.data?.items.length === 0 ? (
+        <AdminQueueEmpty
+          title="No payments match these filters"
+          description="Change status, order ID, provider reference, or currency to search another set of payment records."
+        />
+      ) : null}
+
+      {payments.data?.items.length ? (
+        <AdminQueueTable tableClassName="min-w-[980px]">
+          <AdminQueueTableHead>
+            <tr>
+              <th className="px-4 py-3">Payment</th>
+              <th className="px-4 py-3">Order</th>
+              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Captured</th>
+              <th className="px-4 py-3">Refunded</th>
+              <th className="px-4 py-3">Updated</th>
+              <th className="px-4 py-3 text-right">Primary action</th>
+            </tr>
+          </AdminQueueTableHead>
+          <tbody className="divide-y divide-border">
+            {payments.data.items.map((payment) => (
+              <tr key={payment.paymentId} className="transition-colors hover:bg-surface-muted/60">
+                <td className="px-4 py-3">
+                  <strong className="block text-foreground">{payment.providerPaymentId ?? "Internal payment"}</strong>
+                  <span className="block break-all text-xs text-foreground-muted">{payment.paymentId}</span>
+                </td>
+                <td className="px-4 py-3 break-all text-xs text-foreground-muted">{payment.orderId}</td>
+                <td className="px-4 py-3"><PaymentStatusBadge status={payment.status} /></td>
+                <td className="px-4 py-3 whitespace-nowrap font-medium">{formatMoney(payment.amountCaptured, payment.currency)}</td>
+                <td className="px-4 py-3 whitespace-nowrap">{formatMoney(payment.amountRefunded, payment.currency)}</td>
+                <td className="px-4 py-3 whitespace-nowrap text-foreground-muted">{formatDateTime(payment.updatedAt)}</td>
+                <td className="px-4 py-3 text-right">
+                  <Button size="sm" variant="outline" asChild>
+                    <Link to="/admin/payments/$paymentId" params={{ paymentId: payment.paymentId }}>Open detail</Link>
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </AdminQueueTable>
+      ) : null}
+
       {payments.data ? (
-        <section className="rounded-xl border bg-white p-5 shadow-sm">
-          <h1 className="text-2xl font-bold">Payment search</h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Finance reads Payment movement separately from marketplace revenue, seller liability, and payout state.
-          </p>
-
-          <div className="mt-5 overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b text-slate-500">
-                  <th className="py-2">Payment</th>
-                  <th>Order</th>
-                  <th>Status</th>
-                  <th>Captured</th>
-                  <th>Refunded</th>
-                  <th aria-label="Actions" />
-                </tr>
-              </thead>
-              <tbody>
-                {payments.data.items.map((payment) => (
-                  <tr key={payment.paymentId} className="border-b">
-                    <td className="py-3 font-medium">{payment.providerPaymentId ?? payment.paymentId}</td>
-                    <td className="break-all">{payment.orderId}</td>
-                    <td><PaymentStatusBadge status={payment.status} /></td>
-                    <td>{payment.amountCaptured} {payment.currency}</td>
-                    <td>{payment.amountRefunded} {payment.currency}</td>
-                    <td className="text-right">
-                      <Link
-                        className="underline"
-                        to="/admin/payments/$paymentId"
-                        params={{ paymentId: payment.paymentId }}
-                      >
-                        View
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {payments.data.items.length === 0 ? (
-              <p className="py-8 text-center text-slate-500">No Payments found.</p>
-            ) : null}
-          </div>
-
-          <div className="mt-4">
-            <PaymentPagination
-              meta={payments.data.meta}
-              onPageChange={(page) => setParams((current) => ({ ...current, page }))}
-            />
-          </div>
-        </section>
+        <PaymentPagination
+          meta={payments.data.meta}
+          onPageChange={(page) => setParams((current) => ({ ...current, page }))}
+        />
       ) : null}
     </div>
   );

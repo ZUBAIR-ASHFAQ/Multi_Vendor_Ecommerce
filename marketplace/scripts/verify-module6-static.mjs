@@ -10,7 +10,10 @@ function readProjectFile(relativePath) {
   if (!existsSync(absolutePath)) {
     throw new Error(`Required file is missing: ${relativePath}`);
   }
-  return readFileSync(absolutePath, "utf8").replace(/^\uFEFF/, "");
+  const source = readFileSync(absolutePath, "utf8").replace(/^\uFEFF/, "");
+  return relativePath.endsWith("package.json")
+    ? JSON.stringify(JSON.parse(source.replace(/^\uFEFF/u, "")), null, 2)
+    : source;
 }
 
 /** Fails when required source text is missing. */
@@ -35,8 +38,8 @@ function verifyTopologyAndStack() {
     }
   }
 
-  const backendPackage = JSON.parse(readProjectFile("marketplace-backend/package.json"));
-  const frontendPackage = JSON.parse(readProjectFile("marketplace-frontend/package.json"));
+  const backendPackage = JSON.parse(readProjectFile("backend/package.json"));
+  const frontendPackage = JSON.parse(readProjectFile("frontend/package.json"));
 
   for (const dependency of ["express", "drizzle-orm", "pg", "zod", "bullmq", "ioredis"]) {
     if (!backendPackage.dependencies?.[dependency]) {
@@ -59,14 +62,14 @@ function verifyTopologyAndStack() {
 
 /** Confirms Pass 1's five Product tables and append-only migration frontier are present. */
 function verifyDatabasePass() {
-  const schema = readProjectFile("marketplace-backend/src/database/schema/products.ts");
-  const baseMigration = readProjectFile("marketplace-backend/drizzle/0009_product_management.sql");
+  const schema = readProjectFile("backend/src/database/schema/products.ts");
+  const baseMigration = readProjectFile("backend/drizzle/0009_product_management.sql");
   const integrityMigration = readProjectFile(
-    "marketplace-backend/drizzle/0010_product_management_integrity.sql",
+    "backend/drizzle/0010_product_management_integrity.sql",
   );
-  const schemaIndex = readProjectFile("marketplace-backend/src/database/schema/index.ts");
-  const relations = readProjectFile("marketplace-backend/src/database/relations.ts");
-  const packageJson = JSON.parse(readProjectFile("marketplace-backend/package.json"));
+  const schemaIndex = readProjectFile("backend/src/database/schema/index.ts");
+  const relations = readProjectFile("backend/src/database/relations.ts");
+  const packageJson = JSON.parse(readProjectFile("backend/package.json"));
 
   for (const tableName of [
     '"products"',
@@ -120,7 +123,7 @@ function verifyDatabasePass() {
     "Backend Module 6 migration command",
   );
 
-  const migrations = readdirSync(join(root, "marketplace-backend/drizzle"))
+  const migrations = readdirSync(join(root, "backend/drizzle"))
     .filter((name) => /^\d{4}_.*\.sql$/.test(name))
     .sort();
   const productMigrationIndex = migrations.indexOf("0009_product_management.sql");
@@ -133,7 +136,7 @@ function verifyDatabasePass() {
 /** Confirms the Pass 2 permission, error, event, and status constants match the controlling Module 6 contract. */
 function verifyProductConstants() {
   const constants = readProjectFile(
-    "marketplace-backend/src/modules/products/products.constants.ts",
+    "backend/src/modules/products/products.constants.ts",
   );
 
   for (const permission of [
@@ -177,7 +180,7 @@ function verifyProductConstants() {
 /** Confirms Pass 2 Zod contracts reuse shared API primitives and match database precision/privacy rules. */
 function verifyProductContracts() {
   const schema = readProjectFile(
-    "marketplace-backend/src/modules/products/products.schema.ts",
+    "backend/src/modules/products/products.schema.ts",
   );
 
   for (const contract of [
@@ -275,7 +278,7 @@ function verifyProductContracts() {
 /** Confirms Product permissions are composed into existing platform roles without changing Module 2 ownership. */
 function verifyRbacComposition() {
   const seed = readProjectFile(
-    "marketplace-backend/src/database/seeds/platform-rbac.seed.ts",
+    "backend/src/database/seeds/platform-rbac.seed.ts",
   );
   requireText(seed, "PRODUCT_PERMISSION_CATALOG", "Platform permission composition");
   requireText(seed, "PRODUCT_PERMISSION.SELLER_CREATE", "Seller Product permission grants");
@@ -301,7 +304,7 @@ function verifyRepositoryFunctionComments(repository) {
 /** Confirms Pass 3 exposes only scoped persistence operations needed by the upcoming Product service. */
 function verifyRepositoryPass() {
   const repository = readProjectFile(
-    "marketplace-backend/src/modules/products/products.repository.ts",
+    "backend/src/modules/products/products.repository.ts",
   );
 
   requireText(repository, "export class ProductsRepository", "Module 6 repository boundary");
@@ -389,19 +392,19 @@ function verifyServiceFunctionComments(service) {
 /** Confirms Pass 4 owns Product business logic in the service and keeps upstream modules behind service boundaries. */
 function verifyServicePass() {
   const service = readProjectFile(
-    "marketplace-backend/src/modules/products/products.service.ts",
+    "backend/src/modules/products/products.service.ts",
   );
   const moduleIndex = readProjectFile(
-    "marketplace-backend/src/modules/products/index.ts",
+    "backend/src/modules/products/index.ts",
   );
   const catalogService = readProjectFile(
-    "marketplace-backend/src/modules/catalog-taxonomy/catalog-taxonomy.service.ts",
+    "backend/src/modules/catalog-taxonomy/catalog-taxonomy.service.ts",
   );
   const sellersService = readProjectFile(
-    "marketplace-backend/src/modules/sellers/sellers.service.ts",
+    "backend/src/modules/sellers/sellers.service.ts",
   );
   const documentsService = readProjectFile(
-    "marketplace-backend/src/modules/documents-audit/documents-audit.service.ts",
+    "backend/src/modules/documents-audit/documents-audit.service.ts",
   );
 
   for (const method of [
@@ -509,17 +512,17 @@ function verifyControllerFunctionComments(controller) {
 /** Confirms Pass 5 exposes the complete Product HTTP/RBAC/OpenAPI surface without bypassing service boundaries. */
 function verifyHttpPass() {
   const controller = readProjectFile(
-    "marketplace-backend/src/modules/products/products.controller.ts",
+    "backend/src/modules/products/products.controller.ts",
   );
   const routes = readProjectFile(
-    "marketplace-backend/src/modules/products/products.routes.ts",
+    "backend/src/modules/products/products.routes.ts",
   );
   const moduleIndex = readProjectFile(
-    "marketplace-backend/src/modules/products/index.ts",
+    "backend/src/modules/products/index.ts",
   );
-  const app = readProjectFile("marketplace-backend/src/app.ts");
+  const app = readProjectFile("backend/src/app.ts");
   const openApi = readProjectFile(
-    "marketplace-backend/src/http/openapi/openapi.document.ts",
+    "backend/src/http/openapi/openapi.document.ts",
   );
 
   for (const method of [
@@ -627,9 +630,9 @@ function verifyHttpPass() {
     "Module 6 Product moderation runtime composition",
   );
 
-  const environment = readProjectFile("marketplace-backend/src/config/env.ts");
-  const appConfig = readProjectFile("marketplace-backend/src/config/app.config.ts");
-  const envExample = readProjectFile("marketplace-backend/.env.example");
+  const environment = readProjectFile("backend/src/config/env.ts");
+  const appConfig = readProjectFile("backend/src/config/app.config.ts");
+  const envExample = readProjectFile("backend/.env.example");
   requireText(environment, "PRODUCT_MODERATION_REQUIRED", "Typed Product moderation environment");
   requireText(appConfig, "productModerationRequired", "Product moderation application config");
   requireText(envExample, "PRODUCT_MODERATION_REQUIRED=true", "Product moderation environment example");
@@ -641,14 +644,14 @@ function verifyHttpPass() {
 
 /** Confirms Pass 6 proves Product repository, service, HTTP, isolation, history, and regression behavior. */
 function verifyBackendTestsPass() {
-  const packageJson = JSON.parse(readProjectFile("marketplace-backend/package.json"));
-  const runner = readProjectFile("marketplace-backend/scripts/run-module6-tests.mjs");
-  const schemasTest = readProjectFile("marketplace-backend/tests/module6/module6.schemas.test.ts");
-  const serviceTest = readProjectFile("marketplace-backend/tests/module6/module6.service.test.ts");
-  const repositoryTest = readProjectFile("marketplace-backend/tests/module6/module6.repository.test.ts");
-  const integrationTest = readProjectFile("marketplace-backend/tests/module6/module6.integration.test.ts");
-  const helpers = readProjectFile("marketplace-backend/tests/module6/module6.test-helpers.ts");
-  const backendCi = readProjectFile("marketplace-backend/.github/workflows/ci.yml");
+  const packageJson = JSON.parse(readProjectFile("backend/package.json"));
+  const runner = readProjectFile("backend/scripts/run-module6-tests.mjs");
+  const schemasTest = readProjectFile("backend/tests/module6/module6.schemas.test.ts");
+  const serviceTest = readProjectFile("backend/tests/module6/module6.service.test.ts");
+  const repositoryTest = readProjectFile("backend/tests/module6/module6.repository.test.ts");
+  const integrationTest = readProjectFile("backend/tests/module6/module6.integration.test.ts");
+  const helpers = readProjectFile("backend/tests/module6/module6.test-helpers.ts");
+  const backendCi = readProjectFile("backend/.github/workflows/ci.yml");
 
   for (const scriptName of ["test:module6:migrations", "test:module6:specs", "test:module6"]) {
     if (!packageJson.scripts?.[scriptName]) {
@@ -734,25 +737,25 @@ function verifyBackendTestsPass() {
 
 /** Confirms Pass 7 implements the independent React Product feature without changing the required frontend stack. */
 function verifyFrontendPass() {
-  const frontendPackage = JSON.parse(readProjectFile("marketplace-frontend/package.json"));
-  const router = readProjectFile("marketplace-frontend/src/app/router/router.tsx");
-  const routes = readProjectFile("marketplace-frontend/src/app/routes/products.routes.tsx");
-  const api = readProjectFile("marketplace-frontend/src/features/products/api/products.api.ts");
-  const hooks = readProjectFile("marketplace-frontend/src/features/products/hooks/use-products.ts");
-  const productForm = readProjectFile("marketplace-frontend/src/features/products/forms/product-form.tsx");
-  const variantForm = readProjectFile("marketplace-frontend/src/features/products/forms/product-variant-form.tsx");
-  const mediaForm = readProjectFile("marketplace-frontend/src/features/products/forms/product-media-form.tsx");
-  const sellerList = readProjectFile("marketplace-frontend/src/features/products/pages/seller-products.page.tsx");
-  const sellerCreate = readProjectFile("marketplace-frontend/src/features/products/pages/seller-product-create.page.tsx");
-  const sellerEdit = readProjectFile("marketplace-frontend/src/features/products/pages/seller-product-edit.page.tsx");
-  const adminList = readProjectFile("marketplace-frontend/src/features/products/pages/admin-products.page.tsx");
-  const adminReview = readProjectFile("marketplace-frontend/src/features/products/pages/admin-product-review.page.tsx");
-  const publicList = readProjectFile("marketplace-frontend/src/features/products/pages/public-products.page.tsx");
-  const publicDetail = readProjectFile("marketplace-frontend/src/features/products/pages/public-product-detail.page.tsx");
-  const productTests = readProjectFile("marketplace-frontend/tests/module6-products.test.tsx");
-  const sellerLayout = readProjectFile("marketplace-frontend/src/features/sellers/components/seller-layout.tsx");
-  const authNavigation = readProjectFile("marketplace-frontend/src/features/auth/auth.navigation.ts");
-  const frontendCi = readProjectFile("marketplace-frontend/.github/workflows/ci.yml");
+  const frontendPackage = JSON.parse(readProjectFile("frontend/package.json"));
+  const router = readProjectFile("frontend/src/app/router/router.tsx");
+  const routes = readProjectFile("frontend/src/app/routes/products.routes.tsx");
+  const api = readProjectFile("frontend/src/features/products/api/products.api.ts");
+  const hooks = readProjectFile("frontend/src/features/products/hooks/use-products.ts");
+  const productForm = readProjectFile("frontend/src/features/products/forms/product-form.tsx");
+  const variantForm = readProjectFile("frontend/src/features/products/forms/product-variant-form.tsx");
+  const mediaForm = readProjectFile("frontend/src/features/products/forms/product-media-form.tsx");
+  const sellerList = readProjectFile("frontend/src/features/products/pages/seller-products.page.tsx");
+  const sellerCreate = readProjectFile("frontend/src/features/products/pages/seller-product-create.page.tsx");
+  const sellerEdit = readProjectFile("frontend/src/features/products/pages/seller-product-edit.page.tsx");
+  const adminList = readProjectFile("frontend/src/features/products/pages/admin-products.page.tsx");
+  const adminReview = readProjectFile("frontend/src/features/products/pages/admin-product-review.page.tsx");
+  const publicList = readProjectFile("frontend/src/features/products/pages/public-products.page.tsx");
+  const publicDetail = readProjectFile("frontend/src/features/products/pages/public-product-detail.page.tsx");
+  const productTests = readProjectFile("frontend/tests/module6-products.test.tsx");
+  const sellerLayout = readProjectFile("frontend/src/features/sellers/components/seller-layout.tsx");
+  const authNavigation = readProjectFile("frontend/src/features/auth/auth.navigation.ts");
+  const frontendCi = readProjectFile("frontend/.github/workflows/ci.yml");
 
   if (!frontendPackage.scripts?.["test:module6"]) {
     throw new Error("Frontend Module 6 test script is missing: test:module6");
@@ -847,24 +850,24 @@ function verifyFrontendPass() {
   }
   requireText(sellerCreate, "Create draft Product", "Seller Product create workflow");
   for (const required of [
-    "Variants / SKUs",
-    "Media manager",
+    "Variants & pricing",
+    "Media",
     "Pricing history",
     "Publication",
     "Submit for review",
     "Unpublish",
-    "Inventory quantities are intentionally not edited here",
+    "dedicated Inventory workspace",
   ]) {
     requireText(sellerEdit, required, "Seller Product edit workflow");
   }
-  for (const required of ["Product approvals", "PENDING_APPROVAL", "Review"]) {
+  for (const required of ["Product approval queue", "PENDING_APPROVAL", "Review"]) {
     requireText(adminList, required, "Admin Product approval queue");
   }
-  for (const required of ["Approve and publish", "Reject and return to seller", "Rejection reason"]) {
+  for (const required of ["Approve and publish", "Reject and return", "Rejection reason"]) {
     requireText(adminReview, required, "Admin Product review workflow");
   }
-  requireText(publicList, "No published Products match these filters.", "Public Product empty state");
-  requireText(publicDetail, "The current Product API exposes safe media metadata/file IDs", "Public media contract honesty");
+  requireText(publicList, "No products match these filters", "Public Product empty state");
+  requireText(publicDetail, "usePublicMediaQuery", "Public media contract honesty");
 
   requireText(sellerLayout, 'to="/seller/products"', "Seller Product navigation");
   requireText(authNavigation, 'return "/seller/products";', "Seller Product post-login navigation");
@@ -888,12 +891,12 @@ function verifyFrontendPass() {
 
 /** Confirms Pass 8 adds the browser workflow and cumulative cross-project release gate without adding temporary evidence files. */
 function verifyReleasePass() {
-  const backendPackage = JSON.parse(readProjectFile("marketplace-backend/package.json"));
-  const frontendPackage = JSON.parse(readProjectFile("marketplace-frontend/package.json"));
+  const backendPackage = JSON.parse(readProjectFile("backend/package.json"));
+  const frontendPackage = JSON.parse(readProjectFile("frontend/package.json"));
   const releaseGate = readProjectFile("scripts/verify-module6.mjs");
-  const e2e = readProjectFile("marketplace-frontend/e2e/module6.spec.ts");
+  const e2e = readProjectFile("frontend/e2e/module6.spec.ts");
   const releaseData = readProjectFile(
-    "marketplace-backend/scripts/verify-module6-release-data.mjs",
+    "backend/scripts/verify-module6-release-data.mjs",
   );
 
   if (!frontendPackage.scripts?.["test:e2e:module6"]) {

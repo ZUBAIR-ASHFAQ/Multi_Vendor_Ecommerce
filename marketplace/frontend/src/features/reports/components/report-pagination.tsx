@@ -10,9 +10,9 @@ export function ReportPagination({
   onPageChange: (page: number) => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+    <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-foreground-muted">
       <span>
-        Page {meta.page} of {Math.max(meta.totalPages, 1)} · {meta.totalItems} rows
+        Page {meta.page} of {Math.max(meta.totalPages, 1)} · {meta.totalItems.toLocaleString()} rows
       </span>
       <div className="flex gap-2">
         <Button

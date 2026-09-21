@@ -581,12 +581,12 @@ test.describe("Module 12 Payments E2E", () => {
         const adminBrowser = await authenticatedPage(browser, adminEmail, adminPassword);
         try {
           await adminBrowser.page.goto("/admin/payments");
-          await expect(adminBrowser.page.getByRole("heading", { name: "Payment search" })).toBeVisible();
+          await expect(adminBrowser.page.getByRole("heading", { name: "Payment operations" })).toBeVisible();
           const paymentRow = adminBrowser.page.getByRole("row").filter({
             hasText: intent.providerPaymentId,
           });
           await expect(paymentRow).toBeVisible();
-          await paymentRow.getByRole("link", { name: "View" }).click();
+          await paymentRow.getByRole("link", { name: "Open detail" }).click();
           await expect(adminBrowser.page.getByRole("heading", { name: intent.providerPaymentId })).toBeVisible();
           await expect(adminBrowser.page.getByRole("heading", { name: "Transaction timeline" })).toBeVisible();
           await expect(adminBrowser.page.getByText("Refund reference:", { exact: false })).toBeVisible();

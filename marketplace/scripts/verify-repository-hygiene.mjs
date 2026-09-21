@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const backendSrc = path.join(root, "marketplace-backend", "src");
+const backendSrc = path.join(root, "backend", "src");
 
 const expectedRepositories = [
   "common/audit/audit.repository.ts",
@@ -15,6 +15,7 @@ const expectedRepositories = [
   "modules/sellers/sellers.repository.ts",
   "modules/catalog-taxonomy/catalog-taxonomy.repository.ts",
   "modules/products/products.repository.ts",
+  "modules/public-media/public-media.repository.ts",
   "modules/inventory/inventory.repository.ts",
   "modules/cart-wishlist/cart-wishlist.repository.ts",
   "modules/promotions/promotions.repository.ts",

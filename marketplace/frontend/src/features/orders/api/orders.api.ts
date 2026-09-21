@@ -2,6 +2,7 @@ import { apiClient } from "@/lib/api-client";
 import type { ApiResponse, PaginationMeta } from "@/types/api";
 import {
   customerOrderDetailSchema,
+  customerOrderListItemSchema,
   customerOrderSummarySchema,
   sellerOrderDetailSchema,
   sellerOrderListItemSchema,
@@ -52,7 +53,7 @@ async function list<T>(
 export const ordersApi = {
   /** Lists only the authenticated customer's parent Orders. */
   listCustomerOrders: (params: CustomerOrdersParams): Promise<PaginatedCustomerOrders> =>
-    list(apiClient.get("/orders", { params: queryParams(params) }), (value) => customerOrderSummarySchema.parse(value)),
+    list(apiClient.get("/orders", { params: queryParams(params) }), (value) => customerOrderListItemSchema.parse(value)),
 
   /** Reads one customer-owned parent Order including immutable Seller Order groups and timeline. */
   getCustomerOrder: (orderId: string) =>

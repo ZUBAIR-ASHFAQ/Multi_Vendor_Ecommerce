@@ -50,24 +50,24 @@ function walk(relativeDirectory) {
 /** Rejects generated evidence/build artifacts and placeholder markers from the final Module 3 delivery. */
 function verifyFinalCleanup() {
   const forbiddenDirectories = [
-    "marketplace-backend/node_modules",
-    "marketplace-backend/dist",
-    "marketplace-backend/coverage",
-    "marketplace-frontend/node_modules",
-    "marketplace-frontend/dist",
-    "marketplace-frontend/coverage",
-    "marketplace-frontend/test-results",
-    "marketplace-frontend/playwright-report",
+    "backend/node_modules",
+    "backend/dist",
+    "backend/coverage",
+    "frontend/node_modules",
+    "frontend/dist",
+    "frontend/coverage",
+    "frontend/test-results",
+    "frontend/playwright-report",
   ];
   for (const directory of forbiddenDirectories) {
     assertCondition(!existsSync(resolve(directory)), `Final archive must not contain generated directory: ${directory}`);
   }
 
   const allFiles = [
-    ...walk("marketplace-backend/src/modules/customers"),
-    ...walk("marketplace-backend/tests/module3"),
-    ...walk("marketplace-frontend/src/features/customers"),
-    "marketplace-frontend/e2e/module3.spec.ts",
+    ...walk("backend/src/modules/customers"),
+    ...walk("backend/tests/module3"),
+    ...walk("frontend/src/features/customers"),
+    "frontend/e2e/module3.spec.ts",
   ];
   const placeholderPattern = /\b(TODO|FIXME|HACK|XXX)\b/;
   for (const file of allFiles) {
@@ -92,37 +92,37 @@ function verifyFinalCleanup() {
 /** Verifies the completed Module 3 implementation and final E2E/release gate wiring. */
 function main() {
   [
-    "marketplace-backend/src/database/schema/customers.ts",
-    "marketplace-backend/drizzle/0006_customer_management.sql",
-    "marketplace-backend/src/modules/customers/customers.constants.ts",
-    "marketplace-backend/src/modules/customers/customers.schema.ts",
-    "marketplace-backend/src/modules/customers/customers.repository.ts",
-    "marketplace-backend/src/modules/customers/customers.service.ts",
-    "marketplace-backend/src/modules/customers/customers.controller.ts",
-    "marketplace-backend/src/modules/customers/customers.routes.ts",
-    "marketplace-backend/src/modules/customers/customers.routes.ts",
-    "marketplace-backend/tests/module3/module3.schemas.test.ts",
-    "marketplace-backend/tests/module3/module3.service.test.ts",
-    "marketplace-backend/tests/module3/module3.integration.test.ts",
-    "marketplace-backend/scripts/run-module3-tests.mjs",
-    "marketplace-backend/scripts/verify-module3-migrations.mjs",
-    "marketplace-frontend/src/features/customers/api/customers.api.ts",
-    "marketplace-frontend/src/features/customers/hooks/use-customers.ts",
-    "marketplace-frontend/src/features/customers/components/customer-layout.tsx",
-    "marketplace-frontend/src/features/customers/components/address-card.tsx",
-    "marketplace-frontend/src/features/customers/forms/customer-profile-form.tsx",
-    "marketplace-frontend/src/features/customers/forms/customer-address-form.tsx",
-    "marketplace-frontend/src/features/customers/forms/admin-customer-filter-form.tsx",
-    "marketplace-frontend/src/features/customers/pages/customer-profile.page.tsx",
-    "marketplace-frontend/src/features/customers/pages/customer-addresses.page.tsx",
-    "marketplace-frontend/src/features/customers/pages/admin-customers.page.tsx",
-    "marketplace-frontend/src/features/customers/pages/admin-customer-detail.page.tsx",
-    "marketplace-frontend/tests/module3-customers.test.tsx",
-    "marketplace-frontend/e2e/module3.spec.ts",
+    "backend/src/database/schema/customers.ts",
+    "backend/drizzle/0006_customer_management.sql",
+    "backend/src/modules/customers/customers.constants.ts",
+    "backend/src/modules/customers/customers.schema.ts",
+    "backend/src/modules/customers/customers.repository.ts",
+    "backend/src/modules/customers/customers.service.ts",
+    "backend/src/modules/customers/customers.controller.ts",
+    "backend/src/modules/customers/customers.routes.ts",
+    "backend/src/modules/customers/customers.routes.ts",
+    "backend/tests/module3/module3.schemas.test.ts",
+    "backend/tests/module3/module3.service.test.ts",
+    "backend/tests/module3/module3.integration.test.ts",
+    "backend/scripts/run-module3-tests.mjs",
+    "backend/scripts/verify-module3-migrations.mjs",
+    "frontend/src/features/customers/api/customers.api.ts",
+    "frontend/src/features/customers/hooks/use-customers.ts",
+    "frontend/src/features/customers/components/customer-layout.tsx",
+    "frontend/src/features/customers/components/address-card.tsx",
+    "frontend/src/features/customers/forms/customer-profile-form.tsx",
+    "frontend/src/features/customers/forms/customer-address-form.tsx",
+    "frontend/src/features/customers/forms/admin-customer-filter-form.tsx",
+    "frontend/src/features/customers/pages/customer-profile.page.tsx",
+    "frontend/src/features/customers/pages/customer-addresses.page.tsx",
+    "frontend/src/features/customers/pages/admin-customers.page.tsx",
+    "frontend/src/features/customers/pages/admin-customer-detail.page.tsx",
+    "frontend/tests/module3-customers.test.tsx",
+    "frontend/e2e/module3.spec.ts",
     "scripts/verify-module3.mjs",
   ].forEach(requireFile);
 
-  requireText("marketplace-backend/src/modules/customers/customers.routes.ts", [
+  requireText("backend/src/modules/customers/customers.routes.ts", [
     'router.get(\n    "/me"',
     'router.patch(\n    "/me"',
     '"/me/addresses"',
@@ -130,7 +130,7 @@ function main() {
     "CUSTOMER_PERMISSION.ADMIN_CUSTOMERS_READ",
   ]);
 
-  const customerServiceSource = read("marketplace-backend/src/modules/customers/customers.service.ts");
+  const customerServiceSource = read("backend/src/modules/customers/customers.service.ts");
   assertCondition(
     !customerServiceSource.includes("AdministrationRepository"),
     "Module 3 service must not reach directly into the Module 2 repository.",
@@ -139,13 +139,13 @@ function main() {
     !/from ["']\.\.\/[^"']+\/[^"']*repository\.js["']/.test(customerServiceSource),
     "Module 3 service must use service/composition contracts instead of cross-module repositories.",
   );
-  requireText("marketplace-backend/src/modules/customers/customers.service.ts", [
+  requireText("backend/src/modules/customers/customers.service.ts", [
     "RegisteredCustomerProvisionInput",
     "displayName: input.displayName",
     "input.accountType !== ACCOUNT_TYPE.CUSTOMER",
   ]);
 
-  requireText("marketplace-backend/src/modules/customers/customers.routes.ts", [
+  requireText("backend/src/modules/customers/customers.routes.ts", [
     'operationId: "getCurrentCustomerProfile"',
     'operationId: "updateCurrentCustomerProfile"',
     'operationId: "listCurrentCustomerAddresses"',
@@ -156,7 +156,7 @@ function main() {
     'operationId: "getCustomerForAdmin"',
   ]);
 
-  requireText("marketplace-backend/tests/module3/module3.integration.test.ts", [
+  requireText("backend/tests/module3/module3.integration.test.ts", [
     "registers a customer with one profile and the protected self-service role",
     "archives default addresses without hard deletion",
     "inside the authenticated customer scope",
@@ -165,7 +165,7 @@ function main() {
     "ADDRESS_NOT_FOUND",
   ]);
 
-  requireText("marketplace-frontend/tests/module3-customers.test.tsx", [
+  requireText("frontend/tests/module3-customers.test.tsx", [
     "updates the authenticated customer profile",
     "creates, changes defaults, and archives saved addresses",
     "safe conflict message",
@@ -173,7 +173,7 @@ function main() {
     "clear permission state",
   ]);
 
-  requireText("marketplace-frontend/e2e/module3.spec.ts", [
+  requireText("frontend/e2e/module3.spec.ts", [
     "registration provisions customer self-service and profile updates survive reload",
     "address create, default switch, edit, archive, and reload preserve database state",
     "another customer's address is hidden exactly like a missing private address",
@@ -183,23 +183,23 @@ function main() {
     "Module 11 owns customer orders",
   ]);
 
-  requireText("marketplace-frontend/e2e/module2.spec.ts", [
+  requireText("frontend/e2e/module2.spec.ts", [
     "customer registration creates a customer account with the protected self-service role",
     'page.getByText("Customer Self Service", { exact: true })',
-    'page.getByRole("link", { name: "My profile" })',
-    'page.getByRole("link", { name: "Address book" })',
+    'page.getByRole("link", { name: "Profile" })',
+    'page.getByRole("link", { name: "Addresses" })',
   ]);
   assertCondition(
-    !read("marketplace-frontend/e2e/module2.spec.ts").includes("No explicit role membership is assigned."),
+    !read("frontend/e2e/module2.spec.ts").includes("No explicit role membership is assigned."),
     "Module 2 E2E still contains the stale pre-Module-3 customer-role expectation.",
   );
 
-  requireText("marketplace-frontend/package.json", [
+  requireText("frontend/package.json", [
     '"test:module3": "vitest run tests/module3-customers.test.tsx"',
     '"test:e2e:module3": "playwright test e2e/module3.spec.ts"',
   ]);
 
-  requireText("marketplace-backend/.github/workflows/ci.yml", [
+  requireText("backend/.github/workflows/ci.yml", [
     "Verify Module 3 clean and upgrade migrations",
     "npm run test:module3:migrations",
     "Prepare database for Module 3 tests",

@@ -402,6 +402,36 @@ export const customerOrderSummarySchema = z
   })
   .strict();
 
+/** One immutable item preview shown inside a customer Order-history seller group. */
+export const customerOrderListItemPreviewSchema = z
+  .object({
+    id: uuidSchema,
+    name: nonBlankString(ORDERS_LIMITS.PRODUCT_NAME_MAX_LENGTH),
+    variantTitle: z.string().max(ORDERS_LIMITS.VARIANT_TITLE_MAX_LENGTH).nullable(),
+    quantity: z.number().int().positive(),
+  })
+  .strict();
+
+/** One seller/store fulfillment preview nested in the customer Order-history list only. */
+export const customerOrderListSellerOrderSchema = z
+  .object({
+    id: uuidSchema,
+    storeId: uuidSchema,
+    storeName: nonBlankString(200),
+    status: sellerOrderStatusSchema,
+    latestShipmentStatus: z.enum(["shipped", "delivered"]).nullable(),
+    itemCount: z.number().int().nonnegative(),
+    items: z
+      .array(customerOrderListItemPreviewSchema)
+      .max(ORDERS_LIMITS.CUSTOMER_LIST_ITEM_PREVIEW_MAX),
+  })
+  .strict();
+
+/** Customer-owned Order list row enriched with bounded seller/store and item previews. */
+export const customerOrderListItemSchema = customerOrderSummarySchema.extend({
+  sellerOrders: z.array(customerOrderListSellerOrderSchema),
+});
+
 /** Customer-owned parent Order detail with only safe Seller Order, address, and timeline data. */
 export const customerOrderDetailSchema = customerOrderSummarySchema.extend({
   shippingAddress: orderAddressResponseSchema,
@@ -441,7 +471,7 @@ export const sellerOrderDetailSchema = sellerOrderListItemSchema.extend({
 });
 
 /** Paginated list data payloads; pagination metadata belongs in the standard envelope meta field. */
-export const customerOrderListDataSchema = z.array(customerOrderSummarySchema);
+export const customerOrderListDataSchema = z.array(customerOrderListItemSchema);
 export const sellerOrderListDataSchema = z.array(sellerOrderListItemSchema);
 export const adminOrderListDataSchema = z.array(customerOrderSummarySchema);
 
@@ -453,6 +483,7 @@ export type CancelOrderInput = z.infer<typeof cancelOrderBodySchema>;
 export type CreateOrderFromCheckoutInput = z.infer<typeof createOrderFromCheckoutInputSchema>;
 export type OrderItemResponse = z.infer<typeof orderItemResponseSchema>;
 export type CustomerOrderSummary = z.infer<typeof customerOrderSummarySchema>;
+export type CustomerOrderListItem = z.infer<typeof customerOrderListItemSchema>;
 export type CustomerOrderDetail = z.infer<typeof customerOrderDetailSchema>;
 export type SellerOrderListItem = z.infer<typeof sellerOrderListItemSchema>;
 export type SellerOrderDetail = z.infer<typeof sellerOrderDetailSchema>;

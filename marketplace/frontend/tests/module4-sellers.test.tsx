@@ -259,8 +259,10 @@ describe("Module 4 Seller & Store Management UI", () => {
     );
 
     await renderRoute("/admin/seller-applications");
-    expect(await screen.findByRole("heading", { name: "Example Seller" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Seller application queue" })).toBeInTheDocument();
     const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Review" }));
+    expect(await screen.findByRole("heading", { name: "Example Seller" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Approve application" }));
     await waitFor(() => expect(approveCalled).toBe(true));
   });
@@ -626,6 +628,8 @@ describe("Module 4 Seller & Store Management UI", () => {
     await user.type(screen.getByLabelText("Seller ID to suspend"), sellerId);
     await user.type(screen.getByLabelText("Seller suspension reason"), "Compliance review");
     await user.click(screen.getByRole("button", { name: "Suspend seller" }));
+    expect(screen.getByRole("alertdialog", { name: "Suspend this seller?" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Confirm suspension" }));
 
     await waitFor(() => expect(suspendBody).toEqual({ reason: "Compliance review" }));
     expect(await screen.findByText("Seller Example Seller is now suspended.")).toBeInTheDocument();

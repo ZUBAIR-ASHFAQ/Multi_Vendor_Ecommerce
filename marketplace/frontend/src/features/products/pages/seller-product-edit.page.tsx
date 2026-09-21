@@ -62,7 +62,7 @@ function VariantEditor({
           <p className="text-xs text-slate-500">SKU {variant.sku} · {variant.status}</p>
           <p className="mt-2 font-bold">{formatMoney(variant.price, variant.currency)}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {canManageInventory ? (
             <Button size="sm" variant="outline" asChild>
               <Link
@@ -117,7 +117,7 @@ function PublicationPanel({ product }: { product: ProductDetail }) {
             Submit for review after confirming the store, variants, pricing, images, and admin-managed taxonomy. The product becomes public only after admin approval.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {canPublish ? (
             <Button disabled={publish.isPending} onClick={() => publish.mutate()}>
               {publish.isPending ? "Submitting..." : "Submit for review"}
@@ -211,7 +211,7 @@ function SellerProductEditContent({
         </div>
       </section>
 
-      <nav aria-label="Product editor sections" className="flex flex-wrap gap-2 rounded-xl border bg-white p-3 shadow-sm">
+      <nav aria-label="Product editor sections" className="flex max-w-full flex-nowrap gap-2 overflow-x-auto overscroll-x-contain rounded-xl border bg-white p-3 shadow-sm">
         {[
           ["#information", "Information"],
           ["#variants", "Variants & pricing"],
@@ -220,7 +220,7 @@ function SellerProductEditContent({
           ["#pricing-history", "Pricing history"],
           ["#publication", "Publishing"],
         ].map(([href, label]) => (
-          <a key={href} href={href} className="rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-950">
+          <a key={href} href={href} className="shrink-0 rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-950">
             {label}
           </a>
         ))}
@@ -359,7 +359,7 @@ function SellerProductEditContent({
         <p className="mt-1 text-sm text-slate-600">History is append-only. Product edits never rewrite old prices.</p>
         {product.data.priceHistory?.length ? (
           <div className="mt-4 overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
+            <table className="w-full min-w-[640px] text-left text-sm">
               <thead className="border-b text-xs uppercase tracking-wider text-slate-500">
                 <tr>
                   <th className="px-3 py-2">Variant</th>

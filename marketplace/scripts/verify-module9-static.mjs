@@ -11,7 +11,10 @@ function readProjectFile(relativePath) {
   if (!existsSync(absolutePath)) {
     throw new Error(`Required Module 9 file is missing: ${relativePath}`);
   }
-  return readFileSync(absolutePath, "utf8");
+  const source = readFileSync(absolutePath, "utf8");
+  return relativePath.endsWith("package.json")
+    ? JSON.stringify(JSON.parse(source.replace(/^\uFEFF/u, "")), null, 2)
+    : source;
 }
 
 /** Requires one permanent contract fragment in a source file. */
@@ -61,10 +64,10 @@ function verifyIndependentProjects() {
 
 /** Confirms Pass 1 persistence remains present while later Module 9 passes build on it. */
 function verifyDatabaseFoundation() {
-  const schema = readProjectFile("marketplace-backend/src/database/schema/promotions.ts");
-  const migration = readProjectFile("marketplace-backend/drizzle/0018_promotions_coupons.sql");
+  const schema = readProjectFile("backend/src/database/schema/promotions.ts");
+  const migration = readProjectFile("backend/drizzle/0018_promotions_coupons.sql");
   const verifier = readProjectFile(
-    "marketplace-backend/scripts/verify-module9-migrations.mjs",
+    "backend/scripts/verify-module9-migrations.mjs",
   );
 
   for (const tableName of [
@@ -94,7 +97,7 @@ function verifyDatabaseFoundation() {
 /** Confirms true Module 9 constants match the controlling contract without inventing a closed promotion-rule enum. */
 function verifyConstants() {
   const constants = readProjectFile(
-    "marketplace-backend/src/modules/promotions/promotions.constants.ts",
+    "backend/src/modules/promotions/promotions.constants.ts",
   );
 
   for (const permission of [
@@ -129,7 +132,7 @@ function verifyConstants() {
 /** Confirms Zod contracts validate the approved inputs while ownership and financial authority stay server-derived. */
 function verifySchemas() {
   const schemas = readProjectFile(
-    "marketplace-backend/src/modules/promotions/promotions.schema.ts",
+    "backend/src/modules/promotions/promotions.schema.ts",
   );
 
   for (const schemaName of [
@@ -176,7 +179,7 @@ function verifySchemas() {
 /** Confirms Module 9 permissions are composed downstream into the existing platform RBAC seed. */
 function verifyRbacComposition() {
   const seed = readProjectFile(
-    "marketplace-backend/src/database/seeds/platform-rbac.seed.ts",
+    "backend/src/database/seeds/platform-rbac.seed.ts",
   );
 
   for (const marker of [
@@ -190,7 +193,7 @@ function verifyRbacComposition() {
   }
 
   const administrationConstants = readProjectFile(
-    "marketplace-backend/src/modules/administration/administration.constants.ts",
+    "backend/src/modules/administration/administration.constants.ts",
   );
   rejectText(
     administrationConstants,
@@ -203,7 +206,7 @@ function verifyRbacComposition() {
 /** Confirms Pass 3 adds only scoped Drizzle persistence and transaction helpers. */
 function verifyRepository() {
   const repository = readProjectFile(
-    "marketplace-backend/src/modules/promotions/promotions.repository.ts",
+    "backend/src/modules/promotions/promotions.repository.ts",
   );
 
   for (const marker of [
@@ -272,7 +275,7 @@ function verifyRepository() {
 /** Confirms Pass 4 owns promotion business rules, transactions, scope isolation, audit/outbox, and redemption logic. */
 function verifyService() {
   const service = readProjectFile(
-    "marketplace-backend/src/modules/promotions/promotions.service.ts",
+    "backend/src/modules/promotions/promotions.service.ts",
   );
 
   for (const marker of [
@@ -338,7 +341,7 @@ function verifyService() {
   }
 
   const sellersService = readProjectFile(
-    "marketplace-backend/src/modules/sellers/sellers.service.ts",
+    "backend/src/modules/sellers/sellers.service.ts",
   );
   requireText(
     sellersService,
@@ -352,7 +355,7 @@ function verifyService() {
   );
 
   const productsService = readProjectFile(
-    "marketplace-backend/src/modules/products/products.service.ts",
+    "backend/src/modules/products/products.service.ts",
   );
   requireText(
     productsService,
@@ -369,7 +372,7 @@ function verifyService() {
 /** Confirms Pass 5 exposes exactly the approved runtime routes and registers their OpenAPI contract. */
 function verifyHttpContracts() {
   const routes = readProjectFile(
-    "marketplace-backend/src/modules/promotions/promotions.routes.ts",
+    "backend/src/modules/promotions/promotions.routes.ts",
   );
 
   for (const path of [
@@ -418,7 +421,7 @@ function verifyHttpContracts() {
   rejectText(routes, '.service.js', "Module 9 HTTP layering");
 
   const controller = readProjectFile(
-    "marketplace-backend/src/modules/promotions/promotions.controller.ts",
+    "backend/src/modules/promotions/promotions.controller.ts",
   );
   for (const marker of [
     "export class PromotionsController",
@@ -447,7 +450,7 @@ function verifyHttpContracts() {
   }
 
   const openApiDocument = readProjectFile(
-    "marketplace-backend/src/http/openapi/openapi.document.ts",
+    "backend/src/http/openapi/openapi.document.ts",
   );
   requireText(
     openApiDocument,
@@ -465,7 +468,7 @@ function verifyHttpContracts() {
     "Module 9 OpenAPI tag registration",
   );
 
-  const app = readProjectFile("marketplace-backend/src/app.ts");
+  const app = readProjectFile("backend/src/app.ts");
   for (const marker of [
     "new PromotionsService({",
     "sellers: sellersService",
@@ -487,27 +490,27 @@ function verifyHttpContracts() {
 /** Confirms Pass 6 adds direct backend regression coverage without changing Module 9 production boundaries. */
 function verifyBackendTests() {
   const schemas = readProjectFile(
-    "marketplace-backend/tests/module9/module9.schemas.test.ts",
+    "backend/tests/module9/module9.schemas.test.ts",
   );
   const repository = readProjectFile(
-    "marketplace-backend/tests/module9/module9.repository.test.ts",
+    "backend/tests/module9/module9.repository.test.ts",
   );
   const service = readProjectFile(
-    "marketplace-backend/tests/module9/module9.service.test.ts",
+    "backend/tests/module9/module9.service.test.ts",
   );
   const integration = readProjectFile(
-    "marketplace-backend/tests/module9/module9.integration.test.ts",
+    "backend/tests/module9/module9.integration.test.ts",
   );
   const helper = readProjectFile(
-    "marketplace-backend/tests/module9/module9.test-helpers.ts",
+    "backend/tests/module9/module9.test-helpers.ts",
   );
   const runner = readProjectFile(
-    "marketplace-backend/scripts/run-module9-tests.mjs",
+    "backend/scripts/run-module9-tests.mjs",
   );
-  const backendPackage = readProjectFile("marketplace-backend/package.json");
-  const backendCi = readProjectFile("marketplace-backend/.github/workflows/ci.yml");
+  const backendPackage = readProjectFile("backend/package.json");
+  const backendCi = readProjectFile("backend/.github/workflows/ci.yml");
   const regression = readProjectFile(
-    "marketplace-backend/tests/regression/implemented-api-contracts.test.ts",
+    "backend/tests/regression/implemented-api-contracts.test.ts",
   );
 
   for (const proof of [
@@ -579,7 +582,7 @@ function verifyBackendTests() {
 
 /** Confirms Pass 7 implements the required React/TanStack feature surface and keeps server authority intact. */
 function verifyFrontendFeature() {
-  const frontendRoot = "marketplace-frontend/src/features/promotions";
+  const frontendRoot = "frontend/src/features/promotions";
   const api = readProjectFile(`${frontendRoot}/api/promotions.api.ts`);
   const hooks = readProjectFile(`${frontendRoot}/hooks/use-promotions.ts`);
   const form = readProjectFile(`${frontendRoot}/forms/promotion.form.tsx`);
@@ -590,10 +593,10 @@ function verifyFrontendFeature() {
   const breakdown = readProjectFile(`${frontendRoot}/components/discount-breakdown.tsx`);
   const scopeSelector = readProjectFile(`${frontendRoot}/components/promotion-scope-selector.tsx`);
   const couponManager = readProjectFile(`${frontendRoot}/components/coupon-manager.tsx`);
-  const frontendRoutes = readProjectFile("marketplace-frontend/src/app/routes/promotions.routes.tsx");
-  const router = readProjectFile("marketplace-frontend/src/app/router/router.tsx");
-  const tests = readProjectFile("marketplace-frontend/tests/module9-promotions.test.tsx");
-  const frontendPackage = readProjectFile("marketplace-frontend/package.json");
+  const frontendRoutes = readProjectFile("frontend/src/app/routes/promotions.routes.tsx");
+  const router = readProjectFile("frontend/src/app/router/router.tsx");
+  const tests = readProjectFile("frontend/tests/module9-promotions.test.tsx");
+  const frontendPackage = readProjectFile("frontend/package.json");
 
   for (const marker of [
     'apiClient.get("/admin/promotions"',
@@ -647,15 +650,15 @@ function verifyFrontendFeature() {
 
 /** Confirms Pass 8 covers the real browser workflow and cumulative release/integrity gates. */
 function verifyE2EReleaseGate() {
-  const frontendPackage = JSON.parse(readProjectFile("marketplace-frontend/package.json"));
-  const backendPackage = JSON.parse(readProjectFile("marketplace-backend/package.json"));
-  const e2eSpec = readProjectFile("marketplace-frontend/e2e/module9.spec.ts");
-  const e2eRunner = readProjectFile("marketplace-frontend/e2e/run-e2e-ci.mjs");
+  const frontendPackage = JSON.parse(readProjectFile("frontend/package.json"));
+  const backendPackage = JSON.parse(readProjectFile("backend/package.json"));
+  const e2eSpec = readProjectFile("frontend/e2e/module9.spec.ts");
+  const e2eRunner = readProjectFile("frontend/e2e/run-e2e-ci.mjs");
   const releaseData = readProjectFile(
-    "marketplace-backend/scripts/verify-module9-release-data.mjs",
+    "backend/scripts/verify-module9-release-data.mjs",
   );
   const cumulativeRelease = readProjectFile("scripts/verify-module9.mjs");
-  const frontendCi = readProjectFile("marketplace-frontend/.github/workflows/ci.yml");
+  const frontendCi = readProjectFile("frontend/.github/workflows/ci.yml");
 
   if (
     frontendPackage.scripts?.["test:e2e:module9"] !==
@@ -740,7 +743,7 @@ function verifyE2EReleaseGate() {
 
 /** Confirms Pass 8 keeps every implemented browser workflow in one strict cumulative release gate. */
 function verifyPass8SourceGate() {
-  const e2eRunner = readProjectFile("marketplace-frontend/e2e/run-e2e-ci.mjs");
+  const e2eRunner = readProjectFile("frontend/e2e/run-e2e-ci.mjs");
   const cumulativeRelease = readProjectFile("scripts/verify-module9.mjs");
   const expectedSpecs = [
     "foundation.spec.ts",
@@ -757,7 +760,7 @@ function verifyPass8SourceGate() {
   ];
 
   for (const specName of expectedSpecs) {
-    const relativePath = `marketplace-frontend/e2e/${specName}`;
+    const relativePath = `frontend/e2e/${specName}`;
     const spec = readProjectFile(relativePath);
     requireText(e2eRunner, `"e2e/${specName}"`, "Cross-repository Playwright runner");
     requireText(cumulativeRelease, `"e2e/${specName}"`, "Cumulative Module 9 release verifier");
@@ -782,7 +785,7 @@ function verifyPass8SourceGate() {
 
 /** Confirms the Module 9 barrel exposes the Pass 5 HTTP boundary without redundant type boilerplate. */
 function verifyModuleBoundary() {
-  const index = readProjectFile("marketplace-backend/src/modules/promotions/index.ts");
+  const index = readProjectFile("backend/src/modules/promotions/index.ts");
   requireText(index, 'export * from "./promotions.constants.js";', "Module 9 module boundary");
   requireText(index, 'export * from "./promotions.controller.js";', "Module 9 module boundary");
   requireText(index, 'export * from "./promotions.schema.js";', "Module 9 module boundary");
@@ -790,7 +793,7 @@ function verifyModuleBoundary() {
   requireText(index, 'export * from "./promotions.repository.js";', "Module 9 module boundary");
   requireText(index, 'export * from "./promotions.service.js";', "Module 9 module boundary");
 
-  if (existsSync(join(root, "marketplace-backend/src/modules/promotions/promotions.types.ts"))) {
+  if (existsSync(join(root, "backend/src/modules/promotions/promotions.types.ts"))) {
     throw new Error("Module 9 must not add a redundant types file when Zod/Drizzle already infer the required types.");
   }
 }

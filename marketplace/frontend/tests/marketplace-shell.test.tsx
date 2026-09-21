@@ -71,6 +71,8 @@ describe("global marketplace shell", () => {
 
     const router = await renderRoute("/");
 
+    expect(screen.getByRole("link", { name: "Skip to main content" })).toHaveAttribute("href", "#main-content");
+    expect(screen.getByRole("main")).toHaveAttribute("id", "main-content");
     expect(screen.getByRole("search")).toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: "Global navigation" })).toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: "Footer navigation" })).toBeInTheDocument();

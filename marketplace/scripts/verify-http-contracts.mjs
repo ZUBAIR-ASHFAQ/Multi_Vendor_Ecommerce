@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const HTTP_METHODS = new Set(["get", "post", "put", "patch", "delete"]);
-const IMPLEMENTED_OPERATION_COUNT = 168;
+const IMPLEMENTED_OPERATION_COUNT = 170;
 
 /** Reads one UTF-8 project file and fails with a useful message when it is missing. */
 function readProjectFile(relativePath) {
@@ -215,7 +215,7 @@ function assertExactRoutes(actual, expected, label) {
 const moduleContracts = [
   {
     name: "Module 2 Authentication",
-    file: "marketplace-backend/src/modules/administration/auth.routes.ts",
+    file: "backend/src/modules/administration/auth.routes.ts",
     runtime: [
       "POST /register",
       "POST /login",
@@ -233,7 +233,7 @@ const moduleContracts = [
   },
   {
     name: "Module 2 Administration",
-    file: "marketplace-backend/src/modules/administration/administration.routes.ts",
+    file: "backend/src/modules/administration/administration.routes.ts",
     runtime: [
       "GET /users",
       "PATCH /users/:id/status",
@@ -257,7 +257,7 @@ const moduleContracts = [
   },
   {
     name: "Module 21 Documents and Audit",
-    file: "marketplace-backend/src/modules/documents-audit/documents-audit.routes.ts",
+    file: "backend/src/modules/documents-audit/documents-audit.routes.ts",
     runtime: [
       "POST /uploads/sign",
       "POST /uploads/:id/confirm",
@@ -278,8 +278,14 @@ const moduleContracts = [
     ],
   },
   {
+    name: "Public Media",
+    file: "backend/src/modules/public-media/public-media.routes.ts",
+    runtime: ["POST /public/resolve"],
+    openApi: ["POST /api/v1/media/public/resolve"],
+  },
+  {
     name: "Module 3 Customers",
-    file: "marketplace-backend/src/modules/customers/customers.routes.ts",
+    file: "backend/src/modules/customers/customers.routes.ts",
     runtime: [
       "GET /me",
       "PATCH /me",
@@ -303,7 +309,7 @@ const moduleContracts = [
   },
   {
     name: "Module 4 Sellers",
-    file: "marketplace-backend/src/modules/sellers/sellers.routes.ts",
+    file: "backend/src/modules/sellers/sellers.routes.ts",
     runtime: [
       "POST /applications",
       "GET /me",
@@ -331,7 +337,7 @@ const moduleContracts = [
   },
   {
     name: "Module 5 Catalog Taxonomy",
-    file: "marketplace-backend/src/modules/catalog-taxonomy/catalog-taxonomy.routes.ts",
+    file: "backend/src/modules/catalog-taxonomy/catalog-taxonomy.routes.ts",
     runtime: [
       "GET /categories",
       "GET /categories/:id/attributes",
@@ -357,7 +363,7 @@ const moduleContracts = [
   },
   {
     name: "Module 6 Products",
-    file: "marketplace-backend/src/modules/products/products.routes.ts",
+    file: "backend/src/modules/products/products.routes.ts",
     runtime: [
       "GET /",
       "GET /:slug",
@@ -395,7 +401,7 @@ const moduleContracts = [
   },
   {
     name: "Module 7 Inventory",
-    file: "marketplace-backend/src/modules/inventory/inventory.routes.ts",
+    file: "backend/src/modules/inventory/inventory.routes.ts",
     runtime: [
       "GET /",
       "GET /:variantId/movements",
@@ -417,7 +423,7 @@ const moduleContracts = [
   },
   {
     name: "Module 19 Search and Discovery",
-    file: "marketplace-backend/src/modules/search-discovery/search-discovery.routes.ts",
+    file: "backend/src/modules/search-discovery/search-discovery.routes.ts",
     runtime: [
       "GET /products",
       "GET /suggestions",
@@ -435,7 +441,7 @@ const moduleContracts = [
   },
   {
     name: "Module 8 Cart and Wishlist",
-    file: "marketplace-backend/src/modules/cart-wishlist/cart-wishlist.routes.ts",
+    file: "backend/src/modules/cart-wishlist/cart-wishlist.routes.ts",
     runtime: [
       "GET /",
       "POST /items",
@@ -459,8 +465,9 @@ const moduleContracts = [
   },
   {
     name: "Module 9 Promotions and Coupons",
-    file: "marketplace-backend/src/modules/promotions/promotions.routes.ts",
+    file: "backend/src/modules/promotions/promotions.routes.ts",
     runtime: [
+      "GET /",
       "GET /",
       "POST /",
       "PATCH /:id",
@@ -482,7 +489,7 @@ const moduleContracts = [
   },
   {
     name: "Module 13 Shipping & Fulfillment",
-    file: "marketplace-backend/src/modules/shipping/shipping.routes.ts",
+    file: "backend/src/modules/shipping/shipping.routes.ts",
     runtime: [
       "GET /shipping-options",
       "GET /shipments",
@@ -504,7 +511,7 @@ const moduleContracts = [
   },
   {
     name: "Module 10 Checkout",
-    file: "marketplace-backend/src/modules/checkout/checkout.routes.ts",
+    file: "backend/src/modules/checkout/checkout.routes.ts",
     runtime: [
       "POST /quote",
       "GET /quote/:id",
@@ -520,7 +527,7 @@ const moduleContracts = [
   },
   {
     name: "Module 11 Orders",
-    file: "marketplace-backend/src/modules/orders/orders.routes.ts",
+    file: "backend/src/modules/orders/orders.routes.ts",
     runtime: [
       "GET /",
       "GET /:id",
@@ -546,7 +553,7 @@ const moduleContracts = [
   },
   {
     name: "Module 12 Payments",
-    file: "marketplace-backend/src/modules/payments/payments.routes.ts",
+    file: "backend/src/modules/payments/payments.routes.ts",
     runtime: [
       "POST /order/:orderId/intent",
       "GET /order/:orderId",
@@ -566,7 +573,7 @@ const moduleContracts = [
   },
   {
     name: "Module 16 Commissions",
-    file: "marketplace-backend/src/modules/commissions/commissions.routes.ts",
+    file: "backend/src/modules/commissions/commissions.routes.ts",
     runtime: [
       "GET /rules",
       "POST /rules",
@@ -588,7 +595,7 @@ const moduleContracts = [
   },
   {
     name: "Module 14 Returns, Refunds & Disputes",
-    file: "marketplace-backend/src/modules/returns-refunds/returns-refunds.routes.ts",
+    file: "backend/src/modules/returns-refunds/returns-refunds.routes.ts",
     runtime: [
       "POST /:orderId/returns",
       "GET /",
@@ -612,7 +619,7 @@ const moduleContracts = [
   },
   {
     name: "Module 17 Seller Wallet & Payouts",
-    file: "marketplace-backend/src/modules/seller-wallet-payouts/seller-wallet-payouts.routes.ts",
+    file: "backend/src/modules/seller-wallet-payouts/seller-wallet-payouts.routes.ts",
     runtime: [
       "GET /wallet",
       "GET /payouts",
@@ -638,7 +645,7 @@ const moduleContracts = [
   },
   {
     name: "Module 15 Reviews & Ratings",
-    file: "marketplace-backend/src/modules/reviews/reviews.routes.ts",
+    file: "backend/src/modules/reviews/reviews.routes.ts",
     runtime: [
       "POST /",
       "PATCH /:id",
@@ -662,7 +669,7 @@ const moduleContracts = [
   },
   {
     name: "Module 18 Notifications",
-    file: "marketplace-backend/src/modules/notifications/notifications.routes.ts",
+    file: "backend/src/modules/notifications/notifications.routes.ts",
     runtime: [
       "GET /",
       "POST /:id/read",
@@ -684,7 +691,7 @@ const moduleContracts = [
   },
   {
     name: "Module 20 Reports & Analytics",
-    file: "marketplace-backend/src/modules/reports/reports.routes.ts",
+    file: "backend/src/modules/reports/reports.routes.ts",
     runtime: [
       "GET /catalog",
       "GET /sales",
@@ -710,7 +717,7 @@ const moduleContracts = [
   },
   {
     name: "Module 1 Dashboard",
-    file: "marketplace-backend/src/modules/dashboard/dashboard.routes.ts",
+    file: "backend/src/modules/dashboard/dashboard.routes.ts",
     runtime: [
       "GET /summary",
       "GET /orders",
@@ -739,11 +746,12 @@ function verifyModuleRouteSurfaces() {
 
 /** Verifies every composed router is mounted at the expected API prefix exactly once. */
 function verifyApplicationMounts() {
-  const app = readProjectFile("marketplace-backend/src/app.ts");
+  const app = readProjectFile("backend/src/app.ts");
   const mounts = [
     ["/auth", "authRouter"],
     ["/admin", "administrationRouter"],
     ["/documents", "documentsRouter"],
+    ["/media", "publicMediaRouter"],
     ["/audit", "auditRouter"],
     ["/customers", "customersRouter"],
     ["/admin/customers", "adminCustomersRouter"],
@@ -814,39 +822,39 @@ function verifyApplicationMounts() {
 function verifyRouteSecurity() {
   const checks = [
     [
-      "marketplace-backend/src/modules/administration/auth.routes.ts",
+      "backend/src/modules/administration/auth.routes.ts",
       ["authenticationMiddleware", 'router.get("/me", authenticationMiddleware'],
     ],
     [
-      "marketplace-backend/src/modules/administration/administration.routes.ts",
+      "backend/src/modules/administration/administration.routes.ts",
       ["router.use(authenticationMiddleware)", "requirePermission", "requireAnyPermission"],
     ],
     [
-      "marketplace-backend/src/modules/documents-audit/documents-audit.routes.ts",
+      "backend/src/modules/documents-audit/documents-audit.routes.ts",
       ["router.use(authenticationMiddleware)", "requirePermission"],
     ],
     [
-      "marketplace-backend/src/modules/customers/customers.routes.ts",
+      "backend/src/modules/customers/customers.routes.ts",
       ["router.use(authenticationMiddleware)", "requirePermission"],
     ],
     [
-      "marketplace-backend/src/modules/sellers/sellers.routes.ts",
+      "backend/src/modules/sellers/sellers.routes.ts",
       ["router.use(authenticationMiddleware)", "requirePermission"],
     ],
     [
-      "marketplace-backend/src/modules/catalog-taxonomy/catalog-taxonomy.routes.ts",
+      "backend/src/modules/catalog-taxonomy/catalog-taxonomy.routes.ts",
       ["router.use(optionalAuthenticationMiddleware)", "router.use(authenticationMiddleware)", "requirePermission"],
     ],
     [
-      "marketplace-backend/src/modules/products/products.routes.ts",
+      "backend/src/modules/products/products.routes.ts",
       ["router.use(authenticationMiddleware)", "requirePermission"],
     ],
     [
-      "marketplace-backend/src/modules/inventory/inventory.routes.ts",
+      "backend/src/modules/inventory/inventory.routes.ts",
       ["router.use(authenticationMiddleware)", "router.use(internalServiceMiddleware)", "requirePermission"],
     ],
     [
-      "marketplace-backend/src/modules/search-discovery/search-discovery.routes.ts",
+      "backend/src/modules/search-discovery/search-discovery.routes.ts",
       [
         "router.use(optionalAuthenticationMiddleware)",
         "publicSearchPermissionMiddleware",
@@ -856,7 +864,7 @@ function verifyRouteSecurity() {
       ],
     ],
     [
-      "marketplace-backend/src/modules/cart-wishlist/cart-wishlist.routes.ts",
+      "backend/src/modules/cart-wishlist/cart-wishlist.routes.ts",
       [
         "router.use(authenticationMiddleware)",
         "requirePermission(CART_WISHLIST_PERMISSION.CART_MANAGE_OWN)",
@@ -864,7 +872,7 @@ function verifyRouteSecurity() {
       ],
     ],
     [
-      "marketplace-backend/src/modules/promotions/promotions.routes.ts",
+      "backend/src/modules/promotions/promotions.routes.ts",
       [
         "router.use(authenticationMiddleware)",
         "requirePermission(PROMOTION_PERMISSION.ADMIN_MANAGE)",
@@ -873,7 +881,7 @@ function verifyRouteSecurity() {
       ],
     ],
     [
-      "marketplace-backend/src/modules/shipping/shipping.routes.ts",
+      "backend/src/modules/shipping/shipping.routes.ts",
       [
         "router.use(authenticationMiddleware)",
         "requirePermission(SHIPPING_PERMISSION.SELLER_READ)",
@@ -884,7 +892,7 @@ function verifyRouteSecurity() {
       ],
     ],
     [
-      "marketplace-backend/src/modules/checkout/checkout.routes.ts",
+      "backend/src/modules/checkout/checkout.routes.ts",
       [
         "router.use(authenticationMiddleware)",
         "requirePermission(CHECKOUT_PERMISSION.CREATE_OWN)",
@@ -892,7 +900,7 @@ function verifyRouteSecurity() {
       ],
     ],
     [
-      "marketplace-backend/src/modules/orders/orders.routes.ts",
+      "backend/src/modules/orders/orders.routes.ts",
       [
         "router.use(authenticationMiddleware)",
         "router.use(internalServiceMiddleware)",
@@ -904,7 +912,7 @@ function verifyRouteSecurity() {
       ],
     ],
     [
-      "marketplace-backend/src/modules/payments/payments.routes.ts",
+      "backend/src/modules/payments/payments.routes.ts",
       [
         "router.use(authenticationMiddleware)",
         "router.use(internalServiceMiddleware)",
@@ -914,7 +922,7 @@ function verifyRouteSecurity() {
       ],
     ],
     [
-      "marketplace-backend/src/modules/commissions/commissions.routes.ts",
+      "backend/src/modules/commissions/commissions.routes.ts",
       [
         "router.use(authenticationMiddleware)",
         "router.use(internalServiceMiddleware)",
@@ -924,7 +932,7 @@ function verifyRouteSecurity() {
       ],
     ],
     [
-      "marketplace-backend/src/modules/returns-refunds/returns-refunds.routes.ts",
+      "backend/src/modules/returns-refunds/returns-refunds.routes.ts",
       [
         "router.use(authenticationMiddleware)",
         "requirePermission(RETURNS_PERMISSION.CREATE_OWN)",
@@ -935,7 +943,7 @@ function verifyRouteSecurity() {
       ],
     ],
     [
-      "marketplace-backend/src/modules/seller-wallet-payouts/seller-wallet-payouts.routes.ts",
+      "backend/src/modules/seller-wallet-payouts/seller-wallet-payouts.routes.ts",
       [
         "router.use(authenticationMiddleware)",
         "router.use(internalServiceMiddleware)",
@@ -947,7 +955,7 @@ function verifyRouteSecurity() {
       ],
     ],
     [
-      "marketplace-backend/src/modules/reviews/reviews.routes.ts",
+      "backend/src/modules/reviews/reviews.routes.ts",
       [
         "router.use(authenticationMiddleware)",
         "router.use(optionalAuthenticationMiddleware)",
@@ -959,7 +967,7 @@ function verifyRouteSecurity() {
       ],
     ],
     [
-      "marketplace-backend/src/modules/notifications/notifications.routes.ts",
+      "backend/src/modules/notifications/notifications.routes.ts",
       [
         "router.use(authenticationMiddleware)",
         "requirePermission(NOTIFICATIONS_PERMISSION.READ_OWN)",
@@ -969,7 +977,7 @@ function verifyRouteSecurity() {
       ],
     ],
     [
-      "marketplace-backend/src/modules/reports/reports.routes.ts",
+      "backend/src/modules/reports/reports.routes.ts",
       [
         "router.use(authenticationMiddleware)",
         "requirePermission(REPORTS_PERMISSION.SALES_READ)",
@@ -980,7 +988,7 @@ function verifyRouteSecurity() {
       ],
     ],
     [
-      "marketplace-backend/src/modules/dashboard/dashboard.routes.ts",
+      "backend/src/modules/dashboard/dashboard.routes.ts",
       [
         "router.use(authenticationMiddleware)",
         "requirePermission(DASHBOARD_PERMISSION.READ)",
@@ -1003,12 +1011,13 @@ function verifyRouteSecurity() {
 /** Verifies the central OpenAPI document includes every implemented module registry and both Foundation endpoints. */
 function verifyOpenApiRegistration() {
   const document = readProjectFile(
-    "marketplace-backend/src/http/openapi/openapi.document.ts",
+    "backend/src/http/openapi/openapi.document.ts",
   );
   for (const registry of [
     "...authOpenApiPaths",
     "...administrationOpenApiPaths",
     "...documentsAuditOpenApiPaths",
+    "...publicMediaOpenApiPaths",
     "...customersOpenApiPaths",
     "...sellersOpenApiPaths",
     "...catalogTaxonomyOpenApiPaths",
@@ -1041,13 +1050,13 @@ function verifyOpenApiRegistration() {
 /** Keeps requestId mandatory in the documented stable success/error envelopes. */
 function verifyRequestIdContract() {
   const authRoutes = readProjectFile(
-    "marketplace-backend/src/modules/administration/auth.routes.ts",
+    "backend/src/modules/administration/auth.routes.ts",
   );
   const adminRoutes = readProjectFile(
-    "marketplace-backend/src/modules/administration/administration.routes.ts",
+    "backend/src/modules/administration/administration.routes.ts",
   );
   const openApiDocument = readProjectFile(
-    "marketplace-backend/src/http/openapi/openapi.document.ts",
+    "backend/src/http/openapi/openapi.document.ts",
   );
 
   for (const requiredText of [
@@ -1078,28 +1087,29 @@ function verifyRequestIdContract() {
 /** Ensures every controller reads params/query/body only through an explicit Zod boundary parser. */
 function verifyControllerValidationBoundaries() {
   const controllers = [
-    "marketplace-backend/src/modules/administration/auth.controller.ts",
-    "marketplace-backend/src/modules/administration/administration.controller.ts",
-    "marketplace-backend/src/modules/documents-audit/documents-audit.controller.ts",
-    "marketplace-backend/src/modules/customers/customers.controller.ts",
-    "marketplace-backend/src/modules/sellers/sellers.controller.ts",
-    "marketplace-backend/src/modules/catalog-taxonomy/catalog-taxonomy.controller.ts",
-    "marketplace-backend/src/modules/products/products.controller.ts",
-    "marketplace-backend/src/modules/inventory/inventory.controller.ts",
-    "marketplace-backend/src/modules/search-discovery/search-discovery.controller.ts",
-    "marketplace-backend/src/modules/cart-wishlist/cart-wishlist.controller.ts",
-    "marketplace-backend/src/modules/promotions/promotions.controller.ts",
-    "marketplace-backend/src/modules/shipping/shipping.controller.ts",
-    "marketplace-backend/src/modules/checkout/checkout.controller.ts",
-    "marketplace-backend/src/modules/orders/orders.controller.ts",
-    "marketplace-backend/src/modules/payments/payments.controller.ts",
-    "marketplace-backend/src/modules/commissions/commissions.controller.ts",
-    "marketplace-backend/src/modules/returns-refunds/returns-refunds.controller.ts",
-    "marketplace-backend/src/modules/seller-wallet-payouts/seller-wallet-payouts.controller.ts",
-    "marketplace-backend/src/modules/reviews/reviews.controller.ts",
-    "marketplace-backend/src/modules/notifications/notifications.controller.ts",
-    "marketplace-backend/src/modules/reports/reports.controller.ts",
-    "marketplace-backend/src/modules/dashboard/dashboard.controller.ts",
+    "backend/src/modules/administration/auth.controller.ts",
+    "backend/src/modules/administration/administration.controller.ts",
+    "backend/src/modules/documents-audit/documents-audit.controller.ts",
+    "backend/src/modules/public-media/public-media.controller.ts",
+    "backend/src/modules/customers/customers.controller.ts",
+    "backend/src/modules/sellers/sellers.controller.ts",
+    "backend/src/modules/catalog-taxonomy/catalog-taxonomy.controller.ts",
+    "backend/src/modules/products/products.controller.ts",
+    "backend/src/modules/inventory/inventory.controller.ts",
+    "backend/src/modules/search-discovery/search-discovery.controller.ts",
+    "backend/src/modules/cart-wishlist/cart-wishlist.controller.ts",
+    "backend/src/modules/promotions/promotions.controller.ts",
+    "backend/src/modules/shipping/shipping.controller.ts",
+    "backend/src/modules/checkout/checkout.controller.ts",
+    "backend/src/modules/orders/orders.controller.ts",
+    "backend/src/modules/payments/payments.controller.ts",
+    "backend/src/modules/commissions/commissions.controller.ts",
+    "backend/src/modules/returns-refunds/returns-refunds.controller.ts",
+    "backend/src/modules/seller-wallet-payouts/seller-wallet-payouts.controller.ts",
+    "backend/src/modules/reviews/reviews.controller.ts",
+    "backend/src/modules/notifications/notifications.controller.ts",
+    "backend/src/modules/reports/reports.controller.ts",
+    "backend/src/modules/dashboard/dashboard.controller.ts",
   ];
 
   for (const relativePath of controllers) {
@@ -1125,16 +1135,16 @@ function verifyControllerValidationBoundaries() {
 
 /** Keeps runtime/backend/frontend API envelopes aligned with the documented mandatory request ID. */
 function verifyRuntimeEnvelopeContract() {
-  const backendTypes = readProjectFile("marketplace-backend/src/common/types/api.ts");
+  const backendTypes = readProjectFile("backend/src/common/types/api.ts");
   const backendSchemas = readProjectFile(
-    "marketplace-backend/src/common/schemas/api-envelope.schema.ts",
+    "backend/src/common/schemas/api-envelope.schema.ts",
   );
   const responseHelpers = readProjectFile(
-    "marketplace-backend/src/common/utils/api-response.ts",
+    "backend/src/common/utils/api-response.ts",
   );
-  const frontendTypes = readProjectFile("marketplace-frontend/src/types/api.ts");
-  const frontendApiError = readProjectFile("marketplace-frontend/src/lib/api-error.ts");
-  const contractTests = readProjectFile("marketplace-backend/tests/unit/contracts.test.ts");
+  const frontendTypes = readProjectFile("frontend/src/types/api.ts");
+  const frontendApiError = readProjectFile("frontend/src/lib/api-error.ts");
+  const contractTests = readProjectFile("backend/tests/unit/contracts.test.ts");
 
   if ((backendTypes.match(/requestId: string;/g) ?? []).length < 2) {
     throw new Error("Backend success/failure envelope types must require requestId.");
@@ -1171,7 +1181,7 @@ function verifyFrontendApiParity() {
     ),
   );
 
-  const apiRoot = join(root, "marketplace-frontend/src/features");
+  const apiRoot = join(root, "frontend/src/features");
   for (const absolutePath of frontendApiFiles(apiRoot)) {
     const source = readFileSync(absolutePath, "utf8");
     for (const route of frontendApiCalls(source)) {
@@ -1191,28 +1201,29 @@ function verifyHttpLayerBoundaries() {
     ...new Set(moduleContracts.map((contract) => contract.file)),
   ];
   const controllerFiles = [
-    "marketplace-backend/src/modules/administration/auth.controller.ts",
-    "marketplace-backend/src/modules/administration/administration.controller.ts",
-    "marketplace-backend/src/modules/documents-audit/documents-audit.controller.ts",
-    "marketplace-backend/src/modules/customers/customers.controller.ts",
-    "marketplace-backend/src/modules/sellers/sellers.controller.ts",
-    "marketplace-backend/src/modules/catalog-taxonomy/catalog-taxonomy.controller.ts",
-    "marketplace-backend/src/modules/products/products.controller.ts",
-    "marketplace-backend/src/modules/inventory/inventory.controller.ts",
-    "marketplace-backend/src/modules/search-discovery/search-discovery.controller.ts",
-    "marketplace-backend/src/modules/cart-wishlist/cart-wishlist.controller.ts",
-    "marketplace-backend/src/modules/promotions/promotions.controller.ts",
-    "marketplace-backend/src/modules/shipping/shipping.controller.ts",
-    "marketplace-backend/src/modules/checkout/checkout.controller.ts",
-    "marketplace-backend/src/modules/orders/orders.controller.ts",
-    "marketplace-backend/src/modules/payments/payments.controller.ts",
-    "marketplace-backend/src/modules/commissions/commissions.controller.ts",
-    "marketplace-backend/src/modules/returns-refunds/returns-refunds.controller.ts",
-    "marketplace-backend/src/modules/seller-wallet-payouts/seller-wallet-payouts.controller.ts",
-    "marketplace-backend/src/modules/reviews/reviews.controller.ts",
-    "marketplace-backend/src/modules/notifications/notifications.controller.ts",
-    "marketplace-backend/src/modules/reports/reports.controller.ts",
-    "marketplace-backend/src/modules/dashboard/dashboard.controller.ts",
+    "backend/src/modules/administration/auth.controller.ts",
+    "backend/src/modules/administration/administration.controller.ts",
+    "backend/src/modules/documents-audit/documents-audit.controller.ts",
+    "backend/src/modules/public-media/public-media.controller.ts",
+    "backend/src/modules/customers/customers.controller.ts",
+    "backend/src/modules/sellers/sellers.controller.ts",
+    "backend/src/modules/catalog-taxonomy/catalog-taxonomy.controller.ts",
+    "backend/src/modules/products/products.controller.ts",
+    "backend/src/modules/inventory/inventory.controller.ts",
+    "backend/src/modules/search-discovery/search-discovery.controller.ts",
+    "backend/src/modules/cart-wishlist/cart-wishlist.controller.ts",
+    "backend/src/modules/promotions/promotions.controller.ts",
+    "backend/src/modules/shipping/shipping.controller.ts",
+    "backend/src/modules/checkout/checkout.controller.ts",
+    "backend/src/modules/orders/orders.controller.ts",
+    "backend/src/modules/payments/payments.controller.ts",
+    "backend/src/modules/commissions/commissions.controller.ts",
+    "backend/src/modules/returns-refunds/returns-refunds.controller.ts",
+    "backend/src/modules/seller-wallet-payouts/seller-wallet-payouts.controller.ts",
+    "backend/src/modules/reviews/reviews.controller.ts",
+    "backend/src/modules/notifications/notifications.controller.ts",
+    "backend/src/modules/reports/reports.controller.ts",
+    "backend/src/modules/dashboard/dashboard.controller.ts",
   ];
 
   for (const relativePath of routeFiles) {
@@ -1236,9 +1247,9 @@ function verifyHttpLayerBoundaries() {
 
 /** Ensures every HTTP definition has a real runtime consumer instead of leaving dead handlers or registries behind. */
 function verifyNoDeadHttpDefinitions() {
-  const app = readProjectFile("marketplace-backend/src/app.ts");
+  const app = readProjectFile("backend/src/app.ts");
   const openApiDocument = readProjectFile(
-    "marketplace-backend/src/http/openapi/openapi.document.ts",
+    "backend/src/http/openapi/openapi.document.ts",
   );
   const routeFiles = [...new Set(moduleContracts.map((contract) => contract.file))];
 
@@ -1315,7 +1326,7 @@ function verifyHttpReadabilityAndClientUsage() {
     }
   }
 
-  const sourceRoot = join(root, "marketplace-frontend/src");
+  const sourceRoot = join(root, "frontend/src");
   const sourceFiles = frontendSourceFiles(sourceRoot);
   const sourceByFile = new Map(
     sourceFiles.map((absolutePath) => [absolutePath, readFileSync(absolutePath, "utf8")]),
@@ -1379,7 +1390,7 @@ function verifyHttpReadabilityAndClientUsage() {
     }
   }
 
-  const apiClient = readProjectFile("marketplace-frontend/src/lib/api-client.ts");
+  const apiClient = readProjectFile("frontend/src/lib/api-client.ts");
   for (const required of [
     "axios.create({",
     "withCredentials: true",
@@ -1399,11 +1410,11 @@ function verifyHttpReadabilityAndClientUsage() {
 function verifyExplicitHttpComposition() {
   const checks = [
     [
-      "marketplace-backend/src/modules/administration/administration.routes.ts",
+      "backend/src/modules/administration/administration.routes.ts",
       ["administrationController", "export const administrationRouter"],
     ],
     [
-      "marketplace-backend/src/modules/customers/customers.routes.ts",
+      "backend/src/modules/customers/customers.routes.ts",
       [
         "customersController",
         "export const customersRouter",
@@ -1411,7 +1422,7 @@ function verifyExplicitHttpComposition() {
       ],
     ],
     [
-      "marketplace-backend/src/modules/documents-audit/documents-audit.routes.ts",
+      "backend/src/modules/documents-audit/documents-audit.routes.ts",
       [
         "documentsAuditController",
         "export const documentsRouter",
@@ -1419,7 +1430,7 @@ function verifyExplicitHttpComposition() {
       ],
     ],
     [
-      "marketplace-backend/src/modules/cart-wishlist/cart-wishlist.routes.ts",
+      "backend/src/modules/cart-wishlist/cart-wishlist.routes.ts",
       [
         "cartWishlistController",
         "export const cartRouter",
@@ -1427,7 +1438,7 @@ function verifyExplicitHttpComposition() {
       ],
     ],
     [
-      "marketplace-backend/src/modules/promotions/promotions.routes.ts",
+      "backend/src/modules/promotions/promotions.routes.ts",
       [
         "promotionsController =",
         "export const promotionsRouter",
@@ -1436,15 +1447,15 @@ function verifyExplicitHttpComposition() {
       ],
     ],
     [
-      "marketplace-backend/src/modules/shipping/shipping.routes.ts",
+      "backend/src/modules/shipping/shipping.routes.ts",
       ["shippingController =", "export const shippingRouter"],
     ],
     [
-      "marketplace-backend/src/modules/checkout/checkout.routes.ts",
+      "backend/src/modules/checkout/checkout.routes.ts",
       ["checkoutController =", "export const checkoutRouter"],
     ],
     [
-      "marketplace-backend/src/modules/orders/orders.routes.ts",
+      "backend/src/modules/orders/orders.routes.ts",
       [
         "ordersController =",
         "export const customerOrdersRouter",
@@ -1454,7 +1465,7 @@ function verifyExplicitHttpComposition() {
       ],
     ],
     [
-      "marketplace-backend/src/modules/payments/payments.routes.ts",
+      "backend/src/modules/payments/payments.routes.ts",
       [
         "paymentsController =",
         "export const paymentsRouter",
@@ -1464,7 +1475,7 @@ function verifyExplicitHttpComposition() {
       ],
     ],
     [
-      "marketplace-backend/src/modules/returns-refunds/returns-refunds.routes.ts",
+      "backend/src/modules/returns-refunds/returns-refunds.routes.ts",
       [
         "returnsRefundsController =",
         "export const orderReturnsRouter",
@@ -1474,7 +1485,7 @@ function verifyExplicitHttpComposition() {
       ],
     ],
     [
-      "marketplace-backend/src/modules/seller-wallet-payouts/seller-wallet-payouts.routes.ts",
+      "backend/src/modules/seller-wallet-payouts/seller-wallet-payouts.routes.ts",
       [
         "sellerWalletPayoutsController =",
         "export const sellerWalletPayoutsRouter",
@@ -1483,7 +1494,7 @@ function verifyExplicitHttpComposition() {
       ],
     ],
     [
-      "marketplace-backend/src/modules/reviews/reviews.routes.ts",
+      "backend/src/modules/reviews/reviews.routes.ts",
       [
         "reviewsController =",
         "export const reviewsRouter",
@@ -1493,7 +1504,7 @@ function verifyExplicitHttpComposition() {
       ],
     ],
     [
-      "marketplace-backend/src/modules/notifications/notifications.routes.ts",
+      "backend/src/modules/notifications/notifications.routes.ts",
       [
         "notificationsController =",
         "export const notificationsRouter",
@@ -1501,7 +1512,7 @@ function verifyExplicitHttpComposition() {
       ],
     ],
     [
-      "marketplace-backend/src/modules/reports/reports.routes.ts",
+      "backend/src/modules/reports/reports.routes.ts",
       [
         "reportsController =",
         "export const reportsRouter",
@@ -1570,7 +1581,7 @@ function verifyApprovedExtensions() {
   }
 }
 
-/** Locks the complete implemented business HTTP surface through Module 1 Pass 5 to 168 operations. */
+/** Locks the complete implemented business HTTP surface, including public media, to 170 operations. */
 function verifyImplementedOperationCount() {
   const operationCount = moduleContracts.reduce(
     (total, contract) => total + contract.openApi.length,

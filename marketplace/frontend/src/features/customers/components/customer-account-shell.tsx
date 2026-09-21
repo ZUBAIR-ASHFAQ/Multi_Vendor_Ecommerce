@@ -75,7 +75,7 @@ export function CustomerAccountShell({
 
   return (
     <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start">
-      <aside className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:sticky lg:top-24">
+      <aside className="min-w-0 max-w-full rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4 lg:sticky lg:top-24">
         <div className="border-b border-slate-100 pb-4">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">My account</p>
           <p className="mt-1 truncate font-semibold text-slate-950">{user.displayName}</p>
@@ -83,7 +83,7 @@ export function CustomerAccountShell({
         </div>
 
         <nav
-          className="mt-3 flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0"
+          className="mt-3 flex max-w-full gap-2 overflow-x-auto overscroll-x-contain pb-1 lg:flex-col lg:overflow-visible lg:pb-0"
           aria-label="Customer account navigation"
         >
           {links
@@ -111,7 +111,7 @@ export function CustomerAccountShell({
         </div>
       </aside>
 
-      <main className="min-w-0">{children}</main>
+      <div className="min-w-0">{children}</div>
     </div>
   );
 }

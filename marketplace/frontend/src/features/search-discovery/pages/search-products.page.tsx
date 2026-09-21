@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ApiClientError } from "@/lib/api-error";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
+import { EmptySearchState, OperationFeedback } from "@/components/feedback/system-state";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { usePublicMediaQuery } from "@/features/public-media/hooks/use-public-media";
+import { useModalFocus } from "@/hooks/use-modal-focus";
 import {
   SEARCH_ERROR_CODE,
   SEARCH_PRODUCT_SORT_OPTIONS,
@@ -156,6 +158,8 @@ export function SearchProductsPage({
   onSearchChange: (next: SearchProductsRouteSearch) => void;
 }) {
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const filterDrawerRef = useRef<HTMLElement>(null);
+  useModalFocus(filterDrawerRef, filtersOpen, () => setFiltersOpen(false));
   const results = useProductSearchQuery(search);
   const items = results.data?.data.items ?? [];
   const productMedia = usePublicMediaQuery(items.map((product) => product.thumbnailFileId));
@@ -193,6 +197,7 @@ export function SearchProductsPage({
                 variant="outline"
                 className="search-discovery-mobile-filter-button"
                 aria-expanded={filtersOpen}
+                aria-controls="product-filter-drawer"
                 onClick={() => setFiltersOpen(true)}
               >
                 Filters{filterCount ? ` (${filterCount})` : ""}
@@ -234,9 +239,18 @@ export function SearchProductsPage({
       ) : null}
 
       <div className="search-discovery-layout">
-        <aside className={`search-discovery-sidebar${filtersOpen ? " is-open" : ""}`} aria-label="Product filters">
+        <aside
+          id="product-filter-drawer"
+          ref={filterDrawerRef}
+          tabIndex={filtersOpen ? -1 : undefined}
+          role={filtersOpen ? "dialog" : undefined}
+          aria-modal={filtersOpen ? true : undefined}
+          aria-labelledby={filtersOpen ? "mobile-product-filter-title" : undefined}
+          className={`search-discovery-sidebar${filtersOpen ? " is-open" : ""}`}
+          aria-label={filtersOpen ? undefined : "Product filters"}
+        >
           <div className="search-discovery-mobile-filter-heading">
-            <strong>Filters</strong>
+            <strong id="mobile-product-filter-title">Filters</strong>
             <button type="button" aria-label="Close filters" onClick={() => setFiltersOpen(false)}>×</button>
           </div>
 
@@ -271,10 +285,10 @@ export function SearchProductsPage({
 
         <section className="search-discovery-results" aria-label="Product Search results">
           {results.isFetching && !results.isPending ? (
-            <p className="search-discovery-refreshing" role="status">Updating results…</p>
+            <OperationFeedback>Updating results…</OperationFeedback>
           ) : null}
 
-          {results.isPending ? <LoadingState label="Searching products..." /> : null}
+          {results.isPending ? <LoadingState label="Searching products..." variant="products" count={8} /> : null}
           {results.isError ? (
             <ErrorState
               title={searchErrorTitle(results.error)}
@@ -285,18 +299,17 @@ export function SearchProductsPage({
           ) : null}
 
           {results.data && results.data.data.items.length === 0 ? (
-            <div className="search-discovery-empty">
-              <span aria-hidden="true">◇</span>
-              <h2>No products found</h2>
-              <p>Try a broader search or remove one of the active filters.</p>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onSearchChange({ sort: "relevance", page: 1, pageSize: search.pageSize })}
-              >
-                Clear search and filters
-              </Button>
-            </div>
+            <EmptySearchState
+              action={(
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onSearchChange({ sort: "relevance", page: 1, pageSize: search.pageSize })}
+                >
+                  Clear search and filters
+                </Button>
+              )}
+            />
           ) : null}
 
           {results.data && results.data.data.items.length > 0 ? (

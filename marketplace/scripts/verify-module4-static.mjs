@@ -49,7 +49,7 @@ function walk(relativeDirectory) {
 
 /** Verifies the seller routes expose exactly ten documented Module 4 OpenAPI operations. */
 function verifyExactSellerOpenApiMarkers() {
-  const source = read("marketplace-backend/src/modules/sellers/sellers.routes.ts");
+  const source = read("backend/src/modules/sellers/sellers.routes.ts");
   const operationIds = [...source.matchAll(/operationId:\s*"([^"]+)"/g)].map((match) => match[1]);
   const expected = [
     "submitSellerApplication",
@@ -72,7 +72,7 @@ function verifyExactSellerOpenApiMarkers() {
 
 /** Verifies Module 4 repository coverage, seller scoping and removal of proven dead queries. */
 function verifySellerRepositoryContract() {
-  const repository = read("marketplace-backend/src/modules/sellers/sellers.repository.ts");
+  const repository = read("backend/src/modules/sellers/sellers.repository.ts");
   const requiredMethods = [
     "createSellerApplication",
     "findOpenSellerApplicationByApplicantUserId",
@@ -136,8 +136,8 @@ function verifySellerRepositoryContract() {
     );
   }
 
-  const service = read("marketplace-backend/src/modules/sellers/sellers.service.ts");
-  const controller = read("marketplace-backend/src/modules/sellers/sellers.controller.ts");
+  const service = read("backend/src/modules/sellers/sellers.service.ts");
+  const controller = read("backend/src/modules/sellers/sellers.controller.ts");
   for (const [name, source] of [["service", service], ["controller", controller]]) {
     assertCondition(
       !source.includes('from "../../database/db.js"'),
@@ -154,9 +154,9 @@ function verifySellerRepositoryContract() {
 
 /** Verifies the Pass 4 service invariants that protect seller/store lifecycle and seller staff delegation. */
 function verifySellerServiceInvariants() {
-  const sellersService = read("marketplace-backend/src/modules/sellers/sellers.service.ts");
+  const sellersService = read("backend/src/modules/sellers/sellers.service.ts");
   const administrationService = read(
-    "marketplace-backend/src/modules/administration/administration.service.ts",
+    "backend/src/modules/administration/administration.service.ts",
   );
 
   for (const marker of [
@@ -191,13 +191,13 @@ function verifySellerServiceInvariants() {
 
 /** Verifies Module 4 HTTP routing, RBAC, controller-service wiring, mounts and OpenAPI registration. */
 function verifySellerHttpContract() {
-  const routes = read("marketplace-backend/src/modules/sellers/sellers.routes.ts");
-  const controller = read("marketplace-backend/src/modules/sellers/sellers.controller.ts");
-  const app = read("marketplace-backend/src/app.ts");
+  const routes = read("backend/src/modules/sellers/sellers.routes.ts");
+  const controller = read("backend/src/modules/sellers/sellers.controller.ts");
+  const app = read("backend/src/app.ts");
   const openApiDocument = read(
-    "marketplace-backend/src/http/openapi/openapi.document.ts",
+    "backend/src/http/openapi/openapi.document.ts",
   );
-  const index = read("marketplace-backend/src/modules/sellers/index.ts");
+  const index = read("backend/src/modules/sellers/index.ts");
 
   const routePatterns = [
     /router\.post\(\s*"\/applications",\s*controller\.submitApplication,?\s*\)/s,
@@ -294,14 +294,14 @@ function verifySellerHttpContract() {
 /** Rejects generated output, temporary generation evidence and placeholder markers from the final tree. */
 function verifyFinalCleanup() {
   const forbiddenDirectories = [
-    "marketplace-backend/node_modules",
-    "marketplace-backend/dist",
-    "marketplace-backend/coverage",
-    "marketplace-frontend/node_modules",
-    "marketplace-frontend/dist",
-    "marketplace-frontend/coverage",
-    "marketplace-frontend/test-results",
-    "marketplace-frontend/playwright-report",
+    "backend/node_modules",
+    "backend/dist",
+    "backend/coverage",
+    "frontend/node_modules",
+    "frontend/dist",
+    "frontend/coverage",
+    "frontend/test-results",
+    "frontend/playwright-report",
   ];
   for (const directory of forbiddenDirectories) {
     assertCondition(
@@ -316,10 +316,10 @@ function verifyFinalCleanup() {
   );
 
   const checkedFiles = [
-    ...walk("marketplace-backend/src/modules/sellers"),
-    ...walk("marketplace-backend/tests/module4"),
-    ...walk("marketplace-frontend/src/features/sellers"),
-    "marketplace-frontend/e2e/module4.spec.ts",
+    ...walk("backend/src/modules/sellers"),
+    ...walk("backend/tests/module4"),
+    ...walk("frontend/src/features/sellers"),
+    "frontend/e2e/module4.spec.ts",
     "scripts/verify-module4-static.mjs",
     "scripts/verify-module4.mjs",
   ];
@@ -345,39 +345,39 @@ function verifyFinalCleanup() {
 /** Verifies the completed Module 4 implementation and release-gate wiring without runtime dependencies. */
 function main() {
   [
-    "marketplace-backend/src/database/schema/sellers.ts",
-    "marketplace-backend/drizzle/0007_seller_store_management.sql",
-    "marketplace-backend/src/modules/sellers/sellers.constants.ts",
-    "marketplace-backend/src/modules/sellers/sellers.schema.ts",
-    "marketplace-backend/src/modules/sellers/sellers.repository.ts",
-    "marketplace-backend/src/modules/sellers/sellers.service.ts",
-    "marketplace-backend/src/modules/sellers/sellers.controller.ts",
-    "marketplace-backend/src/modules/sellers/sellers.routes.ts",
-    "marketplace-backend/tests/module4/module4.schemas.test.ts",
-    "marketplace-backend/tests/module4/module4.service.test.ts",
-    "marketplace-backend/tests/module4/module4.integration.test.ts",
-    "marketplace-backend/scripts/run-module4-tests.mjs",
-    "marketplace-backend/scripts/verify-module4-migrations.mjs",
-    "marketplace-frontend/src/features/sellers/api/sellers.api.ts",
-    "marketplace-frontend/src/features/sellers/hooks/use-sellers.ts",
-    "marketplace-frontend/src/features/sellers/components/seller-layout.tsx",
-    "marketplace-frontend/src/features/sellers/forms/seller-application-form.tsx",
-    "marketplace-frontend/src/features/sellers/forms/seller-profile-form.tsx",
-    "marketplace-frontend/src/features/sellers/forms/store-form.tsx",
-    "marketplace-frontend/src/features/sellers/pages/seller-application.page.tsx",
-    "marketplace-frontend/src/features/sellers/pages/admin-seller-applications.page.tsx",
-    "marketplace-frontend/src/features/sellers/pages/seller-profile.page.tsx",
-    "marketplace-frontend/src/features/sellers/pages/seller-stores.page.tsx",
-    "marketplace-frontend/src/features/sellers/pages/seller-staff.page.tsx",
-    "marketplace-frontend/src/features/sellers/pages/admin-seller-suspension.page.tsx",
-    "marketplace-frontend/src/features/sellers/pages/public-store.page.tsx",
-    "marketplace-frontend/src/app/routes/sellers.routes.tsx",
-    "marketplace-frontend/tests/module4-sellers.test.tsx",
-    "marketplace-frontend/e2e/module4.spec.ts",
+    "backend/src/database/schema/sellers.ts",
+    "backend/drizzle/0007_seller_store_management.sql",
+    "backend/src/modules/sellers/sellers.constants.ts",
+    "backend/src/modules/sellers/sellers.schema.ts",
+    "backend/src/modules/sellers/sellers.repository.ts",
+    "backend/src/modules/sellers/sellers.service.ts",
+    "backend/src/modules/sellers/sellers.controller.ts",
+    "backend/src/modules/sellers/sellers.routes.ts",
+    "backend/tests/module4/module4.schemas.test.ts",
+    "backend/tests/module4/module4.service.test.ts",
+    "backend/tests/module4/module4.integration.test.ts",
+    "backend/scripts/run-module4-tests.mjs",
+    "backend/scripts/verify-module4-migrations.mjs",
+    "frontend/src/features/sellers/api/sellers.api.ts",
+    "frontend/src/features/sellers/hooks/use-sellers.ts",
+    "frontend/src/features/sellers/components/seller-layout.tsx",
+    "frontend/src/features/sellers/forms/seller-application-form.tsx",
+    "frontend/src/features/sellers/forms/seller-profile-form.tsx",
+    "frontend/src/features/sellers/forms/store-form.tsx",
+    "frontend/src/features/sellers/pages/seller-application.page.tsx",
+    "frontend/src/features/sellers/pages/admin-seller-applications.page.tsx",
+    "frontend/src/features/sellers/pages/seller-profile.page.tsx",
+    "frontend/src/features/sellers/pages/seller-stores.page.tsx",
+    "frontend/src/features/sellers/pages/seller-staff.page.tsx",
+    "frontend/src/features/sellers/pages/admin-seller-suspension.page.tsx",
+    "frontend/src/features/sellers/pages/public-store.page.tsx",
+    "frontend/src/app/routes/sellers.routes.tsx",
+    "frontend/tests/module4-sellers.test.tsx",
+    "frontend/e2e/module4.spec.ts",
     "scripts/verify-module4.mjs",
   ].forEach(requireFile);
 
-  requireText("marketplace-backend/src/database/schema/sellers.ts", [
+  requireText("backend/src/database/schema/sellers.ts", [
     '"seller_applications"',
     '"sellers"',
     '"stores"',
@@ -386,7 +386,7 @@ function main() {
     'uniqueIndex("seller_staff_seller_user_uq")',
   ]);
 
-  requireText("marketplace-backend/drizzle/0007_seller_store_management.sql", [
+  requireText("backend/drizzle/0007_seller_store_management.sql", [
     'CREATE TABLE "seller_applications"',
     'CREATE TABLE "sellers"',
     'CREATE TABLE "stores"',
@@ -395,7 +395,7 @@ function main() {
     "'store_asset'",
   ]);
 
-  requireText("marketplace-backend/src/modules/sellers/sellers.constants.ts", [
+  requireText("backend/src/modules/sellers/sellers.constants.ts", [
     "SELLER_EDITABLE_STORE_STATUS_VALUES",
     'PROFILE_READ: "seller.profile.read"',
     'PROFILE_MANAGE: "seller.profile.manage"',
@@ -408,13 +408,13 @@ function main() {
     'SELLER_SCOPE_FORBIDDEN: "SELLER_SCOPE_FORBIDDEN"',
   ]);
 
-  requireText("marketplace-backend/src/modules/sellers/sellers.schema.ts", [
+  requireText("backend/src/modules/sellers/sellers.schema.ts", [
     "sellerEditableStoreStatusSchema",
     "status: sellerEditableStoreStatusSchema.optional()",
     ".meta({ minProperties: 1 })",
   ]);
 
-  requireText("marketplace-backend/src/modules/sellers/sellers.routes.ts", [
+  requireText("backend/src/modules/sellers/sellers.routes.ts", [
     "z.toJSONSchema",
     "objectPropertySchema",
     "openApiSchema(updateStoreBodySchema)",
@@ -427,7 +427,7 @@ function main() {
   verifySellerServiceInvariants();
   verifySellerHttpContract();
 
-  const sellerRoutes = read("marketplace-backend/src/modules/sellers/sellers.routes.ts");
+  const sellerRoutes = read("backend/src/modules/sellers/sellers.routes.ts");
   for (const forbidden of [
     'router.delete(',
     '"/sellers"',
@@ -440,7 +440,7 @@ function main() {
     );
   }
 
-  requireText("marketplace-backend/src/app.ts", [
+  requireText("backend/src/app.ts", [
     "SellersService",
     "resolveAccessScopes",
     "sellerDocumentPolicy",
@@ -449,7 +449,7 @@ function main() {
     "createPublicStoresRouter",
   ]);
 
-  requireText("marketplace-backend/tests/module4/module4.integration.test.ts", [
+  requireText("backend/tests/module4/module4.integration.test.ts", [
     "approves an application atomically into seller owner identity, seller staff and active authentication scope",
     "rolls back seller approval when downstream protected-role provisioning fails",
     "rejects privileged seller review and suspension routes without the required admin permissions",
@@ -463,19 +463,19 @@ function main() {
     "exactly the ten approved Module 4 OpenAPI operations",
   ]);
 
-  requireText("marketplace-backend/tests/module4/module4.service.test.ts", [
+  requireText("backend/tests/module4/module4.service.test.ts", [
     "locks each assignable seller scope once in stable order before staff assignment",
     "rejects seller staff assignment when the requested seller is suspended",
   ]);
 
-  requireText("marketplace-backend/tests/module2/module2.business-rules.integration.test.ts", [
+  requireText("backend/tests/module2/module2.business-rules.integration.test.ts", [
     "allows seller staff management inside Seller A without delegating staff-management authority",
     "rejects seller staff attempts to delegate seller.staff.manage",
     "lets seller staff managers search one exact email and read only safe assignable seller roles",
     "createSellerScope",
   ]);
 
-  requireText("marketplace-backend/scripts/run-module4-tests.mjs", [
+  requireText("backend/scripts/run-module4-tests.mjs", [
     '"test:module4:migrations"',
     '"test:module4:specs"',
     '"test:module2:specs"',
@@ -486,7 +486,7 @@ function main() {
     '"build"',
   ]);
 
-  requireText("marketplace-frontend/tests/module4-sellers.test.tsx", [
+  requireText("frontend/tests/module4-sellers.test.tsx", [
     "submits a customer seller application without client-owned approval fields",
     "uploads optional seller verification",
     "loads the admin review queue and sends the explicit approve command",
@@ -497,38 +497,38 @@ function main() {
     "shows seller staff management from the seller profile when the owner has permission",
     "sends the explicit admin seller suspension command from the protected frontend page",
     "uploads and links a store_asset",
-    "renders only the public-safe store projection",
+    "renders a shoppable public-safe storefront without loading an authenticated actor",
   ]);
 
-  requireText("marketplace-frontend/src/features/sellers/forms/store-form.tsx", [
+  requireText("frontend/src/features/sellers/forms/store-form.tsx", [
     "Store status",
     'value="inactive"',
     "Admin suspension cannot be changed here.",
   ]);
 
-  requireText("marketplace-frontend/src/features/sellers/pages/seller-staff.page.tsx", [
+  requireText("frontend/src/features/sellers/pages/seller-staff.page.tsx", [
     "Find one existing marketplace user by exact email",
     "SELLER_PERMISSION.STAFF_MANAGE",
     "Only seller-scoped roles that do not contain staff-management authority are listed.",
   ]);
 
-  requireText("marketplace-frontend/src/features/sellers/pages/admin-seller-suspension.page.tsx", [
+  requireText("frontend/src/features/sellers/pages/admin-seller-suspension.page.tsx", [
     "SELLER_PERMISSION.ADMIN_SUSPEND",
     "Suspend seller",
     "useSuspendSellerMutation",
   ]);
 
-  requireText("marketplace-frontend/src/app/routes/sellers.routes.tsx", [
+  requireText("frontend/src/app/routes/sellers.routes.tsx", [
     'path: "/seller/staff"',
     'path: "/admin/sellers/suspend"',
   ]);
 
-  requireText("marketplace-frontend/src/features/auth/auth.navigation.ts", [
+  requireText("frontend/src/features/auth/auth.navigation.ts", [
     '"/seller/staff"',
     '"/admin/sellers/suspend"',
   ]);
 
-  requireText("marketplace-frontend/e2e/module4.spec.ts", [
+  requireText("frontend/e2e/module4.spec.ts", [
     "customer registers, signs in, submits seller application, and links verification evidence",
     "platform admin reviews and approves the submitted application in the browser",
     "approved seller re-authenticates, updates profile, creates store, uploads logo, and serves public storefront",
@@ -544,30 +544,30 @@ function main() {
     '"FILE_NOT_FOUND"',
   ]);
 
-  requireText("marketplace-frontend/src/features/sellers/hooks/use-sellers.ts", [
+  requireText("frontend/src/features/sellers/hooks/use-sellers.ts", [
     "sellerQueryKeys.publicStores",
     "Promise.all",
   ]);
 
-  requireText("marketplace-backend/src/database/seeds/module21-e2e.seed.ts", [
+  requireText("backend/src/database/seeds/module21-e2e.seed.ts", [
     "sellerStaff, sellers",
     "upsertSellerScope",
     "current Module 4 ownership model",
   ]);
 
-  requireText("marketplace-frontend/src/features/auth/auth.navigation.ts", [
+  requireText("frontend/src/features/auth/auth.navigation.ts", [
     'user.accountType === "seller" && user.permissions.includes("seller.profile.read")',
     'return "/seller/profile"',
     'return "/seller/staff"',
     'return "/admin/sellers/suspend"',
   ]);
 
-  requireText("marketplace-frontend/package.json", [
+  requireText("frontend/package.json", [
     '"test:module4": "vitest run tests/module4-sellers.test.tsx"',
     '"test:e2e:module4": "playwright test e2e/module4.spec.ts"',
   ]);
 
-  requireText("marketplace-backend/.github/workflows/ci.yml", [
+  requireText("backend/.github/workflows/ci.yml", [
     "Verify Module 4 clean and upgrade migrations",
     "npm run test:module4:migrations",
     "Prepare database for Module 4 tests",

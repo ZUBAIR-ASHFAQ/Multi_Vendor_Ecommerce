@@ -1,10 +1,18 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
+import { Button } from "@/components/ui/button";
+import { StatusPill } from "@/components/ui/status-pill";
+import {
+  AdminQueueEmpty,
+  AdminQueueHeader,
+  AdminQueueTable,
+  AdminQueueTableHead,
+} from "@/features/administration/components/admin-queue";
 import { AdminLayout } from "@/features/administration/components/admin-layout";
 import { RequirePagePermission } from "@/features/administration/components/permission-gate";
 import { ApiClientError } from "@/lib/api-error";
+import { formatDateTime } from "@/lib/dates";
 import { NotificationPagination } from "../components/notification-pagination";
 import {
   useAdminNotificationDeliveriesQuery,
@@ -22,27 +30,25 @@ function AdminNotificationDeliveriesContent({ canRetry }: { canRetry: boolean })
   const deliveries = useAdminNotificationDeliveriesQuery({ page, pageSize: 20 });
   const retry = useRetryNotificationDeliveryMutation();
 
-  if (deliveries.isPending) return <LoadingState label="Loading failed notification deliveries..." />;
-  if (deliveries.isError) {
-    return (
-      <ErrorState
-        title="Failed deliveries could not be loaded"
-        message={deliveries.error instanceof Error ? deliveries.error.message : "Please try again."}
-        requestId={deliveries.error instanceof ApiClientError ? deliveries.error.requestId : undefined}
-        onRetry={() => void deliveries.refetch()}
-      />
-    );
-  }
-
   return (
     <div className="space-y-5">
-      <section className="rounded-xl border bg-white p-5 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Notifications</p>
-        <h1 className="mt-1 text-2xl font-bold">Failed delivery queue</h1>
-        <p className="mt-1 max-w-3xl text-sm text-slate-600">
-          Destinations are masked. Retry reuses the original durable event, recipient, channel, and delivery identity.
-        </p>
-      </section>
+      <AdminQueueHeader
+        eyebrow="Operations · Notifications"
+        title="Failed delivery queue"
+        description="The current admin API exposes failed deliveries only, with masked destinations. Retry reuses the original durable event, recipient, channel, and delivery identity."
+        meta={deliveries.data?.meta}
+        visibleCount={deliveries.data?.items.length}
+      />
+
+      {deliveries.isPending ? <LoadingState variant="table" label="Loading failed notification deliveries..." /> : null}
+      {deliveries.isError ? (
+        <ErrorState
+          title="Failed deliveries could not be loaded"
+          message={deliveries.error instanceof Error ? deliveries.error.message : "Please try again."}
+          requestId={deliveries.error instanceof ApiClientError ? deliveries.error.requestId : undefined}
+          onRetry={() => void deliveries.refetch()}
+        />
+      ) : null}
 
       {retry.isError ? (
         <ErrorState
@@ -52,24 +58,42 @@ function AdminNotificationDeliveriesContent({ canRetry }: { canRetry: boolean })
         />
       ) : null}
 
-      {deliveries.data.items.length === 0 ? (
-        <p className="rounded-xl border bg-white p-8 text-center text-slate-500">There are no failed Notification deliveries.</p>
-      ) : (
-        <div className="space-y-3">
-          {deliveries.data.items.map((delivery) => (
-            <article key={delivery.id} className="rounded-xl border bg-white p-5 shadow-sm">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="space-y-1 text-sm">
-                  <h2 className="font-semibold">{delivery.templateCode}</h2>
-                  <p>{NOTIFICATION_CHANNEL_LABEL[delivery.channel]} · {delivery.destinationMasked}</p>
-                  <p className="text-xs text-slate-500">User {delivery.userId}</p>
-                  <p className="text-xs text-slate-500">Attempts: {delivery.attempts} · Error: {delivery.lastErrorCode ?? "Unknown"}</p>
-                  <p className="text-xs text-slate-500">Updated {new Date(delivery.updatedAt).toLocaleString()}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-800">
-                    {NOTIFICATION_DELIVERY_STATUS_LABEL[delivery.status]}
-                  </span>
+      {deliveries.data?.items.length === 0 ? (
+        <AdminQueueEmpty
+          title="No failed notification deliveries"
+          description="There is no failed-delivery work in the current queue. The existing endpoint does not expose additional search or status filters."
+        />
+      ) : null}
+
+      {deliveries.data?.items.length ? (
+        <AdminQueueTable tableClassName="min-w-[1050px]">
+          <AdminQueueTableHead>
+            <tr>
+              <th className="px-4 py-3">Template</th>
+              <th className="px-4 py-3">Channel / destination</th>
+              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Attempts</th>
+              <th className="px-4 py-3">Last error</th>
+              <th className="px-4 py-3">Updated</th>
+              <th className="px-4 py-3 text-right">Primary action</th>
+            </tr>
+          </AdminQueueTableHead>
+          <tbody className="divide-y divide-border">
+            {deliveries.data.items.map((delivery) => (
+              <tr key={delivery.id} className="transition-colors hover:bg-surface-muted/60">
+                <td className="px-4 py-3">
+                  <strong className="block text-foreground">{delivery.templateCode}</strong>
+                  <span className="block break-all text-xs text-foreground-muted">User {delivery.userId}</span>
+                </td>
+                <td className="px-4 py-3">
+                  <span className="block">{NOTIFICATION_CHANNEL_LABEL[delivery.channel]}</span>
+                  <span className="block text-xs text-foreground-muted">{delivery.destinationMasked}</span>
+                </td>
+                <td className="px-4 py-3"><StatusPill tone="negative">{NOTIFICATION_DELIVERY_STATUS_LABEL[delivery.status]}</StatusPill></td>
+                <td className="px-4 py-3">{delivery.attempts}</td>
+                <td className="px-4 py-3 text-xs text-foreground-muted">{delivery.lastErrorCode ?? "Unknown"}</td>
+                <td className="px-4 py-3 whitespace-nowrap text-foreground-muted">{formatDateTime(delivery.updatedAt)}</td>
+                <td className="px-4 py-3 text-right">
                   {canRetry ? (
                     <Button
                       type="button"
@@ -80,17 +104,19 @@ function AdminNotificationDeliveriesContent({ canRetry }: { canRetry: boolean })
                     >
                       {retry.isPending && retry.variables === delivery.id ? "Retrying..." : "Retry"}
                     </Button>
-                  ) : null}
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
+                  ) : (
+                    <span className="text-xs text-foreground-muted">Read only</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </AdminQueueTable>
+      ) : null}
 
-      <section className="rounded-xl border bg-white p-4 shadow-sm">
+      {deliveries.data ? (
         <NotificationPagination meta={deliveries.data.meta} label="Failed deliveries" onPageChange={setPage} />
-      </section>
+      ) : null}
     </div>
   );
 }

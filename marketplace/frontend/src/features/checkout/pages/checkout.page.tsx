@@ -132,7 +132,7 @@ function CheckoutContent({ canConfirm, displayName }: { canConfirm: boolean; dis
       <CheckoutStepper activeStep={activeStep} />
 
       <div className="checkout-content-grid">
-        <main className="checkout-flow-column">
+        <section className="checkout-flow-column" aria-label="Checkout steps">
           <CheckoutQuoteForm
             addresses={addresses.data}
             storeNamesById={storeNamesById}
@@ -225,7 +225,7 @@ function CheckoutContent({ canConfirm, displayName }: { canConfirm: boolean; dis
               ) : null}
             </section>
           ) : null}
-        </main>
+        </section>
 
         <div className="checkout-summary-column">
           <CheckoutQuoteSummary quote={quote} cart={cart.data} />

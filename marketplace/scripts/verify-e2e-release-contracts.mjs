@@ -22,7 +22,7 @@ function requireText(source, expected, label) {
 
 /** Confirms every implemented Playwright workflow is present and executed in dependency order. */
 function verifyPlaywrightCoverage() {
-  const runner = read("marketplace-frontend/e2e/run-e2e-ci.mjs");
+  const runner = read("frontend/e2e/run-e2e-ci.mjs");
   const specs = [
     "foundation.spec.ts",
     "module2.spec.ts",
@@ -50,7 +50,7 @@ function verifyPlaywrightCoverage() {
 
   let previousIndex = -1;
   for (const spec of specs) {
-    read(`marketplace-frontend/e2e/${spec}`);
+    read(`frontend/e2e/${spec}`);
     const expected = `e2e/${spec}`;
     const currentIndex = runner.indexOf(expected);
     if (currentIndex === -1) {
@@ -68,7 +68,7 @@ function verifyPlaywrightCoverage() {
 
 /** Confirms the post-browser reconciliation checks cover every current transactional read model. */
 function verifyReleaseDataCoverage() {
-  const runner = read("marketplace-frontend/e2e/run-e2e-ci.mjs");
+  const runner = read("frontend/e2e/run-e2e-ci.mjs");
   for (const script of [
     "test:module6:release-data",
     "test:module7:release-data",
@@ -103,7 +103,7 @@ function verifyReleaseDataCoverage() {
 
 /** Confirms independent CI repositories require committed lockfiles and reproducible npm ci installs. */
 function verifyCiLockfilePolicy() {
-  for (const project of ["marketplace-backend", "marketplace-frontend"]) {
+  for (const project of ["backend", "frontend"]) {
     const workflow = read(`${project}/.github/workflows/ci.yml`);
     requireText(workflow, "npm run deps:verify-lock", `${project} CI`);
     requireText(workflow, "run: npm ci", `${project} CI`);
@@ -112,7 +112,7 @@ function verifyCiLockfilePolicy() {
     }
   }
 
-  const e2eWorkflow = read("marketplace-frontend/.github/workflows/e2e.yml");
+  const e2eWorkflow = read("frontend/.github/workflows/e2e.yml");
   for (const proof of [
     "Verify backend dependency lock",
     "Verify frontend dependency lock",

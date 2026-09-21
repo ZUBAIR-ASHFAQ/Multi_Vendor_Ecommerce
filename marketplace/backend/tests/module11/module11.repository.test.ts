@@ -208,6 +208,23 @@ describe("Module 11 Orders repository boundaries", () => {
       order: "desc",
     });
     expect(customerList.items.map((row) => row.id)).toEqual([orderId]);
+    await expect(repository.listCustomerOrderSellerOrders([orderId])).resolves.toEqual([
+      expect.objectContaining({
+        orderId,
+        sellerOrderId,
+        storeId: fixture.product.seller.storeId,
+        storeName: expect.any(String),
+      }),
+    ]);
+    await expect(repository.listCustomerOrderItemPreviews([orderId])).resolves.toEqual([
+      expect.objectContaining({
+        orderId,
+        sellerOrderId,
+        orderItemId: item?.id,
+        name: fixture.product.product.name,
+      }),
+    ]);
+    await expect(repository.listCustomerOrderVisibleShipments([orderId])).resolves.toEqual([]);
 
     const sellerScope = {
       sellerIds: [fixture.product.seller.sellerId],

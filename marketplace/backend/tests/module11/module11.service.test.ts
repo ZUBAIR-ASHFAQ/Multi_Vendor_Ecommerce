@@ -156,6 +156,9 @@ function repositoryStub(overrides: Partial<Record<keyof OrdersRepository, unknow
     createStatusHistory: vi.fn().mockResolvedValue([]),
     listSellerOrdersByOrderId: vi.fn().mockResolvedValue([]),
     listOrderItemsByOrderId: vi.fn().mockResolvedValue([]),
+    listCustomerOrderSellerOrders: vi.fn().mockResolvedValue([]),
+    listCustomerOrderItemPreviews: vi.fn().mockResolvedValue([]),
+    listCustomerOrderVisibleShipments: vi.fn().mockResolvedValue([]),
     listOrderAddressesByOrderId: vi.fn().mockResolvedValue([]),
     listOrderStatusHistory: vi.fn().mockResolvedValue([]),
     findOrderById: vi.fn(),
@@ -261,6 +264,68 @@ function orderItemRow(
 }
 
 describe("Module 11 Orders service rules", () => {
+  it("enriches customer Order history with bounded seller/store item previews and customer-visible tracking state", async () => {
+    const order = orderRow();
+    const sellerOrder = sellerOrderRow(order.id);
+    const itemRows = Array.from({ length: 4 }, (_, index) => ({
+      orderId: order.id,
+      sellerOrderId: sellerOrder.id,
+      orderItemId: randomUUID(),
+      name: `Product ${index + 1}`,
+      variantTitle: index === 0 ? "Large" : null,
+      quantity: index + 1,
+    }));
+    const repository = repositoryStub({
+      listOrdersForCustomer: vi.fn().mockResolvedValue({ items: [order], totalItems: 1 }),
+      listCustomerOrderSellerOrders: vi.fn().mockResolvedValue([
+        {
+          orderId: order.id,
+          sellerOrderId: sellerOrder.id,
+          storeId: sellerOrder.storeId,
+          storeName: "Store A",
+          status: sellerOrder.status,
+        },
+      ]),
+      listCustomerOrderItemPreviews: vi.fn().mockResolvedValue(itemRows),
+      listCustomerOrderVisibleShipments: vi.fn().mockResolvedValue([
+        { sellerOrderId: sellerOrder.id, status: "shipped" },
+        { sellerOrderId: sellerOrder.id, status: "delivered" },
+      ]),
+    });
+    const service = new OrdersService({ repository });
+
+    const result = await service.listCustomerOrders(actorContext(), {
+      page: 1,
+      pageSize: 20,
+      sort: "createdAt",
+      order: "desc",
+    });
+
+    expect(result.items).toEqual([
+      expect.objectContaining({
+        id: order.id,
+        sellerOrders: [
+          expect.objectContaining({
+            id: sellerOrder.id,
+            storeId: sellerOrder.storeId,
+            storeName: "Store A",
+            latestShipmentStatus: "delivered",
+            itemCount: 4,
+            items: itemRows.slice(0, 3).map((item) => ({
+              id: item.orderItemId,
+              name: item.name,
+              variantTitle: item.variantTitle,
+              quantity: item.quantity,
+            })),
+          }),
+        ],
+      }),
+    ]);
+    expect(repository.listCustomerOrderSellerOrders).toHaveBeenCalledWith([order.id]);
+    expect(repository.listCustomerOrderItemPreviews).toHaveBeenCalledWith([order.id]);
+    expect(repository.listCustomerOrderVisibleShipments).toHaveBeenCalledWith([order.id]);
+  });
+
   it("creates one immutable parent Order plus deterministic reconciled Seller Orders from Checkout", async () => {
     const snapshot = checkoutSnapshot();
     const createdOrder = orderRow({

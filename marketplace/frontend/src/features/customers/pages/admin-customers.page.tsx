@@ -48,7 +48,7 @@ function AdminCustomersContent() {
           <p className="mt-1 text-sm text-slate-600">Search customer identities and their current Module 3 profile/address summary.</p>
 
           <div className="mt-5 overflow-x-auto">
-            <table className="w-full text-left text-sm">
+            <table className="w-full min-w-[760px] text-left text-sm">
               <thead>
                 <tr className="border-b text-slate-500">
                   <th className="py-2">Customer</th>

@@ -1,6 +1,9 @@
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
+import { ConfirmationDialog } from "@/components/feedback/confirmation-dialog";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
+import { EmptyCartState } from "@/components/feedback/system-state";
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/features/auth/components/form-error";
 import { CouponField } from "@/features/promotions/components/coupon-field";
@@ -45,11 +48,12 @@ function groupCartItems(items: CartItem[]): CartStoreGroup[] {
 
 /** Loads and renders the authenticated customer's Cart as a non-authoritative commerce preview. */
 function CartContent() {
+  const [confirmClear, setConfirmClear] = useState(false);
   const cart = useCartQuery();
   const clear = useClearCartMutation();
   const media = usePublicMediaQuery(cart.data?.items.map((item) => item.thumbnailFileId) ?? []);
 
-  if (cart.isPending) return <LoadingState label="Loading Cart..." />;
+  if (cart.isPending) return <LoadingState label="Loading Cart..." variant="cards" count={3} />;
   if (cart.isError) {
     return (
       <ErrorState
@@ -83,16 +87,13 @@ function CartContent() {
       </header>
 
       {cart.data.items.length === 0 ? (
-        <section className="rounded-2xl border bg-white p-10 text-center shadow-sm">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-2xl" aria-hidden="true">
-            ◇
-          </div>
-          <h2 className="mt-4 text-xl font-bold">Your Cart is empty</h2>
-          <p className="mt-2 text-sm text-slate-600">Browse the marketplace and add a Product variant when you are ready.</p>
-          <Button className="mt-5" asChild>
-            <Link to="/products">Browse Products</Link>
-          </Button>
-        </section>
+        <EmptyCartState
+          action={(
+            <Button asChild>
+              <Link to="/products">Browse Products</Link>
+            </Button>
+          )}
+        />
       ) : (
         <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
           <div className="space-y-5">
@@ -192,7 +193,7 @@ function CartContent() {
                 variant="outline"
                 className="mt-3 w-full"
                 disabled={clear.isPending}
-                onClick={() => clear.mutate()}
+                onClick={() => setConfirmClear(true)}
               >
                 {clear.isPending ? "Clearing..." : "Clear Cart"}
               </Button>
@@ -200,6 +201,15 @@ function CartContent() {
           </aside>
         </div>
       )}
+      <ConfirmationDialog
+        open={confirmClear}
+        title="Clear your Cart?"
+        description="Every item currently in your Cart will be removed. You can add products again later."
+        confirmLabel="Confirm clear Cart"
+        isPending={clear.isPending}
+        onCancel={() => setConfirmClear(false)}
+        onConfirm={() => clear.mutate(undefined, { onSettled: () => setConfirmClear(false) })}
+      />
     </div>
   );
 }

@@ -11,7 +11,10 @@ function readProjectFile(relativePath) {
   if (!existsSync(absolutePath)) {
     throw new Error(`Required Module 11 Pass 8 file is missing: ${relativePath}`);
   }
-  return readFileSync(absolutePath, "utf8");
+  const source = readFileSync(absolutePath, "utf8");
+  return relativePath.endsWith("package.json")
+    ? JSON.stringify(JSON.parse(source.replace(/^\uFEFF/u, "")), null, 2)
+    : source;
 }
 
 /** Requires one exact contract or implementation fragment to remain present. */
@@ -77,7 +80,7 @@ function verifyOrdersContractPatch() {
 
 /** Confirms Module 11 keeps the approved persistence/runtime surface and adds no later-module migration. */
 function verifyPassBoundary() {
-  const ordersDirectory = join(root, "marketplace-backend/src/modules/orders");
+  const ordersDirectory = join(root, "backend/src/modules/orders");
   for (const requiredFile of [
     "orders.constants.ts",
     "orders.schema.ts",
@@ -92,12 +95,12 @@ function verifyPassBoundary() {
     }
   }
 
-  requireAbsent("marketplace-backend/src/modules/orders/orders.types.ts", "Unnecessary Orders type boilerplate");
-  if (!existsSync(join(root, "marketplace-frontend/src/features/orders"))) {
+  requireAbsent("backend/src/modules/orders/orders.types.ts", "Unnecessary Orders type boilerplate");
+  if (!existsSync(join(root, "frontend/src/features/orders"))) {
     throw new Error("Module 11 Pass 8 Orders frontend feature folder is missing.");
   }
 
-  const migrationDirectory = join(root, "marketplace-backend/drizzle");
+  const migrationDirectory = join(root, "backend/drizzle");
   const migrations = readdirSync(migrationDirectory).filter((name) => /^\d{4}_.+\.sql$/.test(name));
   if (!migrations.includes("0023_orders_persistence.sql")) {
     throw new Error("Module 11 Pass 8 must retain append-only migration 0023_orders_persistence.sql.");
@@ -106,9 +109,9 @@ function verifyPassBoundary() {
 
 /** Confirms the Pass 1 persistence foundation remains intact. */
 function verifyPersistenceFoundation() {
-  const ordersSchema = readProjectFile("marketplace-backend/src/database/schema/orders.ts");
-  const inventorySchema = readProjectFile("marketplace-backend/src/database/schema/inventory.ts");
-  const migration = readProjectFile("marketplace-backend/drizzle/0023_orders_persistence.sql");
+  const ordersSchema = readProjectFile("backend/src/database/schema/orders.ts");
+  const inventorySchema = readProjectFile("backend/src/database/schema/inventory.ts");
+  const migration = readProjectFile("backend/drizzle/0023_orders_persistence.sql");
 
   for (const fragment of [
     '"orders"',
@@ -135,10 +138,10 @@ function verifyPersistenceFoundation() {
 
 /** Confirms the approved Pass 2 contracts and narrow prerequisite service boundaries remain intact. */
 function verifyPass2ContractsAndPrerequisites() {
-  const constants = readProjectFile("marketplace-backend/src/modules/orders/orders.constants.ts");
-  const schema = readProjectFile("marketplace-backend/src/modules/orders/orders.schema.ts");
-  const productsService = readProjectFile("marketplace-backend/src/modules/products/products.service.ts");
-  const inventoryService = readProjectFile("marketplace-backend/src/modules/inventory/inventory.service.ts");
+  const constants = readProjectFile("backend/src/modules/orders/orders.constants.ts");
+  const schema = readProjectFile("backend/src/modules/orders/orders.schema.ts");
+  const productsService = readProjectFile("backend/src/modules/products/products.service.ts");
+  const inventoryService = readProjectFile("backend/src/modules/inventory/inventory.service.ts");
 
   for (const fragment of [
     "orders.read_own",
@@ -186,8 +189,8 @@ function verifyPass2ContractsAndPrerequisites() {
 
 /** Confirms the Pass 3 repository is scoped, persistence-only, and complete enough for the next service pass. */
 function verifyOrdersRepository() {
-  const repository = readProjectFile("marketplace-backend/src/modules/orders/orders.repository.ts");
-  const index = readProjectFile("marketplace-backend/src/modules/orders/index.ts");
+  const repository = readProjectFile("backend/src/modules/orders/orders.repository.ts");
+  const index = readProjectFile("backend/src/modules/orders/index.ts");
 
   for (const fragment of [
     "export interface OrderSellerScope",
@@ -252,8 +255,8 @@ function verifyOrdersRepository() {
 
 /** Confirms Pass 4 places business rules, transactions, idempotency, Inventory composition, audit, and outbox in the service. */
 function verifyOrdersService() {
-  const service = readProjectFile("marketplace-backend/src/modules/orders/orders.service.ts");
-  const index = readProjectFile("marketplace-backend/src/modules/orders/index.ts");
+  const service = readProjectFile("backend/src/modules/orders/orders.service.ts");
+  const index = readProjectFile("backend/src/modules/orders/index.ts");
 
   for (const fragment of [
     "export class OrdersService",
@@ -313,14 +316,14 @@ function verifyOrdersService() {
 
 /** Confirms the exact nine-route HTTP/OpenAPI surface and same-transaction Checkout-to-Orders composition. */
 function verifyPass5HttpAndCheckoutIntegration() {
-  const controller = readProjectFile("marketplace-backend/src/modules/orders/orders.controller.ts");
-  const routes = readProjectFile("marketplace-backend/src/modules/orders/orders.routes.ts");
-  const app = readProjectFile("marketplace-backend/src/app.ts");
-  const openApi = readProjectFile("marketplace-backend/src/http/openapi/openapi.document.ts");
-  const checkoutService = readProjectFile("marketplace-backend/src/modules/checkout/checkout.service.ts");
-  const checkoutRepository = readProjectFile("marketplace-backend/src/modules/checkout/checkout.repository.ts");
-  const rbacSeed = readProjectFile("marketplace-backend/src/database/seeds/platform-rbac.seed.ts");
-  const index = readProjectFile("marketplace-backend/src/modules/orders/index.ts");
+  const controller = readProjectFile("backend/src/modules/orders/orders.controller.ts");
+  const routes = readProjectFile("backend/src/modules/orders/orders.routes.ts");
+  const app = readProjectFile("backend/src/app.ts");
+  const openApi = readProjectFile("backend/src/http/openapi/openapi.document.ts");
+  const checkoutService = readProjectFile("backend/src/modules/checkout/checkout.service.ts");
+  const checkoutRepository = readProjectFile("backend/src/modules/checkout/checkout.repository.ts");
+  const rbacSeed = readProjectFile("backend/src/database/seeds/platform-rbac.seed.ts");
+  const index = readProjectFile("backend/src/modules/orders/index.ts");
 
   for (const method of [
     "listCustomerOrders = async",
@@ -399,13 +402,13 @@ function verifyPass5HttpAndCheckoutIntegration() {
 
 /** Confirms Pass 6 keeps focused lower-layer tests and adds real Supertest/PostgreSQL reconciliation coverage. */
 function verifyPass6BackendTests() {
-  const repositoryTests = readProjectFile("marketplace-backend/tests/module11/module11.repository.test.ts");
-  const serviceTests = readProjectFile("marketplace-backend/tests/module11/module11.service.test.ts");
-  const integrationTests = readProjectFile("marketplace-backend/tests/module11/module11.integration.test.ts");
-  const helpers = readProjectFile("marketplace-backend/tests/module11/module11.test-helpers.ts");
-  const runner = readProjectFile("marketplace-backend/scripts/run-module11-tests.mjs");
-  const packageJson = readProjectFile("marketplace-backend/package.json");
-  const backendCi = readProjectFile("marketplace-backend/.github/workflows/ci.yml");
+  const repositoryTests = readProjectFile("backend/tests/module11/module11.repository.test.ts");
+  const serviceTests = readProjectFile("backend/tests/module11/module11.service.test.ts");
+  const integrationTests = readProjectFile("backend/tests/module11/module11.integration.test.ts");
+  const helpers = readProjectFile("backend/tests/module11/module11.test-helpers.ts");
+  const runner = readProjectFile("backend/scripts/run-module11-tests.mjs");
+  const packageJson = readProjectFile("backend/package.json");
+  const backendCi = readProjectFile("backend/.github/workflows/ci.yml");
 
   for (const proof of [
     "persists immutable Order snapshots and keeps customer/seller reads scoped",
@@ -485,19 +488,19 @@ function verifyPass6BackendTests() {
 
 /** Confirms Pass 7 React/TanStack/Zod Orders behavior remains intact for the final E2E release. */
 function verifyPass7Frontend() {
-  const api = readProjectFile("marketplace-frontend/src/features/orders/api/orders.api.ts");
-  const hooks = readProjectFile("marketplace-frontend/src/features/orders/hooks/use-orders.ts");
-  const schemas = readProjectFile("marketplace-frontend/src/features/orders/schemas/orders.schemas.ts");
-  const cancellation = readProjectFile("marketplace-frontend/src/features/orders/forms/order-cancellation.form.tsx");
-  const customerList = readProjectFile("marketplace-frontend/src/features/orders/pages/customer-orders.page.tsx");
-  const customerDetail = readProjectFile("marketplace-frontend/src/features/orders/pages/customer-order-detail.page.tsx");
-  const sellerList = readProjectFile("marketplace-frontend/src/features/orders/pages/seller-orders.page.tsx");
-  const sellerDetail = readProjectFile("marketplace-frontend/src/features/orders/pages/seller-order-detail.page.tsx");
-  const adminPage = readProjectFile("marketplace-frontend/src/features/orders/pages/admin-orders.page.tsx");
-  const routes = readProjectFile("marketplace-frontend/src/app/routes/orders.routes.tsx");
-  const router = readProjectFile("marketplace-frontend/src/app/router/router.tsx");
-  const tests = readProjectFile("marketplace-frontend/tests/module11-orders.test.tsx");
-  const packageJson = readProjectFile("marketplace-frontend/package.json");
+  const api = readProjectFile("frontend/src/features/orders/api/orders.api.ts");
+  const hooks = readProjectFile("frontend/src/features/orders/hooks/use-orders.ts");
+  const schemas = readProjectFile("frontend/src/features/orders/schemas/orders.schemas.ts");
+  const cancellation = readProjectFile("frontend/src/features/orders/forms/order-cancellation.form.tsx");
+  const customerList = readProjectFile("frontend/src/features/orders/pages/customer-orders.page.tsx");
+  const customerDetail = readProjectFile("frontend/src/features/orders/pages/customer-order-detail.page.tsx");
+  const sellerList = readProjectFile("frontend/src/features/orders/pages/seller-orders.page.tsx");
+  const sellerDetail = readProjectFile("frontend/src/features/orders/pages/seller-order-detail.page.tsx");
+  const adminPage = readProjectFile("frontend/src/features/orders/pages/admin-orders.page.tsx");
+  const routes = readProjectFile("frontend/src/app/routes/orders.routes.tsx");
+  const router = readProjectFile("frontend/src/app/router/router.tsx");
+  const tests = readProjectFile("frontend/tests/module11-orders.test.tsx");
+  const packageJson = readProjectFile("frontend/package.json");
 
   for (const fragment of [
     'apiClient.get("/orders"',
@@ -519,8 +522,8 @@ function verifyPass7Frontend() {
   requireText(schemas, "sellerOrderDetailSchema", "Orders seller response validation");
   requireText(cancellation, "useForm({", "Orders TanStack Form cancellation flow");
   requireText(cancellation, "orderCancellationFormSchema", "Orders Zod cancellation validation");
-  requireText(customerList, "Customer Orders are separate", "Orders parent/child UI separation");
-  requireText(customerDetail, "Status timeline", "Orders customer detail timeline");
+  requireText(customerList, 'title="Your Orders"', "Orders parent/child UI separation");
+  requireText(customerDetail, "Order timeline", "Orders customer detail timeline");
   requireText(sellerList, "Seller Order queue", "Orders seller queue");
   requireText(sellerDetail, "Accept Seller Order", "Orders seller acceptance command");
   requireText(adminPage, "Order support", "Orders admin search/support view");
@@ -567,13 +570,13 @@ function verifyPass7Frontend() {
 
 /** Confirms Pass 8 adds the real browser workflow, reconciliation check, and full release verifier. */
 function verifyPass8E2eRelease() {
-  const e2e = readProjectFile("marketplace-frontend/e2e/module11.spec.ts");
-  const e2eRunner = readProjectFile("marketplace-frontend/e2e/run-e2e-ci.mjs");
-  const frontendPackage = readProjectFile("marketplace-frontend/package.json");
-  const releaseData = readProjectFile("marketplace-backend/scripts/verify-module11-release-data.mjs");
-  const backendPackage = readProjectFile("marketplace-backend/package.json");
+  const e2e = readProjectFile("frontend/e2e/module11.spec.ts");
+  const e2eRunner = readProjectFile("frontend/e2e/run-e2e-ci.mjs");
+  const frontendPackage = readProjectFile("frontend/package.json");
+  const releaseData = readProjectFile("backend/scripts/verify-module11-release-data.mjs");
+  const backendPackage = readProjectFile("backend/package.json");
   const releaseVerifier = readProjectFile("scripts/verify-module11.mjs");
-  const module10E2e = readProjectFile("marketplace-frontend/e2e/module10.spec.ts");
+  const module10E2e = readProjectFile("frontend/e2e/module10.spec.ts");
 
   for (const proof of [
     "creates one multi-seller parent Order, preserves immutable snapshots, and accepts only seller-scoped units",

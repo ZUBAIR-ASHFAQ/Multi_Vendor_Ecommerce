@@ -1,5 +1,4 @@
 import { render, screen } from "@testing-library/react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
@@ -46,7 +45,6 @@ describe("design-system primitives", () => {
       <>
         <PageHeader title="Orders" description="Manage marketplace orders" />
         <Surface><StatCard label="Orders" value="12" /></Surface>
-        <Badge tone="info">New</Badge>
         <StatusPill tone="positive">Paid</StatusPill>
         <EmptyState title="No orders" />
         <Skeleton className="h-4" />

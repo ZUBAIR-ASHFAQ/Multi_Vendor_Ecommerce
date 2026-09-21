@@ -218,7 +218,7 @@ describe("Module 9 Promotions & Coupons UI", () => {
     await renderRoute("/admin/promotions");
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("Promotions are temporarily unavailable.");
-    expect(alert).toHaveTextContent("Request ID: req-promotions-retry");
+    expect(alert).toHaveTextContent("Technical reference: req-promotions-retry");
 
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "Try again" }));

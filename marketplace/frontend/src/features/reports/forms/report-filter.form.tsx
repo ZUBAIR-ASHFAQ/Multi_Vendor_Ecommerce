@@ -1,5 +1,9 @@
 import { useForm } from "@tanstack/react-form";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { SectionHeader } from "@/components/ui/section-header";
+import { Select } from "@/components/ui/select";
+import { Surface } from "@/components/ui/surface";
 import { firstFieldError } from "@/features/auth/components/form-error";
 import type { AuthenticatedUser } from "@/features/auth/types/auth.types";
 import {
@@ -112,12 +116,17 @@ export function ReportFilterForm({
 
   return (
     <form
-      className="grid gap-4 rounded-xl border bg-white p-4 shadow-sm md:grid-cols-2 xl:grid-cols-4"
       onSubmit={(event) => {
         event.preventDefault();
         void form.handleSubmit();
       }}
     >
+      <Surface>
+        <SectionHeader
+          title="Filters"
+          description="Narrow the server-side report scope, then run or export the same filter set."
+        />
+        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
       {showDates ? (
         <>
           <form.Field name="from">
@@ -126,15 +135,15 @@ export function ReportFilterForm({
               return (
                 <label className="text-sm font-medium">
                   From
-                  <input
+                  <Input
                     aria-label="Report from"
                     type="datetime-local"
-                    className="mt-1 w-full rounded-md border px-3 py-2"
+                    className="mt-1"
                     aria-invalid={Boolean(error)}
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
                   />
-                  {error ? <span className="mt-1 block text-xs text-red-600">{error}</span> : null}
+                  {error ? <span className="mt-1 block text-xs text-negative">{error}</span> : null}
                 </label>
               );
             }}
@@ -143,10 +152,10 @@ export function ReportFilterForm({
             {(field) => (
               <label className="text-sm font-medium">
                 To
-                <input
+                <Input
                   aria-label="Report to"
                   type="datetime-local"
-                  className="mt-1 w-full rounded-md border px-3 py-2"
+                  className="mt-1"
                   value={field.state.value}
                   onChange={(event) => field.handleChange(event.target.value)}
                 />
@@ -163,14 +172,14 @@ export function ReportFilterForm({
             return (
               <label className="text-sm font-medium">
                 Seller UUID
-                <input
+                <Input
                   aria-label="Report seller UUID"
                   className="mt-1 w-full rounded-md border px-3 py-2"
                   aria-invalid={Boolean(error)}
                   value={field.state.value}
                   onChange={(event) => field.handleChange(event.target.value)}
                 />
-                {error ? <span className="mt-1 block text-xs text-red-600">{error}</span> : null}
+                {error ? <span className="mt-1 block text-xs text-negative">{error}</span> : null}
               </label>
             );
           }}
@@ -184,14 +193,14 @@ export function ReportFilterForm({
             return (
               <label className="text-sm font-medium">
                 Store UUID
-                <input
+                <Input
                   aria-label="Report store UUID"
                   className="mt-1 w-full rounded-md border px-3 py-2"
                   aria-invalid={Boolean(error)}
                   value={field.state.value}
                   onChange={(event) => field.handleChange(event.target.value)}
                 />
-                {error ? <span className="mt-1 block text-xs text-red-600">{error}</span> : null}
+                {error ? <span className="mt-1 block text-xs text-negative">{error}</span> : null}
               </label>
             );
           }}
@@ -205,16 +214,16 @@ export function ReportFilterForm({
             return (
               <label className="text-sm font-medium">
                 Currency
-                <input
+                <Input
                   aria-label="Report currency"
-                  className="mt-1 w-full rounded-md border px-3 py-2 uppercase"
+                  className="mt-1 uppercase"
                   maxLength={3}
                   placeholder="USD"
                   aria-invalid={Boolean(error)}
                   value={field.state.value}
                   onChange={(event) => field.handleChange(event.target.value.toUpperCase())}
                 />
-                {error ? <span className="mt-1 block text-xs text-red-600">{error}</span> : null}
+                {error ? <span className="mt-1 block text-xs text-negative">{error}</span> : null}
               </label>
             );
           }}
@@ -226,16 +235,16 @@ export function ReportFilterForm({
           {(field) => (
             <label className="text-sm font-medium">
               Stock risk
-              <select
+              <Select
                 aria-label="Report low stock filter"
-                className="mt-1 w-full rounded-md border px-3 py-2"
+                className="mt-1"
                 value={field.state.value}
                 onChange={(event) => field.handleChange(event.target.value as "" | "true" | "false")}
               >
                 <option value="">All inventory</option>
                 <option value="true">Low stock only</option>
                 <option value="false">Not low stock only</option>
-              </select>
+              </Select>
             </label>
           )}
         </form.Field>
@@ -245,9 +254,9 @@ export function ReportFilterForm({
         {(field) => (
           <label className="text-sm font-medium">
             Sort
-            <select
+            <Select
               aria-label="Report sort"
-              className="mt-1 w-full rounded-md border px-3 py-2"
+              className="mt-1"
               value={field.state.value}
               onChange={(event) => field.handleChange(event.target.value)}
             >
@@ -256,21 +265,23 @@ export function ReportFilterForm({
                   {value.replaceAll("_", " ")}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
         )}
       </form.Field>
 
-      <div className="flex items-end gap-2">
-        <Button>Apply filters</Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => onApply({ sort: defaultSort(reportCode) })}
-        >
-          Clear
-        </Button>
-      </div>
+          <div className="flex items-end gap-2">
+            <Button>Apply filters</Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onApply({ sort: defaultSort(reportCode) })}
+            >
+              Clear
+            </Button>
+          </div>
+        </div>
+      </Surface>
     </form>
   );
 }

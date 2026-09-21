@@ -202,7 +202,7 @@ describe("Module 18 Notifications React feature", () => {
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "Retry" }));
     await waitFor(() => expect(retryCalls).toBe(1));
-    expect(await screen.findByText("There are no failed Notification deliveries.")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "No failed notification deliveries" })).toBeInTheDocument();
   });
 
   it("hides the privileged retry command when the admin only has delivery-read permission", async () => {

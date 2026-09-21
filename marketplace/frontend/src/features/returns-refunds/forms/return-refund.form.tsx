@@ -1,4 +1,7 @@
 import { useForm } from "@tanstack/react-form";
+import { useState } from "react";
+import { ConfirmationDialog } from "@/components/feedback/confirmation-dialog";
+import { SuccessFeedback } from "@/components/feedback/system-state";
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/features/auth/components/form-error";
 import { returnRefundFormSchema } from "../schemas/returns-refunds.schemas";
@@ -16,20 +19,21 @@ export function ReturnRefundForm({
   result?: ReturnRefundResult;
   onSubmit: (input: IssueReturnRefundInput, idempotencyKey: string) => Promise<void>;
 }) {
+  const [pendingRefund, setPendingRefund] = useState<{ input: IssueReturnRefundInput; idempotencyKey: string } | null>(null);
   const form = useForm({
     defaultValues: { note: "" },
     validators: { onChange: returnRefundFormSchema },
     onSubmit: async ({ value }) => {
       const parsed = returnRefundFormSchema.parse(value);
-      try {
-        await onSubmit(parsed.note ? { note: parsed.note } : {}, crypto.randomUUID());
-      } catch {
-        // TanStack Query owns the normalized API error rendered below.
-      }
+      setPendingRefund({
+        input: parsed.note ? { note: parsed.note } : {},
+        idempotencyKey: crypto.randomUUID(),
+      });
     },
   });
 
   return (
+    <>
     <form
       className="space-y-3 rounded-lg border bg-slate-50 p-4"
       onSubmit={(event) => {
@@ -58,13 +62,29 @@ export function ReturnRefundForm({
       </form.Field>
       <FormError error={error} />
       {result ? (
-        <p className="rounded-md bg-emerald-50 p-3 text-sm text-emerald-900">
+        <SuccessFeedback>
           Refund completed: {result.amount} {result.currency}{result.providerRef ? ` · ${result.providerRef}` : ""}
-        </p>
+        </SuccessFeedback>
       ) : null}
       <Button type="submit" size="sm" disabled={isPending}>
         {isPending ? "Issuing refund..." : "Issue Refund"}
       </Button>
     </form>
+    <ConfirmationDialog
+      open={pendingRefund !== null}
+      title="Issue this refund?"
+      description="The marketplace server derives the authoritative payment, refund amount, commission reversal, and approved restock effect. This financial action should only be confirmed after reviewing the return."
+      confirmLabel="Confirm refund"
+      isPending={isPending}
+      onCancel={() => setPendingRefund(null)}
+      onConfirm={() => {
+        if (!pendingRefund) return;
+        void onSubmit(pendingRefund.input, pendingRefund.idempotencyKey)
+          .then(() => setPendingRefund(null))
+          .catch(() => undefined)
+          .finally(() => setPendingRefund(null));
+      }}
+    />
+    </>
   );
 }

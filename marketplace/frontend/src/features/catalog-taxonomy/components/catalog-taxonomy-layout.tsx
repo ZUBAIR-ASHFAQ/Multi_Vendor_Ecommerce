@@ -2,11 +2,13 @@ import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { ErrorState } from "@/components/feedback/error-state";
 import { Button } from "@/components/ui/button";
+import { WorkspaceShell } from "@/components/workspace/workspace-shell";
+import { AdminNavigation } from "@/features/administration/components/admin-layout";
 import { AuthenticatedPanel } from "@/features/auth/components/authenticated-panel";
 import type { AuthenticatedUser } from "@/features/auth/types/auth.types";
 import { CATALOG_PERMISSION, hasCatalogPermission } from "../catalog-taxonomy.constants";
 
-/** Renders Module 5 navigation using only server-derived permission codes. */
+/** Renders Module 5 navigation for non-admin actors using only server-derived permission codes. */
 function CatalogNavigation({ user }: { user: AuthenticatedUser }) {
   const canManageCategories = hasCatalogPermission(
     user.permissions,
@@ -25,14 +27,14 @@ function CatalogNavigation({ user }: { user: AuthenticatedUser }) {
     hasCatalogPermission(user.permissions, CATALOG_PERMISSION.READ);
 
   return (
-    <section className="rounded-xl border bg-white p-4 shadow-sm">
+    <section className="rounded-card border border-border bg-surface p-4 shadow-card">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <p className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
             Catalog Taxonomy
           </p>
-          <p className="mt-1 font-semibold">{user.displayName}</p>
-          <p className="text-xs text-slate-500">{user.email}</p>
+          <p className="mt-1 font-semibold text-foreground">{user.displayName}</p>
+          <p className="text-xs text-foreground-muted">{user.email}</p>
         </div>
         <Button asChild variant="ghost">
           <Link to="/account">Account</Link>
@@ -42,8 +44,8 @@ function CatalogNavigation({ user }: { user: AuthenticatedUser }) {
         {canManageCategories ? (
           <Link
             to="/admin/catalog/categories"
-            className="rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
-            activeProps={{ className: "bg-slate-900 text-white hover:bg-slate-900" }}
+            className="rounded-control px-3 py-2 text-sm font-medium text-foreground-muted hover:bg-surface-muted"
+            activeProps={{ className: "bg-primary text-primary-foreground hover:bg-primary" }}
           >
             Categories
           </Link>
@@ -51,8 +53,8 @@ function CatalogNavigation({ user }: { user: AuthenticatedUser }) {
         {canManageBrands ? (
           <Link
             to="/admin/catalog/brands"
-            className="rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
-            activeProps={{ className: "bg-slate-900 text-white hover:bg-slate-900" }}
+            className="rounded-control px-3 py-2 text-sm font-medium text-foreground-muted hover:bg-surface-muted"
+            activeProps={{ className: "bg-primary text-primary-foreground hover:bg-primary" }}
           >
             Brands
           </Link>
@@ -60,8 +62,8 @@ function CatalogNavigation({ user }: { user: AuthenticatedUser }) {
         {canManageAttributes ? (
           <Link
             to="/admin/catalog/attributes"
-            className="rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
-            activeProps={{ className: "bg-slate-900 text-white hover:bg-slate-900" }}
+            className="rounded-control px-3 py-2 text-sm font-medium text-foreground-muted hover:bg-surface-muted"
+            activeProps={{ className: "bg-primary text-primary-foreground hover:bg-primary" }}
           >
             Attributes
           </Link>
@@ -69,8 +71,8 @@ function CatalogNavigation({ user }: { user: AuthenticatedUser }) {
         {canManageCategories ? (
           <Link
             to="/admin/catalog/category-attributes"
-            className="rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
-            activeProps={{ className: "bg-slate-900 text-white hover:bg-slate-900" }}
+            className="rounded-control px-3 py-2 text-sm font-medium text-foreground-muted hover:bg-surface-muted"
+            activeProps={{ className: "bg-primary text-primary-foreground hover:bg-primary" }}
           >
             Category mappings
           </Link>
@@ -78,8 +80,8 @@ function CatalogNavigation({ user }: { user: AuthenticatedUser }) {
         {canReadSellerTaxonomy ? (
           <Link
             to="/seller/catalog-taxonomy"
-            className="rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
-            activeProps={{ className: "bg-slate-900 text-white hover:bg-slate-900" }}
+            className="rounded-control px-3 py-2 text-sm font-medium text-foreground-muted hover:bg-surface-muted"
+            activeProps={{ className: "bg-primary text-primary-foreground hover:bg-primary" }}
           >
             Seller taxonomy selector
           </Link>
@@ -89,7 +91,7 @@ function CatalogNavigation({ user }: { user: AuthenticatedUser }) {
   );
 }
 
-/** Protects Module 5 pages and supplies the authenticated actor to child content. */
+/** Protects Module 5 pages and keeps platform-admin catalog routes inside the shared admin workspace. */
 export function CatalogTaxonomyLayout({
   children,
 }: {
@@ -97,12 +99,16 @@ export function CatalogTaxonomyLayout({
 }) {
   return (
     <AuthenticatedPanel>
-      {(user) => (
-        <div className="space-y-6">
-          <CatalogNavigation user={user} />
-          {children(user)}
-        </div>
-      )}
+      {(user) =>
+        user.accountType === "platform_admin" ? (
+          <WorkspaceShell sidebar={<AdminNavigation user={user} />}>{children(user)}</WorkspaceShell>
+        ) : (
+          <div className="space-y-6">
+            <CatalogNavigation user={user} />
+            {children(user)}
+          </div>
+        )
+      }
     </AuthenticatedPanel>
   );
 }

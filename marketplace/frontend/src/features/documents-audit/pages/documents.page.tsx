@@ -1,5 +1,9 @@
 import { useState } from "react";
 import { ErrorState } from "@/components/feedback/error-state";
+import { PageHeader } from "@/components/ui/page-header";
+import { SectionHeader } from "@/components/ui/section-header";
+import { StatusPill } from "@/components/ui/status-pill";
+import { Surface } from "@/components/ui/surface";
 import { FileUploadForm } from "../forms/file-upload-form";
 import { DocumentsAuditLayout } from "../components/documents-audit-layout";
 import { LinkedFileList } from "../components/linked-file-list";
@@ -14,7 +18,7 @@ import type {
   UploadedDocumentResult,
 } from "../types/documents-audit.types";
 
-/** Renders the current Module 21 document workflow without inventing an undocumented file-list API. */
+/** Renders the current document workflow without inventing an undocumented file-list API. */
 export function DocumentsPage() {
   const [recentFiles, setRecentFiles] = useState<DocumentFile[]>([]);
   const [linkedFiles, setLinkedFiles] = useState<LinkedDocumentItem[]>([]);
@@ -49,32 +53,45 @@ export function DocumentsPage() {
 
         return (
           <div className="space-y-5">
+            <PageHeader
+              eyebrow="Operations · Documents"
+              title="Documents"
+              description="Upload and access permission-checked evidence without exposing object storage or creating a generic file catalog that the API does not support."
+              actions={(
+                <div className="flex flex-wrap gap-2">
+                  {canUpload ? <StatusPill tone="positive">Upload allowed</StatusPill> : null}
+                  {canRead ? <StatusPill tone="info">Download allowed</StatusPill> : null}
+                  {canLink ? <StatusPill tone="neutral">Link allowed</StatusPill> : null}
+                </div>
+              )}
+            />
+
             {canUpload ? (
               <FileUploadForm user={user} onUploaded={recordUpload} />
             ) : (
-              <section className="rounded-xl border bg-white p-5 shadow-sm">
-                <h1 className="text-2xl font-bold">Documents</h1>
-                <p className="mt-1 text-sm text-slate-600">You can read authorized documents but cannot request uploads.</p>
-              </section>
+              <Surface>
+                <SectionHeader
+                  title="Upload unavailable"
+                  description="You can read authorized documents, but this account cannot request new uploads."
+                />
+              </Surface>
             )}
 
-            <section className="rounded-xl border bg-white p-5 shadow-sm">
-              <h2 className="text-xl font-bold">Recent uploads</h2>
-              <p className="mt-1 text-sm text-slate-600">
-                This list contains files created during the current page session. Module 21
-                intentionally has no generic file-catalog endpoint.
-              </p>
+            <Surface>
+              <SectionHeader
+                title="Recent uploads"
+                description="Files created during this page session only. The backend intentionally exposes no generic file-catalog endpoint."
+              />
               <div className="mt-4">
                 <RecentUploadList files={recentFiles} canDownload={canRead} />
               </div>
-            </section>
+            </Surface>
 
-            <section className="rounded-xl border bg-white p-5 shadow-sm">
-              <h2 className="text-xl font-bold">Linked files</h2>
-              <p className="mt-1 text-sm text-slate-600">
-                Downstream resource screens can reuse this list with links they already own.
-                Current-stage uploads may link only to your own user resource.
-              </p>
+            <Surface>
+              <SectionHeader
+                title="Linked files"
+                description="Resource screens can reuse authorized file/link pairs they already own; this page does not enumerate unrelated resources."
+              />
               <div className="mt-4">
                 <LinkedFileList
                   items={linkedFiles}
@@ -85,7 +102,7 @@ export function DocumentsPage() {
                   }
                 />
               </div>
-            </section>
+            </Surface>
           </div>
         );
       }}

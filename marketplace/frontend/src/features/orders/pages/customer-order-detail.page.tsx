@@ -90,7 +90,7 @@ function CustomerOrderDetailContent({
   );
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <PageHeader
         eyebrow={<Link className="hover:underline" to="/orders">← Your Orders</Link>}
         title={order.data.orderNo}

@@ -29,7 +29,7 @@ function rejectText(source, forbidden, label) {
 
 /** Confirms the React feature uses only the eight approved Module 14 backend operations. */
 function verifyApiSurface() {
-  const api = read("marketplace-frontend/src/features/returns-refunds/api/returns-refunds.api.ts");
+  const api = read("frontend/src/features/returns-refunds/api/returns-refunds.api.ts");
   for (const expected of [
     'apiClient.post(`/orders/${orderId}/returns`',
     'apiClient.get("/returns"',
@@ -58,11 +58,11 @@ function verifyApiSurface() {
 
 /** Confirms Query owns server state and TanStack Form + Zod own Return form state. */
 function verifyStateAndForms() {
-  const hooks = read("marketplace-frontend/src/features/returns-refunds/hooks/use-returns-refunds.ts");
-  const requestForm = read("marketplace-frontend/src/features/returns-refunds/forms/return-request.form.tsx");
-  const inspectionForm = read("marketplace-frontend/src/features/returns-refunds/forms/return-inspection.form.tsx");
-  const refundForm = read("marketplace-frontend/src/features/returns-refunds/forms/return-refund.form.tsx");
-  const schemas = read("marketplace-frontend/src/features/returns-refunds/schemas/returns-refunds.schemas.ts");
+  const hooks = read("frontend/src/features/returns-refunds/hooks/use-returns-refunds.ts");
+  const requestForm = read("frontend/src/features/returns-refunds/forms/return-request.form.tsx");
+  const inspectionForm = read("frontend/src/features/returns-refunds/forms/return-inspection.form.tsx");
+  const refundForm = read("frontend/src/features/returns-refunds/forms/return-refund.form.tsx");
+  const schemas = read("frontend/src/features/returns-refunds/schemas/returns-refunds.schemas.ts");
 
   requireText(hooks, "useQuery({", "Module 14 TanStack Query reads");
   requireText(hooks, "useMutation({", "Module 14 TanStack Query commands");
@@ -83,13 +83,13 @@ function verifyStateAndForms() {
 
 /** Confirms customer, seller, and admin pages cover the required Module 14 workflows. */
 function verifyPagesAndRoutes() {
-  const createPage = read("marketplace-frontend/src/features/returns-refunds/pages/customer-create-return.page.tsx");
-  const customerPage = read("marketplace-frontend/src/features/returns-refunds/pages/customer-returns.page.tsx");
-  const sellerPage = read("marketplace-frontend/src/features/returns-refunds/pages/seller-returns.page.tsx");
-  const adminPage = read("marketplace-frontend/src/features/returns-refunds/pages/admin-returns.page.tsx");
-  const timeline = read("marketplace-frontend/src/features/returns-refunds/components/return-timeline.tsx");
-  const routes = read("marketplace-frontend/src/app/routes/returns-refunds.routes.tsx");
-  const router = read("marketplace-frontend/src/app/router/router.tsx");
+  const createPage = read("frontend/src/features/returns-refunds/pages/customer-create-return.page.tsx");
+  const customerPage = read("frontend/src/features/returns-refunds/pages/customer-returns.page.tsx");
+  const sellerPage = read("frontend/src/features/returns-refunds/pages/seller-returns.page.tsx");
+  const adminPage = read("frontend/src/features/returns-refunds/pages/admin-returns.page.tsx");
+  const timeline = read("frontend/src/features/returns-refunds/components/return-timeline.tsx");
+  const routes = read("frontend/src/app/routes/returns-refunds.routes.tsx");
+  const router = read("frontend/src/app/router/router.tsx");
 
   for (const expected of [
     "deliveredByItem",
@@ -103,7 +103,7 @@ function verifyPagesAndRoutes() {
   requireText(sellerPage, "ApproveReturnForm", "Module 14 seller approval");
   requireText(sellerPage, "RejectReturnForm", "Module 14 seller rejection");
   requireText(sellerPage, "ReturnInspectionForm", "Module 14 seller inspection");
-  requireText(adminPage, "Returns & dispute review", "Module 14 admin dispute view");
+  requireText(adminPage, "Returns & dispute queue", "Module 14 admin dispute view");
   requireText(adminPage, "ReturnRefundForm", "Module 14 privileged refund UI");
   requireText(adminPage, "it does not expose dispute-note CRUD", "Module 14 dispute-note scope honesty");
   requireText(timeline, "const history = value.history ?? []", "Module 14 persisted lifecycle timeline");
@@ -132,9 +132,9 @@ function verifyPagesAndRoutes() {
 
 /** Confirms focused RTL/MSW proof and CI/package wiring remain present after later release passes. */
 function verifyTestsAndPassBoundary() {
-  const tests = read("marketplace-frontend/tests/module14-returns-refunds.test.tsx");
-  const ci = read("marketplace-frontend/.github/workflows/ci.yml");
-  const packageJson = JSON.parse(read("marketplace-frontend/package.json"));
+  const tests = read("frontend/tests/module14-returns-refunds.test.tsx");
+  const ci = read("frontend/.github/workflows/ci.yml");
+  const packageJson = JSON.parse(read("frontend/package.json"));
 
   for (const expected of [
     "potentially delivered quantity",

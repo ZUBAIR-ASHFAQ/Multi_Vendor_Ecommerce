@@ -1,5 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { SectionHeader } from "@/components/ui/section-header";
+import { Surface } from "@/components/ui/surface";
 import { FormError } from "@/features/auth/components/form-error";
 import type { AuthenticatedUser } from "@/features/auth/types/auth.types";
 import {
@@ -8,6 +10,7 @@ import {
   type ReportCode,
 } from "../reports.constants";
 import { useCreateReportRunMutation } from "../hooks/use-reports";
+import { rememberRecentReportRun } from "../reports.history";
 
 /** Queues a server-authoritative report export and opens its status page. */
 export function ReportExportControls({
@@ -25,13 +28,12 @@ export function ReportExportControls({
   if (!user.permissions.includes(REPORTS_PERMISSION.EXPORT)) return null;
 
   return (
-    <div className="space-y-2 rounded-xl border bg-white p-4 shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="font-semibold">Export current filters</p>
-          <p className="text-sm text-slate-600">Exports run asynchronously and never use browser-calculated totals.</p>
-        </div>
-        <div className="flex gap-2">
+    <Surface className="space-y-3">
+      <SectionHeader
+        title="Export current filters"
+        description="Exports run asynchronously and never use browser-calculated totals."
+        actions={(
+          <div className="flex gap-2">
           {[REPORT_OUTPUT_FORMAT.CSV, REPORT_OUTPUT_FORMAT.PDF].map((outputFormat) => (
             <Button
               key={outputFormat}
@@ -41,15 +43,24 @@ export function ReportExportControls({
               onClick={() => {
                 void createRun
                   .mutateAsync({ reportCode, filters, outputFormat })
-                  .then((run) => navigate({ to: "/reports/runs/$runId", params: { runId: run.id } }));
+                  .then((run) => {
+                    rememberRecentReportRun(user.id, {
+                      id: run.id,
+                      reportCode: run.reportCode,
+                      outputFormat: run.outputFormat,
+                      createdAt: run.createdAt,
+                    });
+                    return navigate({ to: "/reports/runs/$runId", params: { runId: run.id } });
+                  });
               }}
             >
               Export {outputFormat.toUpperCase()}
             </Button>
           ))}
-        </div>
-      </div>
+          </div>
+        )}
+      />
       <FormError error={createRun.error} />
-    </div>
+    </Surface>
   );
 }

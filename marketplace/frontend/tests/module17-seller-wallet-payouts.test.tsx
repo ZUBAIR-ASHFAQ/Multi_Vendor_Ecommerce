@@ -251,10 +251,13 @@ describe("Module 17 Seller Wallet & Payouts React feature", () => {
     );
 
     await renderRoute("/admin/payouts");
-    expect(await screen.findByRole("heading", { name: "Finance payout queue" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Payout reconciliation detail" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Payout operations queue" })).toBeInTheDocument();
     const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: "Approve & Reserve" }));
+    await user.click(screen.getByRole("button", { name: "Review" }));
+    expect(screen.getByRole("heading", { name: "Payout reconciliation detail" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Approve & reserve" }));
+    expect(screen.getByRole("alertdialog", { name: "Approve this payout?" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Confirm payout approval" }));
 
     await waitFor(() => expect(idempotencyKey.length).toBeGreaterThan(10));
     expect(approveBody).toEqual({});
@@ -283,9 +286,11 @@ describe("Module 17 Seller Wallet & Payouts React feature", () => {
     );
 
     await renderRoute("/admin/payouts");
-    expect(await screen.findByRole("button", { name: "Send Payout" })).toBeInTheDocument();
     const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: "Send Payout" }));
+    await user.click(await screen.findByRole("button", { name: "Review" }));
+    expect(await screen.findByRole("button", { name: "Send payout" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Send payout" }));
+    await user.click(screen.getByRole("button", { name: "Confirm payout send" }));
 
     await waitFor(() => expect(idempotencyKey.length).toBeGreaterThan(10));
     expect(sendBody).toEqual({});
@@ -318,9 +323,11 @@ describe("Module 17 Seller Wallet & Payouts React feature", () => {
     );
 
     await renderRoute("/admin/payouts");
-    expect(await screen.findByRole("button", { name: "Send Payout" })).toBeInTheDocument();
     const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: "Send Payout" }));
+    await user.click(await screen.findByRole("button", { name: "Review" }));
+    expect(await screen.findByRole("button", { name: "Send payout" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Send payout" }));
+    await user.click(screen.getByRole("button", { name: "Confirm payout send" }));
 
     await waitFor(() => expect(listReads).toBeGreaterThan(1));
   });

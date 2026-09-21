@@ -1,5 +1,7 @@
 import { useForm } from "@tanstack/react-form";
 import { Button } from "@/components/ui/button";
+import { SectionHeader } from "@/components/ui/section-header";
+import { Surface } from "@/components/ui/surface";
 import type { AuthenticatedUser } from "@/features/auth/types/auth.types";
 import { firstFieldError, FormError } from "@/features/auth/components/form-error";
 import {
@@ -53,11 +55,11 @@ export function FileUploadForm({
   });
 
   return (
-    <section className="rounded-xl border bg-white p-5 shadow-sm">
-      <h1 className="text-2xl font-bold">Upload a document</h1>
-      <p className="mt-1 text-sm text-slate-600">
-        The API validates purpose, MIME type, and size. File bytes go directly to signed object storage.
-      </p>
+    <Surface>
+      <SectionHeader
+        title="Upload a document"
+        description="The API validates purpose, MIME type, and size. File bytes go directly to signed object storage."
+      />
 
       <form
         className="mt-5 space-y-4"
@@ -131,6 +133,6 @@ export function FileUploadForm({
           {upload.isPending ? "Uploading and verifying..." : "Upload document"}
         </Button>
       </form>
-    </section>
+    </Surface>
   );
 }

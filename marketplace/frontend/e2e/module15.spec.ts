@@ -719,7 +719,7 @@ async function moderateReviewThroughAdminUi(
   reason: string,
 ): Promise<ReviewRecord> {
   await page.goto("/admin/reviews");
-  await expect(page.getByRole("heading", { name: "Review moderation" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Review moderation queue" })).toBeVisible();
 
   const listResponsePromise = page.waitForResponse((response) => {
     const url = new URL(response.url());
@@ -733,6 +733,8 @@ async function moderateReviewThroughAdminUi(
   await page.getByRole("button", { name: "Apply filters" }).click();
   expect((await listResponsePromise).status()).toBe(200);
   await expect(page.getByText("Excellent verified purchase")).toBeVisible();
+  const reviewRow = page.getByRole("row").filter({ hasText: "Excellent verified purchase" });
+  await reviewRow.getByRole("button", { name: "Moderate" }).click();
 
   const commandResponsePromise = page.waitForResponse(
     (response) =>
@@ -742,6 +744,9 @@ async function moderateReviewThroughAdminUi(
   const actionLabel = command === "hide" ? "Hide Review" : "Publish Review";
   await page.getByLabel(`${actionLabel} reason`).fill(reason);
   await page.getByRole("button", { name: actionLabel }).click();
+  if (command === "hide") {
+    await page.getByRole("button", { name: "Confirm hide" }).click();
+  }
 
   const commandResponse = await commandResponsePromise;
   expect(commandResponse.status()).toBe(200);

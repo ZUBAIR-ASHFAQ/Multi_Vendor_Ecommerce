@@ -1,5 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
-import { ErrorState } from "@/components/feedback/error-state";
+import { UnavailableState } from "@/components/feedback/system-state";
 
 interface AppErrorBoundaryProps {
   children: ReactNode;
@@ -28,7 +28,10 @@ export class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorB
     if (this.state.hasError) {
       return (
         <main className="mx-auto max-w-3xl p-6">
-          <ErrorState message="The page could not be rendered. Reload the browser and try again." />
+          <UnavailableState
+            message="This page could not be displayed. Reload the browser and try again."
+            onRetry={() => window.location.reload()}
+          />
         </main>
       );
     }

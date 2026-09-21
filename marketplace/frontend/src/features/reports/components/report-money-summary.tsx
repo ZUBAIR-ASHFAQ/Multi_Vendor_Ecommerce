@@ -1,3 +1,4 @@
+import { Surface } from "@/components/ui/surface";
 import { formatMoney } from "@/lib/money";
 
 interface MoneyAmount {
@@ -14,19 +15,20 @@ export function ReportMoneySummary({
   amounts: MoneyAmount[];
 }) {
   return (
-    <div className="rounded-lg border bg-slate-50 p-3">
-      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{title}</p>
+    <Surface className="h-full">
+      <p className="text-sm font-medium text-foreground-muted">{title}</p>
       {amounts.length === 0 ? (
-        <p className="mt-1 text-sm text-slate-500">No finalized amount in this scope.</p>
+        <p className="mt-2 text-sm text-foreground-muted">No finalized amount in this scope.</p>
       ) : (
         <div className="mt-2 space-y-1">
           {amounts.map((item) => (
-            <p key={item.currency} className="font-semibold">
+            <p key={item.currency} className="text-2xl font-semibold tracking-tight text-foreground">
               {formatMoney(item.amount, item.currency)}
             </p>
           ))}
         </div>
       )}
-    </div>
+      <p className="mt-2 text-xs leading-5 text-foreground-muted">Server-authoritative amount by currency</p>
+    </Surface>
   );
 }

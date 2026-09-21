@@ -7,6 +7,7 @@ import {
   WorkspaceShell,
   WorkspaceSidebar,
 } from "@/components/workspace/workspace-shell";
+import { AdminNavigation } from "@/features/administration/components/admin-layout";
 import { AuthenticatedPanel } from "@/features/auth/components/authenticated-panel";
 import type { AuthenticatedUser } from "@/features/auth/types/auth.types";
 import {
@@ -14,8 +15,8 @@ import {
   hasDocumentPermission,
 } from "../documents-audit.constants";
 
-/** Renders Module 21 navigation using only permissions supplied by the authenticated backend context. */
-function Layout({ user, children }: { user: AuthenticatedUser; children: ReactNode }) {
+/** Renders Module 21 navigation for non-admin actors from server-derived permissions. */
+function DocumentsAuditNavigation({ user }: { user: AuthenticatedUser }) {
   const canUseDocuments = [
     DOCUMENT_AUDIT_PERMISSION.DOCUMENTS_UPLOAD,
     DOCUMENT_AUDIT_PERMISSION.DOCUMENTS_READ,
@@ -27,52 +28,46 @@ function Layout({ user, children }: { user: AuthenticatedUser; children: ReactNo
   );
 
   return (
-    <WorkspaceShell
-      sidebar={(
-        <WorkspaceSidebar
-          ariaLabel="Documents and audit navigation"
-          kicker="Documents & Audit"
-          title={user.displayName}
-          subtitle={user.email}
-          footer={(
-            <>
-              <strong>Controlled evidence</strong>
-              <p>Upload, link, download, and audit access continue to use the existing backend permission checks.</p>
-              <div className="workspace-account-actions">
-                <Link to="/account" className={WORKSPACE_NAV_LINK_CLASS}>Account <span>›</span></Link>
-              </div>
-            </>
-          )}
-        >
-          <WorkspaceNavGroup label="Operations">
-            {canUseDocuments ? (
-              <Link
-                to="/documents"
-                className={WORKSPACE_NAV_LINK_CLASS}
-                activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}
-              >
-                Documents <span>›</span>
-              </Link>
-            ) : null}
-            {canReadAudit ? (
-              <Link
-                to="/audit"
-                className={WORKSPACE_NAV_LINK_CLASS}
-                activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}
-              >
-                Audit log <span>›</span>
-              </Link>
-            ) : null}
-          </WorkspaceNavGroup>
-        </WorkspaceSidebar>
+    <WorkspaceSidebar
+      ariaLabel="Documents and audit navigation"
+      kicker="Documents & Audit"
+      title={user.displayName}
+      subtitle={user.email}
+      footer={(
+        <>
+          <strong>Controlled evidence</strong>
+          <p>Upload, link, download, and audit access continue to use the existing backend permission checks.</p>
+          <div className="workspace-account-actions">
+            <Link to="/account" className={WORKSPACE_NAV_LINK_CLASS}>Account <span>›</span></Link>
+          </div>
+        </>
       )}
     >
-      {children}
-    </WorkspaceShell>
+      <WorkspaceNavGroup label="Operations">
+        {canUseDocuments ? (
+          <Link
+            to="/documents"
+            className={WORKSPACE_NAV_LINK_CLASS}
+            activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}
+          >
+            Documents <span>›</span>
+          </Link>
+        ) : null}
+        {canReadAudit ? (
+          <Link
+            to="/audit"
+            className={WORKSPACE_NAV_LINK_CLASS}
+            activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}
+          >
+            Audit log <span>›</span>
+          </Link>
+        ) : null}
+      </WorkspaceNavGroup>
+    </WorkspaceSidebar>
   );
 }
 
-/** Protects a Module 21 page and provides the current authenticated actor. */
+/** Protects a Module 21 page and keeps platform-admin routes inside the shared admin workspace. */
 export function DocumentsAuditLayout({
   children,
 }: {
@@ -80,7 +75,19 @@ export function DocumentsAuditLayout({
 }) {
   return (
     <AuthenticatedPanel>
-      {(user) => <Layout user={user}>{children(user)}</Layout>}
+      {(user) => (
+        <WorkspaceShell
+          sidebar={
+            user.accountType === "platform_admin" ? (
+              <AdminNavigation user={user} />
+            ) : (
+              <DocumentsAuditNavigation user={user} />
+            )
+          }
+        >
+          {children(user)}
+        </WorkspaceShell>
+      )}
     </AuthenticatedPanel>
   );
 }

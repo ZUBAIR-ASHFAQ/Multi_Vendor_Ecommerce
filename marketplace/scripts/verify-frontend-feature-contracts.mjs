@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
-const frontendRoot = join(root, "marketplace-frontend");
+const frontendRoot = join(root, "frontend");
 
 /** Reads one required UTF-8 frontend file and reports a useful relative path when missing. */
 function readFrontendFile(relativePath) {
@@ -161,7 +161,7 @@ function verifyFrontendSourceHygiene() {
 
   const namedFunctionPatterns = [
     /^(\s*)(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/gm,
-    /^(\s*)(?:export\s+)?const\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?(?:\([^\n]*\)|[A-Za-z_$][\w$]*)\s*=>/gm,
+    /^(\s*)(?:export\s+)?const\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?(?:\([^()\n]*\)|[A-Za-z_$][\w$]*)\s*=>/gm,
   ];
 
   for (const file of sourceFiles) {
@@ -194,7 +194,7 @@ function verifyAdministrationEmptyStates() {
   const rolesPage = readFrontendFile("src/features/administration/pages/roles.page.tsx");
   const tests = readFrontendFile("tests/module2-administration.test.tsx");
 
-  requireText(rolesPage, "roles.data.items.length === 0", "Administration Roles empty state");
+  requireText(rolesPage, "roles.data?.items.length === 0", "Administration Roles empty state");
   requireText(rolesPage, "No roles found.", "Administration Roles empty-state message");
   requireText(
     tests,
@@ -367,10 +367,14 @@ function verifyCartWishlistFeature() {
     "cartQuantityFormSchema",
     "Module 8 Zod quantity validation",
   );
-  requireText(cartPage, "Not a final checkout total", "Cart preview-only language");
   requireText(
     cartPage,
-    "Inventory is not reserved until the later Checkout workflow.",
+    "Shipping, promotions, tax, final pricing and stock are confirmed during Checkout.",
+    "Cart preview-only language",
+  );
+  requireText(
+    cartPage,
+    "Inventory is not reserved yet.",
     "Cart Inventory non-reservation language",
   );
   requireText(wishlistCard, "Move to Cart", "Wishlist move action");
@@ -497,14 +501,14 @@ function verifyCheckoutFeature() {
   requireText(hooks, "useMutation({", "Module 10 TanStack mutation ownership");
   requireText(form, "useForm({", "Module 10 TanStack Form ownership");
   requireText(form, "checkoutQuoteFormSchema", "Module 10 Zod form validation");
-  requireText(form, "Choose one current server-provided Shipping Core method for every store.", "Checkout seller shipment groups");
+  requireText(form, "Choose one delivery method for every seller in your order.", "Checkout seller shipment groups");
   requireText(schemas, "checkoutShippingSelectionFormSchema", "Checkout shipping-selection validation");
-  requireText(page, "Cart totals are not trusted here.", "Checkout authoritative recalculation language");
-  requireText(page, "Confirm &amp; pay", "Checkout confirm-and-pay action");
-  requireText(page, "Payment capture remains owned", "Checkout Payment state separation");
-  requireText(summary, "Authoritative quote", "Checkout authoritative quote summary");
-  requireText(summary, "Seller shipment groups", "Checkout seller shipment summary");
-  requireText(warning, "Recalculate the quote", "Checkout stale-state warning");
+  requireText(page, "Your order is created only after the latest price and stock checks pass.", "Checkout authoritative recalculation language");
+  requireText(page, "Confirm & pay", "Checkout confirm-and-pay action");
+  requireText(page, "Payment is completed only after secure confirmation from Stripe.", "Checkout Payment state separation");
+  requireText(summary, "Totals are locked to this short-lived review.", "Checkout authoritative quote summary");
+  requireText(summary, "checkout-summary-delivery", "Checkout seller shipment summary");
+  requireText(warning, "Please review the latest totals before placing your order.", "Checkout stale-state warning");
   requireText(routes, 'path: "/checkout"', "Checkout customer route");
   requireText(router, "checkoutRoute", "Checkout router registration");
   requireText(cartPage, '<Link to="/checkout">Proceed to Checkout</Link>', "Cart to Checkout navigation");
@@ -565,8 +569,8 @@ function verifyOrdersFeature() {
   requireText(schemas, "sellerOrderDetailSchema", "Module 11 Seller Order response validation");
   requireText(cancellation, "useForm({", "Module 11 TanStack Form cancellation flow");
   requireText(cancellation, "orderCancellationFormSchema", "Module 11 Zod cancellation validation");
-  requireText(customerList, "Customer Orders are separate", "Module 11 parent/child UI separation");
-  requireText(customerDetail, "Status timeline", "Module 11 customer timeline");
+  requireText(customerList, 'title="Your Orders"', "Module 11 parent/child UI separation");
+  requireText(customerDetail, "Order timeline", "Module 11 customer timeline");
   requireText(sellerList, "Seller Order queue", "Module 11 seller queue");
   requireText(sellerDetail, "Accept Seller Order", "Module 11 seller acceptance command");
   requireText(adminPage, "Order support", "Module 11 admin support search");
@@ -943,7 +947,7 @@ function verifyReviewsFeature() {
   requireText(adminPage, "REVIEWS_PERMISSION.ADMIN_MODERATE", "Module 15 admin page permission gate");
   requireText(adminFilter, "adminReviewFilterFormSchema", "Module 15 admin queue filter validation");
   requireText(reviewRoute, 'path: "/admin/reviews"', "Module 15 admin moderation route");
-  requireText(adminLayout, 'to: "/admin/reviews"', "Module 15 admin navigation");
+  requireText(adminLayout, 'to="/admin/reviews"', "Module 15 admin navigation");
   requireText(reviewRoute, 'path: "/orders/$orderId/reviews/$orderItemId/new"', "Module 15 customer editor route");
   requireText(orderPage, "Write Review", "Module 15 delivered Order entry point");
   requireText(productPage, "ProductReviewsSection", "Module 15 Product Review integration");
@@ -973,7 +977,7 @@ function verifyNotificationsFeature() {
   const adminPage = readFrontendFile("src/features/notifications/pages/admin-notification-deliveries.page.tsx");
   const routes = readFrontendFile("src/app/routes/notifications.routes.tsx");
   const router = readFrontendFile("src/app/router/router.tsx");
-  const appShell = readFrontendFile("src/components/layout/app-shell.tsx");
+  const marketplaceHeader = readFrontendFile("src/components/layout/marketplace-header.tsx");
   const adminLayout = readFrontendFile("src/features/administration/components/admin-layout.tsx");
   const tests = readFrontendFile("tests/module18-notifications.test.tsx");
   const e2e = readFrontendFile("e2e/module18.spec.ts");
@@ -1005,8 +1009,8 @@ function verifyNotificationsFeature() {
   requireText(routes, 'path: "/notifications/preferences"', "Module 18 preferences route");
   requireText(routes, 'path: "/admin/notification-deliveries"', "Module 18 admin delivery route");
   requireText(router, "notificationsRoute", "Module 18 router registration");
-  requireText(appShell, "NotificationBell", "Module 18 global bell entry point");
-  requireText(adminLayout, 'to: "/admin/notification-deliveries"', "Module 18 admin navigation");
+  requireText(marketplaceHeader, "NotificationBell", "Module 18 global bell entry point");
+  requireText(adminLayout, 'to="/admin/notification-deliveries"', "Module 18 admin navigation");
   requireText(tests, "bell unread count", "Module 18 unread/read-state regression");
   requireText(tests, "without sending user identity", "Module 18 preference authority regression");
   requireText(tests, "only masked failed-delivery data", "Module 18 delivery privacy regression");
@@ -1129,7 +1133,7 @@ function verifyReportsFeature() {
   requireText(form, "reportFilterFormSchema", "Module 20 Zod filter validation");
   requireText(form, 'user.accountType === "platform_admin"', "Module 20 seller-scope UI guard");
   requireText(savedFilters, "window.localStorage", "Module 20 browser-local saved filters");
-  requireText(savedFilters, "approved nine-route Reports API", "Module 20 saved-filter API boundary");
+  requireText(savedFilters, "approved Reports API has no saved-filter routes", "Module 20 saved-filter API boundary");
 
   for (const route of [
     'path: "/reports"',

@@ -1,5 +1,9 @@
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
+import { SectionHeader } from "@/components/ui/section-header";
+import { Surface } from "@/components/ui/surface";
 import { CATALOG_PERMISSION } from "../catalog-taxonomy.constants";
 import { CatalogTaxonomyLayout, RequireCatalogPermission } from "../components/catalog-taxonomy-layout";
 import { CategoryTreeEditor, flattenCategoryTree } from "../components/category-tree";
@@ -31,13 +35,18 @@ function AdminCategoriesContent() {
   const parentOptions = flattenCategoryTree(categories.data);
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-xl border bg-white p-5 shadow-sm">
-        <h1 className="text-2xl font-bold">Category tree editor</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Create hierarchy nodes, change parent relationships, ordering, and active/inactive state.
-          The API remains authoritative for cycle prevention.
-        </p>
+    <div className="space-y-5">
+      <PageHeader
+        eyebrow="Catalog · Categories"
+        title="Category hierarchy"
+        description="Maintain the marketplace category tree without flattening parent/child relationships. Cycle prevention and hierarchy validation remain server-authoritative."
+      />
+
+      <Surface>
+        <SectionHeader
+          title="Create category"
+          description="Add a root category or place a new node under an existing category."
+        />
         <div className="mt-5">
           <CategoryForm
             parentOptions={parentOptions}
@@ -47,18 +56,24 @@ function AdminCategoriesContent() {
             onSubmit={createCategory}
           />
         </div>
-      </section>
+      </Surface>
 
-      <section className="space-y-3">
-        <h2 className="text-lg font-bold">Category hierarchy</h2>
-        {categories.data.length === 0 ? (
-          <p className="rounded-xl border bg-white p-5 text-sm text-slate-500 shadow-sm">
-            No categories exist yet.
-          </p>
-        ) : (
-          <CategoryTreeEditor nodes={categories.data} />
-        )}
-      </section>
+      <Surface>
+        <SectionHeader
+          title="Category tree"
+          description={`${parentOptions.length} categor${parentOptions.length === 1 ? "y" : "ies"} in the current hierarchy.`}
+        />
+        <div className="mt-5">
+          {categories.data.length === 0 ? (
+            <EmptyState
+              title="No categories exist yet."
+              description="Create the first root category above to begin the hierarchy."
+            />
+          ) : (
+            <CategoryTreeEditor nodes={categories.data} />
+          )}
+        </div>
+      </Surface>
     </div>
   );
 }

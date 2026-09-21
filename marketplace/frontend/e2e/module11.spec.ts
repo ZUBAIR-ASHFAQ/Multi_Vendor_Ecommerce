@@ -724,6 +724,7 @@ test.describe("Module 11 Orders E2E", () => {
           response.request().method() === "POST",
       );
       await cancellationBrowser.page.getByRole("button", { name: "Cancel eligible quantity" }).click();
+      await cancellationBrowser.page.getByRole("button", { name: "Confirm cancellation" }).click();
       const cancelResponse = await cancelResponsePromise;
       expect(cancelResponse.status()).toBe(200);
       const idempotencyKey = cancelResponse.request().headers()["idempotency-key"];

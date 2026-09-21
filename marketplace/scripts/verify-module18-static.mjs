@@ -10,7 +10,10 @@ function read(relativePath) {
   if (!existsSync(absolutePath)) {
     throw new Error(`Required Module 18 file is missing: ${relativePath}`);
   }
-  return readFileSync(absolutePath, "utf8");
+  const source = readFileSync(absolutePath, "utf8");
+  return relativePath.endsWith("package.json")
+    ? JSON.stringify(JSON.parse(source.replace(/^\uFEFF/u, "")), null, 2)
+    : source;
 }
 
 /** Requires one source fragment that proves a fixed Module 18 contract. */
@@ -22,8 +25,8 @@ function requireText(source, expected, label) {
 
 /** Confirms the Module 18 persistence head from Pass 1 remains immutable and present. */
 function verifyDatabaseContract() {
-  const migration = read("marketplace-backend/drizzle/0032_notifications.sql");
-  const schema = read("marketplace-backend/src/database/schema/notifications.ts");
+  const migration = read("backend/drizzle/0032_notifications.sql");
+  const schema = read("backend/src/database/schema/notifications.ts");
   for (const tableName of [
     "notification_templates",
     "notifications",
@@ -38,7 +41,7 @@ function verifyDatabaseContract() {
 /** Confirms source-defined permissions, errors, events, channels, statuses, and API operations stay fixed. */
 function verifyConstants() {
   const constants = read(
-    "marketplace-backend/src/modules/notifications/notifications.constants.ts",
+    "backend/src/modules/notifications/notifications.constants.ts",
   );
   for (const value of [
     'IN_APP: "in_app"',
@@ -79,7 +82,7 @@ function verifyConstants() {
 
 /** Confirms strict request/response boundaries exist without inventing undocumented list filters. */
 function verifySchemas() {
-  const schema = read("marketplace-backend/src/modules/notifications/notifications.schema.ts");
+  const schema = read("backend/src/modules/notifications/notifications.schema.ts");
   for (const proof of [
     "notificationsListQuerySchema = paginationQuerySchema.strict()",
     "adminNotificationDeliveriesQuerySchema = paginationQuerySchema.strict()",
@@ -95,12 +98,12 @@ function verifySchemas() {
   ]) {
     requireText(schema, proof, "Module 18 Zod contracts");
   }
-  requireText(read("marketplace-backend/src/modules/notifications/index.ts"), "notifications.schema.js", "Module 18 index");
+  requireText(read("backend/src/modules/notifications/index.ts"), "notifications.schema.js", "Module 18 index");
 }
 
 /** Confirms Notification permissions are composed into platform roles without moving ownership into Module 2. */
 function verifyRbacComposition() {
-  const seed = read("marketplace-backend/src/database/seeds/platform-rbac.seed.ts");
+  const seed = read("backend/src/database/seeds/platform-rbac.seed.ts");
   for (const proof of [
     "NOTIFICATIONS_PERMISSION_CATALOG",
     "NOTIFICATIONS_PERMISSION.READ_OWN",
@@ -114,7 +117,7 @@ function verifyRbacComposition() {
 /** Confirms the Pass 3 repository keeps ownership, idempotency, template, preference, and retry persistence boundaries. */
 function verifyRepositoryPass() {
   const repository = read(
-    "marketplace-backend/src/modules/notifications/notifications.repository.ts",
+    "backend/src/modules/notifications/notifications.repository.ts",
   );
   for (const proof of [
     "listOwnedNotifications",
@@ -140,17 +143,17 @@ function verifyRepositoryPass() {
   }
 
   requireText(
-    read("marketplace-backend/src/modules/notifications/index.ts"),
+    read("backend/src/modules/notifications/index.ts"),
     "notifications.repository.js",
     "Module 18 index",
   );
 
-  const tests = read("marketplace-backend/tests/module18/module18.repository.test.ts");
+  const tests = read("backend/tests/module18/module18.repository.test.ts");
   requireText(tests, "keeps Notification reads and read-state writes inside the owning user scope", "Module 18 repository tests");
   requireText(tests, "idempotent by event/recipient/channel", "Module 18 repository tests");
   requireText(tests, "masked destinations", "Module 18 repository tests");
 
-  const packageJson = JSON.parse(read("marketplace-backend/package.json"));
+  const packageJson = JSON.parse(read("backend/package.json"));
   if (
     packageJson.scripts?.["test:module18:repository"] !==
     "vitest run tests/module18/module18.schemas.test.ts tests/module18/module18.repository.test.ts"
@@ -158,14 +161,14 @@ function verifyRepositoryPass() {
     throw new Error("Backend package.json must expose the Module 18 repository test command.");
   }
 
-  const ci = read("marketplace-backend/.github/workflows/ci.yml");
+  const ci = read("backend/.github/workflows/ci.yml");
   requireText(ci, "npm run test:module18:repository", "Backend CI");
 }
 
 /** Confirms Pass 4 service orchestration owns policy, durable preparation, read state, retry audit, and outbox behavior. */
 function verifyServicePass() {
   const service = read(
-    "marketplace-backend/src/modules/notifications/notifications.service.ts",
+    "backend/src/modules/notifications/notifications.service.ts",
   );
   for (const proof of [
     "class NotificationsService",
@@ -194,17 +197,17 @@ function verifyServicePass() {
   }
 
   requireText(
-    read("marketplace-backend/src/modules/administration/administration.service.ts"),
+    read("backend/src/modules/administration/administration.service.ts"),
     "resolveNotificationRecipient",
     "Module 2 Notification identity boundary",
   );
   requireText(
-    read("marketplace-backend/src/modules/notifications/index.ts"),
+    read("backend/src/modules/notifications/index.ts"),
     "notifications.service.js",
     "Module 18 index",
   );
 
-  const tests = read("marketplace-backend/tests/module18/module18.service.test.ts");
+  const tests = read("backend/tests/module18/module18.service.test.ts");
   for (const proof of [
     "Module 18 Notifications service invariants",
     "owner-scoped",
@@ -217,7 +220,7 @@ function verifyServicePass() {
     requireText(tests, proof, "Module 18 service tests");
   }
 
-  const packageJson = JSON.parse(read("marketplace-backend/package.json"));
+  const packageJson = JSON.parse(read("backend/package.json"));
   if (
     packageJson.scripts?.["test:module18:service"] !==
     "vitest run tests/module18/module18.schemas.test.ts tests/module18/module18.repository.test.ts tests/module18/module18.service.test.ts"
@@ -225,7 +228,7 @@ function verifyServicePass() {
     throw new Error("Backend package.json must expose the Module 18 service test command.");
   }
 
-  const ci = read("marketplace-backend/.github/workflows/ci.yml");
+  const ci = read("backend/.github/workflows/ci.yml");
   requireText(ci, "npm run test:module18:service", "Backend CI");
 }
 
@@ -233,8 +236,8 @@ function verifyServicePass() {
 
 /** Confirms the required Socket.IO transport is authenticated, user-scoped, and fed only after durable in-app creation. */
 function verifyRealtimePass() {
-  const backendPackage = JSON.parse(read("marketplace-backend/package.json"));
-  const frontendPackage = JSON.parse(read("marketplace-frontend/package.json"));
+  const backendPackage = JSON.parse(read("backend/package.json"));
+  const frontendPackage = JSON.parse(read("frontend/package.json"));
   if (!backendPackage.dependencies?.["socket.io"]) {
     throw new Error("Backend package.json must include socket.io for required realtime Notification delivery.");
   }
@@ -242,7 +245,7 @@ function verifyRealtimePass() {
     throw new Error("Frontend package.json must include socket.io-client for required realtime Notification delivery.");
   }
 
-  const realtimeService = read("marketplace-backend/src/common/realtime/realtime.service.ts");
+  const realtimeService = read("backend/src/common/realtime/realtime.service.ts");
   for (const proof of [
     'Server as SocketIoServer',
     'auth?.accessToken',
@@ -254,7 +257,7 @@ function verifyRealtimePass() {
     requireText(realtimeService, proof, "Module 18 Socket.IO service");
   }
 
-  const notificationsService = read("marketplace-backend/src/modules/notifications/notifications.service.ts");
+  const notificationsService = read("backend/src/modules/notifications/notifications.service.ts");
   for (const proof of [
     "realtimePublisher?: NotificationRealtimePublisher",
     "publishPreparedInAppNotification(prepared)",
@@ -265,7 +268,7 @@ function verifyRealtimePass() {
     requireText(notificationsService, proof, "Module 18 realtime service integration");
   }
 
-  const server = read("marketplace-backend/src/server.ts");
+  const server = read("backend/src/server.ts");
   for (const proof of [
     "createServer(app)",
     "realtimeService.start(",
@@ -276,7 +279,7 @@ function verifyRealtimePass() {
     requireText(server, proof, "Backend realtime bootstrap");
   }
 
-  const realtimeTest = read("marketplace-backend/tests/module18/module18.realtime.test.ts");
+  const realtimeTest = read("backend/tests/module18/module18.realtime.test.ts");
   requireText(
     realtimeTest,
     "publishes only after a new durable in-app notification is prepared",
@@ -284,7 +287,7 @@ function verifyRealtimePass() {
   );
 
   const frontendRealtime = read(
-    "marketplace-frontend/src/features/notifications/hooks/use-notification-realtime.ts",
+    "frontend/src/features/notifications/hooks/use-notification-realtime.ts",
   );
   for (const proof of [
     'from "socket.io-client"',
@@ -300,7 +303,7 @@ function verifyRealtimePass() {
 /** Confirms Pass 5 controller, routes, RBAC middleware, app mounts, and OpenAPI registration are complete. */
 function verifyHttpPass() {
   const controller = read(
-    "marketplace-backend/src/modules/notifications/notifications.controller.ts",
+    "backend/src/modules/notifications/notifications.controller.ts",
   );
   for (const proof of [
     "class NotificationsController",
@@ -322,7 +325,7 @@ function verifyHttpPass() {
   }
 
   const routes = read(
-    "marketplace-backend/src/modules/notifications/notifications.routes.ts",
+    "backend/src/modules/notifications/notifications.routes.ts",
   );
   for (const proof of [
     "createNotificationsRouter",
@@ -344,11 +347,11 @@ function verifyHttpPass() {
     requireText(routes, proof, "Module 18 routes/OpenAPI");
   }
 
-  const index = read("marketplace-backend/src/modules/notifications/index.ts");
+  const index = read("backend/src/modules/notifications/index.ts");
   requireText(index, "notifications.controller.js", "Module 18 index");
   requireText(index, "notifications.routes.js", "Module 18 index");
 
-  const app = read("marketplace-backend/src/app.ts");
+  const app = read("backend/src/app.ts");
   for (const proof of [
     "new NotificationsService({",
     "emailProvider: notificationEmailProvider",
@@ -361,7 +364,7 @@ function verifyHttpPass() {
     requireText(app, proof, "Module 18 application composition");
   }
 
-  const openApi = read("marketplace-backend/src/http/openapi/openapi.document.ts");
+  const openApi = read("backend/src/http/openapi/openapi.document.ts");
   requireText(openApi, "notificationsOpenApiPaths", "Central OpenAPI");
   requireText(openApi, "...notificationsOpenApiPaths", "Central OpenAPI");
   requireText(openApi, 'name: "Notifications"', "Central OpenAPI");
@@ -369,14 +372,14 @@ function verifyHttpPass() {
 
 /** Confirms Pass 6 BullMQ/provider/runtime wiring is durable, retry-safe, and independently tested. */
 function verifyRuntimePass() {
-  const constants = read("marketplace-backend/src/modules/notifications/notifications.constants.ts");
-  const policy = read("marketplace-backend/src/modules/notifications/notifications.policy.ts");
-  const jobs = read("marketplace-backend/src/modules/notifications/notifications.jobs.ts");
-  const service = read("marketplace-backend/src/modules/notifications/notifications.service.ts");
-  const provider = read("marketplace-backend/src/integrations/email/resend-email-provider.adapter.ts");
-  const factory = read("marketplace-backend/src/integrations/email/notification-email-provider.factory.ts");
-  const server = read("marketplace-backend/src/server.ts");
-  const app = read("marketplace-backend/src/app.ts");
+  const constants = read("backend/src/modules/notifications/notifications.constants.ts");
+  const policy = read("backend/src/modules/notifications/notifications.policy.ts");
+  const jobs = read("backend/src/modules/notifications/notifications.jobs.ts");
+  const service = read("backend/src/modules/notifications/notifications.service.ts");
+  const provider = read("backend/src/integrations/email/resend-email-provider.adapter.ts");
+  const factory = read("backend/src/integrations/email/notification-email-provider.factory.ts");
+  const server = read("backend/src/server.ts");
+  const app = read("backend/src/app.ts");
 
   for (const proof of [
     'SOURCE_EVENT_QUEUE: "notifications-source-events"',
@@ -435,12 +438,12 @@ function verifyRuntimePass() {
   requireText(server, "startNotificationsRuntime(notificationsService)", "Module 18 server runtime");
   requireText(server, "NOTIFICATIONS_JOB.SOURCE_EVENT_QUEUE", "Foundation outbox fan-out");
 
-  const providerTests = read("marketplace-backend/tests/module18/module18.provider.test.ts");
-  const jobsTests = read("marketplace-backend/tests/module18/module18.jobs.test.ts");
-  const policyTests = read("marketplace-backend/tests/module18/module18.policy.test.ts");
-  const startupTests = read("marketplace-backend/tests/module18/module18.startup.test.ts");
-  const integrationTests = read("marketplace-backend/tests/module18/module18.integration.test.ts");
-  const httpTests = read("marketplace-backend/tests/module18/module18.http.test.ts");
+  const providerTests = read("backend/tests/module18/module18.provider.test.ts");
+  const jobsTests = read("backend/tests/module18/module18.jobs.test.ts");
+  const policyTests = read("backend/tests/module18/module18.policy.test.ts");
+  const startupTests = read("backend/tests/module18/module18.startup.test.ts");
+  const integrationTests = read("backend/tests/module18/module18.integration.test.ts");
+  const httpTests = read("backend/tests/module18/module18.http.test.ts");
   requireText(providerTests, "Module 18 email provider adapters", "Module 18 provider tests");
   requireText(jobsTests, "Module 18 Notification BullMQ runtime", "Module 18 jobs tests");
   requireText(policyTests, "Module 18 default Notification dispatch policy", "Module 18 policy tests");
@@ -448,7 +451,7 @@ function verifyRuntimePass() {
   requireText(integrationTests, "Module 18 Notification runtime integration", "Module 18 integration tests");
   requireText(httpTests, "Module 18 Notification HTTP/RBAC integration", "Module 18 HTTP tests");
 
-  const packageJson = JSON.parse(read("marketplace-backend/package.json"));
+  const packageJson = JSON.parse(read("backend/package.json"));
   if (packageJson.scripts?.["test:module18:runtime"] !==
       "vitest run tests/module18/module18.provider.test.ts tests/module18/module18.jobs.test.ts tests/module18/module18.policy.test.ts tests/module18/module18.startup.test.ts") {
     throw new Error("Backend package.json must expose the Module 18 runtime test command.");
@@ -459,8 +462,8 @@ function verifyRuntimePass() {
   if (packageJson.scripts?.["test:module18"] !== "node scripts/run-module18-tests.mjs") {
     throw new Error("Backend package.json must expose the complete Module 18 Docker-backed verifier.");
   }
-  read("marketplace-backend/scripts/run-module18-tests.mjs");
-  const ci = read("marketplace-backend/.github/workflows/ci.yml");
+  read("backend/scripts/run-module18-tests.mjs");
+  const ci = read("backend/.github/workflows/ci.yml");
   requireText(ci, "npm run test:module18:runtime", "Backend CI");
   requireText(ci, "npm run test:module18:specs", "Backend CI");
 }
@@ -468,7 +471,7 @@ function verifyRuntimePass() {
 
 /** Confirms the Module 18 React feature implements the required bell/list, preferences, and admin failure queue. */
 function verifyFrontendPass() {
-  const featureRoot = "marketplace-frontend/src/features/notifications";
+  const featureRoot = "frontend/src/features/notifications";
   for (const relativePath of [
     "api/notifications.api.ts",
     "hooks/notifications.query-keys.ts",
@@ -503,20 +506,21 @@ function verifyFrontendPass() {
   requireText(read(`${featureRoot}/forms/notification-preference.form.tsx`), "useForm({", "Module 18 TanStack Form");
   requireText(read(`${featureRoot}/components/notification-bell.tsx`), "unreadCount", "Module 18 unread bell");
   requireText(read(`${featureRoot}/pages/admin-notification-deliveries.page.tsx`), "destinationMasked", "Module 18 masked admin queue");
-  requireText(read("marketplace-frontend/src/app/routes/notifications.routes.tsx"), 'path: "/admin/notification-deliveries"', "Module 18 React routes");
-  requireText(read("marketplace-frontend/src/components/layout/app-shell.tsx"), "NotificationBell", "Module 18 shell integration");
-  requireText(read("marketplace-frontend/tests/module18-notifications.test.tsx"), "Module 18 Notifications React feature", "Module 18 RTL/MSW tests");
+  requireText(read("frontend/src/app/routes/notifications.routes.tsx"), 'path: "/admin/notification-deliveries"', "Module 18 React routes");
+  requireText(read("frontend/src/components/layout/app-shell.tsx"), "MarketplaceHeader", "Module 18 shell integration");
+  requireText(read("frontend/src/components/layout/marketplace-header.tsx"), "NotificationBell", "Module 18 marketplace header integration");
+  requireText(read("frontend/tests/module18-notifications.test.tsx"), "Module 18 Notifications React feature", "Module 18 RTL/MSW tests");
 
-  const packageJson = JSON.parse(read("marketplace-frontend/package.json"));
+  const packageJson = JSON.parse(read("frontend/package.json"));
   if (packageJson.scripts?.["test:module18"] !== "vitest run tests/module18-notifications.test.tsx") {
     throw new Error("Frontend package.json must expose the Module 18 React test command.");
   }
-  requireText(read("marketplace-frontend/.github/workflows/ci.yml"), "npm run test:module18", "Frontend CI");
+  requireText(read("frontend/.github/workflows/ci.yml"), "npm run test:module18", "Frontend CI");
 }
 
 /** Confirms Pass 8 browser coverage and post-E2E reconciliation are wired into the cumulative release gate. */
 function verifyE2ePass() {
-  const e2e = read("marketplace-frontend/e2e/module18.spec.ts");
+  const e2e = read("frontend/e2e/module18.spec.ts");
   for (const proof of [
     "Module 18 Notifications E2E",
     "approveSellerApplication",
@@ -533,7 +537,7 @@ function verifyE2ePass() {
     requireText(e2e, proof, "Module 18 Playwright E2E");
   }
 
-  const seed = read("marketplace-backend/src/database/seeds/module18-e2e.seed.ts");
+  const seed = read("backend/src/database/seeds/module18-e2e.seed.ts");
   for (const proof of [
     "seedModule18E2eFailedDelivery",
     "MODULE18_E2E_FAILED_DELIVERY_ID",
@@ -544,7 +548,7 @@ function verifyE2ePass() {
     requireText(seed, proof, "Module 18 E2E seed");
   }
 
-  const releaseData = read("marketplace-backend/scripts/verify-module18-release-data.mjs");
+  const releaseData = read("backend/scripts/verify-module18-release-data.mjs");
   for (const proof of [
     "Module 18 seller-approved in-app notification",
     "Module 18 seller-rejected in-app notification",
@@ -557,12 +561,12 @@ function verifyE2ePass() {
     requireText(releaseData, proof, "Module 18 release-data verifier");
   }
 
-  const frontendPackage = JSON.parse(read("marketplace-frontend/package.json"));
+  const frontendPackage = JSON.parse(read("frontend/package.json"));
   if (frontendPackage.scripts?.["test:e2e:module18"] !== "playwright test e2e/module18.spec.ts") {
     throw new Error("Frontend package.json must expose the Module 18 Playwright command.");
   }
 
-  const backendPackage = JSON.parse(read("marketplace-backend/package.json"));
+  const backendPackage = JSON.parse(read("backend/package.json"));
   if (backendPackage.scripts?.["db:seed:module18-e2e"] !== "tsx src/database/seeds/module18-e2e.seed.ts") {
     throw new Error("Backend package.json must expose the Module 18 browser fixture seed.");
   }
@@ -570,7 +574,7 @@ function verifyE2ePass() {
     throw new Error("Backend package.json must expose the Module 18 post-E2E reconciliation verifier.");
   }
 
-  const runner = read("marketplace-frontend/e2e/run-e2e-ci.mjs");
+  const runner = read("frontend/e2e/run-e2e-ci.mjs");
   for (const proof of [
     'NOTIFICATION_EMAIL_PROVIDER_MODE: "deterministic_test"',
     '"db:seed:module18-e2e"',
@@ -586,17 +590,17 @@ function verifyE2ePass() {
 
 /** Confirms focused contract tests and CI/package commands are permanently wired. */
 function verifyContractProof() {
-  const packageJson = JSON.parse(read("marketplace-backend/package.json"));
+  const packageJson = JSON.parse(read("backend/package.json"));
   if (
     packageJson.scripts?.["test:module18:contracts"] !==
     "vitest run tests/module18/module18.schemas.test.ts"
   ) {
     throw new Error("Backend package.json must expose the Module 18 contract test command.");
   }
-  const tests = read("marketplace-backend/tests/module18/module18.schemas.test.ts");
+  const tests = read("backend/tests/module18/module18.schemas.test.ts");
   requireText(tests, "Module 18 fixed contract values", "Module 18 contract tests");
   requireText(tests, "privacy-safe admin delivery boundary", "Module 18 contract tests");
-  const ci = read("marketplace-backend/.github/workflows/ci.yml");
+  const ci = read("backend/.github/workflows/ci.yml");
   requireText(ci, "npm run test:module18:migrations", "Backend CI");
   requireText(ci, "npm run test:module18:contracts", "Backend CI");
 }

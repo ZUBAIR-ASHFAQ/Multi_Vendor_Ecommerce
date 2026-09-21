@@ -1,9 +1,20 @@
 import { useState } from "react";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Surface } from "@/components/ui/surface";
+import {
+  AdminQueueEmpty,
+  AdminQueueHeader,
+  AdminQueueTable,
+  AdminQueueTableHead,
+} from "@/features/administration/components/admin-queue";
 import { AdminLayout } from "@/features/administration/components/admin-layout";
 import { RequirePagePermission } from "@/features/administration/components/permission-gate";
 import { ApiClientError } from "@/lib/api-error";
+import { formatDateTime } from "@/lib/dates";
 import { RefundBreakdown } from "../components/refund-breakdown";
 import { ReturnPagination } from "../components/return-pagination";
 import { ReturnStatus } from "../components/return-status";
@@ -21,34 +32,38 @@ import {
 } from "../returns-refunds.constants";
 import type { AdminReturnListParams, ReturnRequest } from "../types/returns-refunds.types";
 
-/** Renders one admin/support Return with safe dispute context and optional privileged refund action. */
-function AdminReturnCard({ value, canIssueRefund }: { value: ReturnRequest; canIssueRefund: boolean }) {
+/** Renders one selected admin/support Return with safe dispute context and optional privileged refund action. */
+function AdminReturnDetail({ value, canIssueRefund }: { value: ReturnRequest; canIssueRefund: boolean }) {
   const refund = useIssueReturnRefundMutation(value.id);
   const refundableState = value.status === "approved" || value.status === "received";
 
   return (
-    <article className="space-y-4 rounded-xl border bg-white p-5 shadow-sm">
+    <Surface variant="elevated" className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="font-semibold">{value.returnNo}</h2>
-          <p className="text-xs text-slate-500">Order {value.orderId}</p>
-          <p className="text-xs text-slate-500">Seller Order {value.sellerOrderId}</p>
-          <p className="text-xs text-slate-500">Customer {value.customerUserId}</p>
-          <p className="mt-1 text-sm">Reason: {RETURN_REASON_LABEL[value.reasonCode]}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-foreground-muted">Selected return</p>
+          <h2 className="mt-1 text-xl font-semibold text-foreground">{value.returnNo}</h2>
+          <p className="mt-1 text-sm text-foreground-muted">Reason: {RETURN_REASON_LABEL[value.reasonCode]}</p>
         </div>
         <ReturnStatus value={value.status} />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <dl className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
+        <div><dt className="font-semibold text-foreground-muted">Order</dt><dd className="break-all">{value.orderId}</dd></div>
+        <div><dt className="font-semibold text-foreground-muted">Seller order</dt><dd className="break-all">{value.sellerOrderId}</dd></div>
+        <div><dt className="font-semibold text-foreground-muted">Customer</dt><dd className="break-all">{value.customerUserId}</dd></div>
+      </dl>
+
+      <div className="grid gap-5 lg:grid-cols-2">
         <div>
-          <h3 className="text-sm font-semibold">Dispute/support timeline</h3>
-          <p className="mb-2 text-xs text-slate-500">
-            The current API exposes Return lifecycle facts only; it does not expose dispute-note CRUD.
+          <h3 className="text-sm font-semibold text-foreground">Lifecycle timeline</h3>
+          <p className="mb-2 text-xs leading-5 text-foreground-muted">
+            The current API exposes lifecycle facts only; it does not expose dispute-note CRUD.
           </p>
           <ReturnTimeline value={value} />
         </div>
         <div>
-          <h3 className="text-sm font-semibold">Refund and restock breakdown</h3>
+          <h3 className="text-sm font-semibold text-foreground">Refund and restock breakdown</h3>
           <div className="mt-2"><RefundBreakdown value={value} /></div>
         </div>
       </div>
@@ -63,11 +78,11 @@ function AdminReturnCard({ value, canIssueRefund }: { value: ReturnRequest; canI
           }
         />
       ) : null}
-    </article>
+    </Surface>
   );
 }
 
-/** Renders the admin Return/dispute view with bounded support filters. */
+/** Renders the admin Return/dispute queue with bounded support filters. */
 function AdminReturnsContent({ canIssueRefund }: { canIssueRefund: boolean }) {
   const [params, setParams] = useState<AdminReturnListParams>({
     page: 1,
@@ -75,56 +90,131 @@ function AdminReturnsContent({ canIssueRefund }: { canIssueRefund: boolean }) {
     sort: "requestedAt",
     order: "desc",
   });
+  const [orderId, setOrderId] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const returns = useAdminReturnsQuery(params);
-
-  if (returns.isPending) return <LoadingState label="Loading admin Returns..." />;
-  if (returns.isError) {
-    return (
-      <ErrorState
-        title="Admin Returns could not be loaded"
-        message={returns.error instanceof Error ? returns.error.message : "Please try again."}
-        requestId={returns.error instanceof ApiClientError ? returns.error.requestId : undefined}
-        onRetry={() => void returns.refetch()}
-      />
-    );
-  }
+  const selected = returns.data?.items.find((value) => value.id === selectedId);
 
   return (
     <div className="space-y-5">
-      <section className="rounded-xl border bg-white p-5 shadow-sm">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold">Returns & dispute review</h1>
-            <p className="mt-1 text-sm text-slate-600">
-              Search Return lifecycle and item outcomes. Refund execution remains a separate privileged command.
-            </p>
-          </div>
-          <label className="text-sm font-medium">
-            Status
-            <select
-              aria-label="Admin Return status filter"
-              className="ml-2 rounded-md border px-3 py-2"
-              value={params.status ?? ""}
-              onChange={(event) => setParams((current) => ({
+      <AdminQueueHeader
+        eyebrow="Commerce · Returns"
+        title="Returns & dispute queue"
+        description="Review return lifecycle and item outcomes. Refund execution stays a separate permission-gated backend command."
+        meta={returns.data?.meta}
+        visibleCount={returns.data?.items.length}
+      />
+
+      <form
+        className="grid gap-3 rounded-card border border-border bg-surface p-4 shadow-sm sm:grid-cols-[minmax(220px,1fr)_minmax(180px,240px)_auto]"
+        onSubmit={(event) => {
+          event.preventDefault();
+          setSelectedId(null);
+          setParams((current) => ({
+            ...current,
+            page: 1,
+            orderId: orderId.trim() || undefined,
+          }));
+        }}
+      >
+        <label className="text-sm font-medium text-foreground">
+          Order ID
+          <Input
+            className="mt-1 font-mono"
+            aria-label="Admin Return order ID filter"
+            placeholder="Exact order UUID"
+            value={orderId}
+            onChange={(event) => setOrderId(event.target.value)}
+          />
+        </label>
+        <label className="text-sm font-medium text-foreground">
+          Status
+          <Select
+            aria-label="Admin Return status filter"
+            className="mt-1"
+            value={params.status ?? ""}
+            onChange={(event) => {
+              setSelectedId(null);
+              setParams((current) => ({
                 ...current,
                 page: 1,
                 status: event.target.value ? event.target.value as AdminReturnListParams["status"] : undefined,
-              }))}
-            >
-              <option value="">All</option>
-              {RETURN_STATUS_VALUES.map((value) => <option key={value} value={value}>{RETURN_STATUS_LABEL[value]}</option>)}
-            </select>
-          </label>
-        </div>
-      </section>
+              }));
+            }}
+          >
+            <option value="">All statuses</option>
+            {RETURN_STATUS_VALUES.map((value) => <option key={value} value={value}>{RETURN_STATUS_LABEL[value]}</option>)}
+          </Select>
+        </label>
+        <div className="flex items-end"><Button className="w-full sm:w-auto" type="submit">Apply filters</Button></div>
+      </form>
 
-      {returns.data.items.length === 0 ? (
-        <p className="rounded-xl border bg-white p-8 text-center text-slate-500">No Returns found.</p>
-      ) : returns.data.items.map((value) => (
-        <AdminReturnCard key={value.id} value={value} canIssueRefund={canIssueRefund} />
-      ))}
+      {returns.isPending ? <LoadingState variant="table" label="Loading admin returns..." /> : null}
+      {returns.isError ? (
+        <ErrorState
+          title="Admin returns could not be loaded"
+          message={returns.error instanceof Error ? returns.error.message : "Please try again."}
+          requestId={returns.error instanceof ApiClientError ? returns.error.requestId : undefined}
+          onRetry={() => void returns.refetch()}
+        />
+      ) : null}
 
-      <ReturnPagination meta={returns.data.meta} onPageChange={(page) => setParams((current) => ({ ...current, page }))} />
+      {returns.data?.items.length === 0 ? (
+        <AdminQueueEmpty
+          title="No returns match these filters"
+          description="Change the status or exact order ID to inspect another part of the returns queue."
+        />
+      ) : null}
+
+      {returns.data?.items.length ? (
+        <AdminQueueTable tableClassName="min-w-[980px]">
+          <AdminQueueTableHead>
+            <tr>
+              <th className="px-4 py-3">Return</th>
+              <th className="px-4 py-3">Order</th>
+              <th className="px-4 py-3">Reason</th>
+              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Items</th>
+              <th className="px-4 py-3">Requested</th>
+              <th className="px-4 py-3 text-right">Primary action</th>
+            </tr>
+          </AdminQueueTableHead>
+          <tbody className="divide-y divide-border">
+            {returns.data.items.map((value) => (
+              <tr key={value.id} className="transition-colors hover:bg-surface-muted/60">
+                <td className="px-4 py-3 font-medium text-foreground">{value.returnNo}</td>
+                <td className="px-4 py-3 break-all text-xs text-foreground-muted">{value.orderId}</td>
+                <td className="px-4 py-3">{RETURN_REASON_LABEL[value.reasonCode]}</td>
+                <td className="px-4 py-3"><ReturnStatus value={value.status} /></td>
+                <td className="px-4 py-3">{value.items.length}</td>
+                <td className="px-4 py-3 whitespace-nowrap text-foreground-muted">{formatDateTime(value.requestedAt)}</td>
+                <td className="px-4 py-3 text-right">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={selectedId === value.id ? "secondary" : "outline"}
+                    onClick={() => setSelectedId((current) => current === value.id ? null : value.id)}
+                  >
+                    {selectedId === value.id ? "Close review" : "Review"}
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </AdminQueueTable>
+      ) : null}
+
+      {selected ? <AdminReturnDetail value={selected} canIssueRefund={canIssueRefund} /> : null}
+
+      {returns.data ? (
+        <ReturnPagination
+          meta={returns.data.meta}
+          onPageChange={(page) => {
+            setSelectedId(null);
+            setParams((current) => ({ ...current, page }));
+          }}
+        />
+      ) : null}
     </div>
   );
 }

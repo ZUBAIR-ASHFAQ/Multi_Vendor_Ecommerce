@@ -23,6 +23,8 @@ export const ORDER_STATUS_LABEL: Record<string, string> = {
   unfulfilled: "Unfulfilled",
   partially_fulfilled: "Partially fulfilled",
   fulfilled: "Fulfilled",
+  shipped: "Shipped",
+  delivered: "Delivered",
   captured: "Captured",
   pending: "Pending",
   active: "Active",

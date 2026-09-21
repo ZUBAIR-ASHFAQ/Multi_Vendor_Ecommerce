@@ -10,7 +10,10 @@ function read(relativePath) {
   if (!fs.existsSync(absolutePath)) {
     throw new Error(`Required Module 14 backend proof file is missing: ${relativePath}`);
   }
-  return fs.readFileSync(absolutePath, "utf8");
+  const source = fs.readFileSync(absolutePath, "utf8");
+  return relativePath.endsWith("package.json")
+    ? JSON.stringify(JSON.parse(source.replace(/^\uFEFF/u, "")), null, 2)
+    : source;
 }
 
 /** Requires one durable backend proof fragment. */
@@ -22,11 +25,11 @@ function requireText(source, expected, label) {
 
 /** Confirms focused backend tests exist for repository, service, HTTP policy, and real PostgreSQL orchestration. */
 function verifyTestFiles() {
-  const repository = read("marketplace-backend/tests/module14/module14.repository.test.ts");
-  const service = read("marketplace-backend/tests/module14/module14.service.test.ts");
-  const http = read("marketplace-backend/tests/module14/module14.http.test.ts");
-  const integration = read("marketplace-backend/tests/module14/module14.integration.test.ts");
-  const helpers = read("marketplace-backend/tests/module14/module14.test-helpers.ts");
+  const repository = read("backend/tests/module14/module14.repository.test.ts");
+  const service = read("backend/tests/module14/module14.service.test.ts");
+  const http = read("backend/tests/module14/module14.http.test.ts");
+  const integration = read("backend/tests/module14/module14.integration.test.ts");
+  const helpers = read("backend/tests/module14/module14.test-helpers.ts");
 
   for (const expected of [
     "seller locks inside their exact persisted ownership scopes",
@@ -73,7 +76,7 @@ function verifyTestFiles() {
 
 /** Confirms package scripts expose focused and cumulative Module 14 backend gates. */
 function verifyPackageScripts() {
-  const packageJson = JSON.parse(read("marketplace-backend/package.json"));
+  const packageJson = JSON.parse(read("backend/package.json"));
   const scripts = packageJson.scripts ?? {};
   const expected = {
     "test:module14:migrations": "node scripts/verify-module14-migrations.mjs",
@@ -95,7 +98,7 @@ function verifyPackageScripts() {
 
 /** Confirms the cumulative runner provisions dependencies and re-runs released prerequisite suites. */
 function verifyRunner() {
-  const runner = read("marketplace-backend/scripts/run-module14-tests.mjs");
+  const runner = read("backend/scripts/run-module14-tests.mjs");
   for (const expected of [
     '"test:module14:migrations"',
     '"test:module14:specs"',
@@ -113,7 +116,7 @@ function verifyRunner() {
 
 /** Confirms CI executes Module 14 migrations and backend proof on a clean database. */
 function verifyCi() {
-  const ci = read("marketplace-backend/.github/workflows/ci.yml");
+  const ci = read("backend/.github/workflows/ci.yml");
   for (const expected of [
     "Verify Module 14 Returns/refunds clean and upgrade migrations",
     "npm run test:module14:migrations",

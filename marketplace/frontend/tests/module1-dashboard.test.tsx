@@ -323,7 +323,7 @@ describe("Module 1 Dashboard React feature", () => {
     await user.click(screen.getByRole("button", { name: "Apply filters" }));
     expect(await screen.findByRole("heading", { name: "Widget unavailable" })).toBeInTheDocument();
     expect(screen.getByText("Historical category reporting is unavailable.")).toBeInTheDocument();
-    expect(screen.getByText("Request ID: req-dashboard-category")).toBeInTheDocument();
+    expect(screen.getByText("Technical reference: req-dashboard-category")).toBeInTheDocument();
   });
 
   it("denies the page before Dashboard reads when the authenticated actor lacks dashboard.read", async () => {

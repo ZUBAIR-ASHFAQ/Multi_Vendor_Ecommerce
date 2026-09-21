@@ -10,7 +10,10 @@ function readProjectFile(relativePath) {
   if (!existsSync(absolutePath)) {
     throw new Error(`Required backend test file is missing: ${relativePath}`);
   }
-  return readFileSync(absolutePath, "utf8");
+  const source = readFileSync(absolutePath, "utf8");
+  return relativePath.endsWith("package.json")
+    ? JSON.stringify(JSON.parse(source), null, 2)
+    : source;
 }
 
 /** Requires one permanent regression proof in a test source file. */
@@ -30,10 +33,10 @@ function forbidText(source, forbidden, label) {
 /** Confirms Foundation outbox fan-out, failure retry, and claim-race behavior are directly tested. */
 function verifyFoundationOutboxTests() {
   const fanout = readProjectFile(
-    "marketplace-backend/tests/unit/outbox-fanout.test.ts",
+    "backend/tests/unit/outbox-fanout.test.ts",
   );
   const dispatcher = readProjectFile(
-    "marketplace-backend/tests/unit/outbox-dispatcher.test.ts",
+    "backend/tests/unit/outbox-dispatcher.test.ts",
   );
 
   for (const proof of [
@@ -57,57 +60,57 @@ function verifyFoundationOutboxTests() {
 function verifyRepositoryScopeTests() {
   const expectations = [
     [
-      "marketplace-backend/tests/module2/module2.repository.test.ts",
+      "backend/tests/module2/module2.repository.test.ts",
       "returns safe user records and persists role permission membership without password leakage",
       "Module 2 repository safety",
     ],
     [
-      "marketplace-backend/tests/module21/module21.repository.test.ts",
+      "backend/tests/module21/module21.repository.test.ts",
       "keeps file ownership, resource links, and seller audit reads scoped in SQL",
       "Module 21 repository scope",
     ],
     [
-      "marketplace-backend/tests/module3/module3.repository.test.ts",
+      "backend/tests/module3/module3.repository.test.ts",
       "keeps saved-address reads and mutations inside the exact customer owner scope",
       "Module 3 repository scope",
     ],
     [
-      "marketplace-backend/tests/module4/module4.repository.test.ts",
+      "backend/tests/module4/module4.repository.test.ts",
       "keeps private seller and store reads inside the exact seller ownership scope",
       "Module 4 repository scope",
     ],
     [
-      "marketplace-backend/tests/module6/module6.repository.test.ts",
+      "backend/tests/module6/module6.repository.test.ts",
       "keeps private Product reads inside the exact seller/store scope",
       "Module 6 repository scope",
     ],
     [
-      "marketplace-backend/tests/module7/module7.repository.test.ts",
+      "backend/tests/module7/module7.repository.test.ts",
       "keeps private Inventory reads inside the exact seller/store scope",
       "Module 7 repository scope",
     ],
     [
-      "marketplace-backend/tests/module8/module8.repository.test.ts",
+      "backend/tests/module8/module8.repository.test.ts",
       "keeps cart reads, updates, and deletes inside the exact customer owner scope",
       "Module 8 repository scope",
     ],
     [
-      "marketplace-backend/tests/module9/module9.repository.test.ts",
+      "backend/tests/module9/module9.repository.test.ts",
       "keeps platform listing scoped and coupon redemption identity constrained in persistence",
       "Module 9 repository scope",
     ],
     [
-      "marketplace-backend/tests/module10/module10.repository.test.ts",
+      "backend/tests/module10/module10.repository.test.ts",
       "persists Patch 0004 addresses, store lines, and shipping selections while keeping reads customer-scoped",
       "Module 10 Checkout repository scope",
     ],
     [
-      "marketplace-backend/tests/module11/module11.repository.test.ts",
+      "backend/tests/module11/module11.repository.test.ts",
       "persists immutable Order snapshots and keeps customer/seller reads scoped",
       "Module 11 Orders repository scope",
     ],
     [
-      "marketplace-backend/tests/module15/module15.repository.test.ts",
+      "backend/tests/module15/module15.repository.test.ts",
       "keeps one Review per purchased Order Item and enforces customer scope on edits",
       "Module 15 Review repository scope",
     ],
@@ -122,57 +125,57 @@ function verifyRepositoryScopeTests() {
 function verifyIsolationTests() {
   const expectations = [
     [
-      "marketplace-backend/tests/module2/module2.business-rules.integration.test.ts",
+      "backend/tests/module2/module2.business-rules.integration.test.ts",
       "service-level seller isolation fails before persistence",
       "Module 2 seller scope",
     ],
     [
-      "marketplace-backend/tests/module3/module3.integration.test.ts",
+      "backend/tests/module3/module3.integration.test.ts",
       "keeps private address reads and writes inside the authenticated customer scope",
       "Module 3 customer scope",
     ],
     [
-      "marketplace-backend/tests/module4/module4.integration.test.ts",
+      "backend/tests/module4/module4.integration.test.ts",
       "prevents Seller B from reading or updating Seller A private store state",
       "Module 4 seller isolation",
     ],
     [
-      "marketplace-backend/tests/module6/module6.integration.test.ts",
+      "backend/tests/module6/module6.integration.test.ts",
       "seller-to-seller isolation",
       "Module 6 seller isolation",
     ],
     [
-      "marketplace-backend/tests/module7/module7.integration.test.ts",
+      "backend/tests/module7/module7.integration.test.ts",
       "seller-to-seller isolation",
       "Module 7 seller isolation",
     ],
     [
-      "marketplace-backend/tests/module8/module8.integration.test.ts",
+      "backend/tests/module8/module8.integration.test.ts",
       "keeps Cart/Wishlist reads and writes inside the exact customer owner scope",
       "Module 8 customer isolation",
     ],
     [
-      "marketplace-backend/tests/module21/module21.integration.test.ts",
+      "backend/tests/module21/module21.integration.test.ts",
       "denies a Seller A resource operation against Seller B",
       "Module 21 seller isolation",
     ],
     [
-      "marketplace-backend/tests/module9/module9.integration.test.ts",
+      "backend/tests/module9/module9.integration.test.ts",
       "seller-to-seller promotion scope isolation",
       "Module 9 seller isolation",
     ],
     [
-      "marketplace-backend/tests/module10/module10.integration.test.ts",
+      "backend/tests/module10/module10.integration.test.ts",
       "customer quote isolation, and customer-owned addresses",
       "Module 10 customer isolation",
     ],
     [
-      "marketplace-backend/tests/module11/module11.integration.test.ts",
+      "backend/tests/module11/module11.integration.test.ts",
       "enforces customer and seller isolation plus admin scoped search",
       "Module 11 customer/seller isolation",
     ],
     [
-      "marketplace-backend/tests/module15/module15.http.test.ts",
+      "backend/tests/module15/module15.http.test.ts",
       "keeps customer edits owner-only and exposes only privacy-safe published Review cards",
       "Module 15 customer Review isolation",
     ],
@@ -186,7 +189,7 @@ function verifyIsolationTests() {
 /** Confirms the repaired Inventory workflow is proven through the real internal HTTP commands and retry keys. */
 function verifyInventoryCommandTests() {
   const inventory = readProjectFile(
-    "marketplace-backend/tests/module7/module7.integration.test.ts",
+    "backend/tests/module7/module7.integration.test.ts",
   );
 
   for (const proof of [
@@ -205,31 +208,31 @@ function verifyInventoryCommandTests() {
 /** Confirms lifecycle maintenance is wired through repositories, services, BullMQ dispatch, and regression tests. */
 function verifyRepositoryLifecycleMaintenanceTests() {
   const foundation = readProjectFile(
-    "marketplace-backend/tests/integration/foundation.persistence.integration.test.ts",
+    "backend/tests/integration/foundation.persistence.integration.test.ts",
   );
   const inventory = readProjectFile(
-    "marketplace-backend/tests/module7/module7.repository.test.ts",
+    "backend/tests/module7/module7.repository.test.ts",
   );
   const inventoryIntegration = readProjectFile(
-    "marketplace-backend/tests/module7/module7.integration.test.ts",
+    "backend/tests/module7/module7.integration.test.ts",
   );
   const idempotencyRepository = readProjectFile(
-    "marketplace-backend/src/common/idempotency/idempotency.repository.ts",
+    "backend/src/common/idempotency/idempotency.repository.ts",
   );
   const inventoryRepository = readProjectFile(
-    "marketplace-backend/src/modules/inventory/inventory.repository.ts",
+    "backend/src/modules/inventory/inventory.repository.ts",
   );
   const idempotencyService = readProjectFile(
-    "marketplace-backend/src/common/idempotency/idempotency.service.ts",
+    "backend/src/common/idempotency/idempotency.service.ts",
   );
   const inventoryService = readProjectFile(
-    "marketplace-backend/src/modules/inventory/inventory.service.ts",
+    "backend/src/modules/inventory/inventory.service.ts",
   );
   const maintenanceRuntime = readProjectFile(
-    "marketplace-backend/src/common/jobs/lifecycle-maintenance.runtime.ts",
+    "backend/src/common/jobs/lifecycle-maintenance.runtime.ts",
   );
   const maintenanceUnitTest = readProjectFile(
-    "marketplace-backend/tests/unit/lifecycle-maintenance.runtime.test.ts",
+    "backend/tests/unit/lifecycle-maintenance.runtime.test.ts",
   );
 
   requireText(
@@ -297,19 +300,19 @@ function verifyRepositoryLifecycleMaintenanceTests() {
 /** Confirms Module 8 has direct regression proof for its most important Cart/Wishlist invariants. */
 function verifyCartWishlistTests() {
   const schemas = readProjectFile(
-    "marketplace-backend/tests/module8/module8.schemas.test.ts",
+    "backend/tests/module8/module8.schemas.test.ts",
   );
   const repository = readProjectFile(
-    "marketplace-backend/tests/module8/module8.repository.test.ts",
+    "backend/tests/module8/module8.repository.test.ts",
   );
   const service = readProjectFile(
-    "marketplace-backend/tests/module8/module8.service.test.ts",
+    "backend/tests/module8/module8.service.test.ts",
   );
   const integration = readProjectFile(
-    "marketplace-backend/tests/module8/module8.integration.test.ts",
+    "backend/tests/module8/module8.integration.test.ts",
   );
-  const backendPackage = readProjectFile("marketplace-backend/package.json");
-  const runner = readProjectFile("marketplace-backend/scripts/run-module8-tests.mjs");
+  const backendPackage = readProjectFile("backend/package.json");
+  const runner = readProjectFile("backend/scripts/run-module8-tests.mjs");
 
   requireText(
     schemas,
@@ -347,20 +350,20 @@ function verifyCartWishlistTests() {
 /** Confirms Module 9 has direct schema/repository/service/API, isolation, and redemption concurrency proof. */
 function verifyPromotionsTests() {
   const schemas = readProjectFile(
-    "marketplace-backend/tests/module9/module9.schemas.test.ts",
+    "backend/tests/module9/module9.schemas.test.ts",
   );
   const repository = readProjectFile(
-    "marketplace-backend/tests/module9/module9.repository.test.ts",
+    "backend/tests/module9/module9.repository.test.ts",
   );
   const service = readProjectFile(
-    "marketplace-backend/tests/module9/module9.service.test.ts",
+    "backend/tests/module9/module9.service.test.ts",
   );
   const integration = readProjectFile(
-    "marketplace-backend/tests/module9/module9.integration.test.ts",
+    "backend/tests/module9/module9.integration.test.ts",
   );
-  const backendPackage = readProjectFile("marketplace-backend/package.json");
-  const runner = readProjectFile("marketplace-backend/scripts/run-module9-tests.mjs");
-  const backendCi = readProjectFile("marketplace-backend/.github/workflows/ci.yml");
+  const backendPackage = readProjectFile("backend/package.json");
+  const runner = readProjectFile("backend/scripts/run-module9-tests.mjs");
+  const backendCi = readProjectFile("backend/.github/workflows/ci.yml");
 
   requireText(
     schemas,
@@ -401,19 +404,19 @@ function verifyPromotionsTests() {
 /** Confirms executable Shipping Configuration Core has schema, repository, service, and API regression coverage. */
 function verifyShippingCoreSourceSafeTests() {
   const schemas = readProjectFile(
-    "marketplace-backend/tests/module13/module13.schemas.test.ts",
+    "backend/tests/module13/module13.schemas.test.ts",
   );
   const repository = readProjectFile(
-    "marketplace-backend/tests/module13/module13.repository.test.ts",
+    "backend/tests/module13/module13.repository.test.ts",
   );
   const service = readProjectFile(
-    "marketplace-backend/tests/module13/module13.service.test.ts",
+    "backend/tests/module13/module13.service.test.ts",
   );
   const integration = readProjectFile(
-    "marketplace-backend/tests/module13/module13.integration.test.ts",
+    "backend/tests/module13/module13.integration.test.ts",
   );
-  const backendPackage = readProjectFile("marketplace-backend/package.json");
-  const backendCi = readProjectFile("marketplace-backend/.github/workflows/ci.yml");
+  const backendPackage = readProjectFile("backend/package.json");
+  const backendCi = readProjectFile("backend/.github/workflows/ci.yml");
 
   for (const proof of [
     "keeps the approved owner, flat pricing, lifecycle, and route values exact",
@@ -471,22 +474,22 @@ function verifyShippingCoreSourceSafeTests() {
 /** Confirms Checkout has permanent schema, repository, service, and API regression coverage. */
 function verifyCheckoutSourceSafeTests() {
   const schemas = readProjectFile(
-    "marketplace-backend/tests/module10/module10.schemas.test.ts",
+    "backend/tests/module10/module10.schemas.test.ts",
   );
   const repository = readProjectFile(
-    "marketplace-backend/tests/module10/module10.repository.test.ts",
+    "backend/tests/module10/module10.repository.test.ts",
   );
   const service = readProjectFile(
-    "marketplace-backend/tests/module10/module10.service.test.ts",
+    "backend/tests/module10/module10.service.test.ts",
   );
   const integration = readProjectFile(
-    "marketplace-backend/tests/module10/module10.integration.test.ts",
+    "backend/tests/module10/module10.integration.test.ts",
   );
   const helpers = readProjectFile(
-    "marketplace-backend/tests/module10/module10.test-helpers.ts",
+    "backend/tests/module10/module10.test-helpers.ts",
   );
-  const backendPackage = readProjectFile("marketplace-backend/package.json");
-  const backendCi = readProjectFile("marketplace-backend/.github/workflows/ci.yml");
+  const backendPackage = readProjectFile("backend/package.json");
+  const backendCi = readProjectFile("backend/.github/workflows/ci.yml");
 
   for (const proof of [
     "keeps the approved permissions, errors, events, and four route paths stable",
@@ -565,12 +568,12 @@ function verifyCheckoutSourceSafeTests() {
 /** Confirms Module 11 has real source-safe lifecycle, isolation, reconciliation, and rollback proof. */
 function verifyOrdersSourceSafeTests() {
   const orders = readProjectFile(
-    "marketplace-backend/tests/module11/module11.integration.test.ts",
+    "backend/tests/module11/module11.integration.test.ts",
   );
-  const runner = readProjectFile("marketplace-backend/scripts/run-module11-tests.mjs");
-  const releaseData = readProjectFile("marketplace-backend/scripts/verify-module11-release-data.mjs");
-  const backendPackage = readProjectFile("marketplace-backend/package.json");
-  const backendCi = readProjectFile("marketplace-backend/.github/workflows/ci.yml");
+  const runner = readProjectFile("backend/scripts/run-module11-tests.mjs");
+  const releaseData = readProjectFile("backend/scripts/verify-module11-release-data.mjs");
+  const backendPackage = readProjectFile("backend/package.json");
+  const backendCi = readProjectFile("backend/.github/workflows/ci.yml");
 
   for (const proof of [
     "materializes one immutable Customer Order with deterministic multi-seller split and exact money reconciliation",
@@ -615,19 +618,19 @@ function verifyOrdersSourceSafeTests() {
 /** Confirms Module 16 has repository/service/Supertest/PostgreSQL proof for immutable marketplace fee history. */
 function verifyCommissionsTests() {
   const repository = readProjectFile(
-    "marketplace-backend/tests/module16/module16.repository.test.ts",
+    "backend/tests/module16/module16.repository.test.ts",
   );
   const service = readProjectFile(
-    "marketplace-backend/tests/module16/module16.service.test.ts",
+    "backend/tests/module16/module16.service.test.ts",
   );
   const http = readProjectFile(
-    "marketplace-backend/tests/module16/module16.http.test.ts",
+    "backend/tests/module16/module16.http.test.ts",
   );
   const integration = readProjectFile(
-    "marketplace-backend/tests/module16/module16.integration.test.ts",
+    "backend/tests/module16/module16.integration.test.ts",
   );
-  const runner = readProjectFile("marketplace-backend/scripts/run-module16-tests.mjs");
-  const backendPackage = readProjectFile("marketplace-backend/package.json");
+  const runner = readProjectFile("backend/scripts/run-module16-tests.mjs");
+  const backendPackage = readProjectFile("backend/package.json");
 
   requireText(
     repository,
@@ -688,10 +691,10 @@ function verifyCommissionsTests() {
 /** Confirms the repaired Module 2 role-update contract has durable runtime regression proof. */
 function verifyAdministrationEventTests() {
   const businessRules = readProjectFile(
-    "marketplace-backend/tests/module2/module2.business-rules.integration.test.ts",
+    "backend/tests/module2/module2.business-rules.integration.test.ts",
   );
   const integration = readProjectFile(
-    "marketplace-backend/tests/module2/module2.integration.test.ts",
+    "backend/tests/module2/module2.integration.test.ts",
   );
 
   for (const proof of [
@@ -719,32 +722,32 @@ function verifyAdministrationEventTests() {
 function verifyRetryAndIdempotencyTests() {
   const expectations = [
     [
-      "marketplace-backend/tests/module2/module2.integration.test.ts",
+      "backend/tests/module2/module2.integration.test.ts",
       "keeps logout retry-safe",
       "Module 2 auth retry safety",
     ],
     [
-      "marketplace-backend/tests/module21/module21.integration.test.ts",
+      "backend/tests/module21/module21.integration.test.ts",
       "idempotent link",
       "Module 21 file-link idempotency",
     ],
     [
-      "marketplace-backend/tests/module7/module7.integration.test.ts",
+      "backend/tests/module7/module7.integration.test.ts",
       "reserve retries idempotent",
       "Module 7 reservation idempotency",
     ],
     [
-      "marketplace-backend/tests/module19/module19.integration.test.ts",
+      "backend/tests/module19/module19.integration.test.ts",
       "repeating the completed job does not duplicate Search documents",
       "Module 19 reindex idempotency",
     ],
     [
-      "marketplace-backend/tests/module9/module9.integration.test.ts",
+      "backend/tests/module9/module9.integration.test.ts",
       "keeps coupon redemption idempotent and enforces concurrent global usage limits transactionally",
       "Module 9 coupon redemption idempotency",
     ],
     [
-      "marketplace-backend/tests/module16/module16.integration.test.ts",
+      "backend/tests/module16/module16.integration.test.ts",
       "uses Foundation idempotency to reject one settlement source key reused for another Order",
       "Module 16 Commission settlement idempotency",
     ],
@@ -758,19 +761,19 @@ function verifyRetryAndIdempotencyTests() {
 /** Confirms Pass 7 keeps the critical security, lifecycle, and exact API regression guards executable. */
 function verifyRepairRegressionGate() {
   const apiContracts = readProjectFile(
-    "marketplace-backend/tests/regression/implemented-api-contracts.test.ts",
+    "backend/tests/regression/implemented-api-contracts.test.ts",
   );
   const environmentSecurity = readProjectFile(
-    "marketplace-backend/tests/unit/environment-security.test.ts",
+    "backend/tests/unit/environment-security.test.ts",
   );
   const foundationPersistence = readProjectFile(
-    "marketplace-backend/tests/integration/foundation.persistence.integration.test.ts",
+    "backend/tests/integration/foundation.persistence.integration.test.ts",
   );
   const inventoryIntegration = readProjectFile(
-    "marketplace-backend/tests/module7/module7.integration.test.ts",
+    "backend/tests/module7/module7.integration.test.ts",
   );
-  const backendPackage = readProjectFile("marketplace-backend/package.json");
-  const backendCi = readProjectFile("marketplace-backend/.github/workflows/ci.yml");
+  const backendPackage = readProjectFile("backend/package.json");
+  const backendCi = readProjectFile("backend/.github/workflows/ci.yml");
 
   requireText(
     apiContracts,
@@ -845,13 +848,13 @@ function verifyRepairRegressionGate() {
 /** Confirms Module 15 keeps executable proof for eligibility, concurrency, moderation, privacy, and Search propagation. */
 function verifyReviewsTests() {
   const service = readProjectFile(
-    "marketplace-backend/tests/module15/module15.service.test.ts",
+    "backend/tests/module15/module15.service.test.ts",
   );
   const http = readProjectFile(
-    "marketplace-backend/tests/module15/module15.http.test.ts",
+    "backend/tests/module15/module15.http.test.ts",
   );
   const integration = readProjectFile(
-    "marketplace-backend/tests/module15/module15.integration.test.ts",
+    "backend/tests/module15/module15.integration.test.ts",
   );
 
   for (const proof of [
@@ -883,24 +886,24 @@ function verifyReviewsTests() {
 /** Confirms Pass 6 covers the service changes introduced by the audit before later frontend/E2E work. */
 function verifyPass6ServiceChangeTests() {
   const checkout = readProjectFile(
-    "marketplace-backend/tests/module10/module10.integration.test.ts",
+    "backend/tests/module10/module10.integration.test.ts",
   );
   const paymentsPrerequisites = readProjectFile(
-    "marketplace-backend/tests/module12/module12.prerequisite-services.test.ts",
+    "backend/tests/module12/module12.prerequisite-services.test.ts",
   );
   const sellers = readProjectFile(
-    "marketplace-backend/tests/module4/module4.service.test.ts",
+    "backend/tests/module4/module4.service.test.ts",
   );
   const orders = readProjectFile(
-    "marketplace-backend/tests/module11/module11.service.test.ts",
+    "backend/tests/module11/module11.service.test.ts",
   );
   const notificationPolicy = readProjectFile(
-    "marketplace-backend/tests/module18/module18.policy.test.ts",
+    "backend/tests/module18/module18.policy.test.ts",
   );
   const startup = readProjectFile(
-    "marketplace-backend/tests/module18/module18.startup.test.ts",
+    "backend/tests/module18/module18.startup.test.ts",
   );
-  const backendPackage = readProjectFile("marketplace-backend/package.json");
+  const backendPackage = readProjectFile("backend/package.json");
 
   requireText(
     checkout,
@@ -962,25 +965,25 @@ function verifyPass6ServiceChangeTests() {
 /** Confirms Module 20 Reports has direct repository/service/runtime/HTTP/integration regression proof. */
 function verifyReportsTests() {
   const repository = readProjectFile(
-    "marketplace-backend/tests/module20/module20.repository.test.ts",
+    "backend/tests/module20/module20.repository.test.ts",
   );
   const service = readProjectFile(
-    "marketplace-backend/tests/module20/module20.service.test.ts",
+    "backend/tests/module20/module20.service.test.ts",
   );
   const exportRenderer = readProjectFile(
-    "marketplace-backend/tests/module20/module20.export.test.ts",
+    "backend/tests/module20/module20.export.test.ts",
   );
   const jobs = readProjectFile(
-    "marketplace-backend/tests/module20/module20.jobs.test.ts",
+    "backend/tests/module20/module20.jobs.test.ts",
   );
   const http = readProjectFile(
-    "marketplace-backend/tests/module20/module20.http.test.ts",
+    "backend/tests/module20/module20.http.test.ts",
   );
   const integration = readProjectFile(
-    "marketplace-backend/tests/module20/module20.integration.test.ts",
+    "backend/tests/module20/module20.integration.test.ts",
   );
-  const backendPackage = readProjectFile("marketplace-backend/package.json");
-  const runner = readProjectFile("marketplace-backend/scripts/run-module20-tests.mjs");
+  const backendPackage = readProjectFile("backend/package.json");
+  const runner = readProjectFile("backend/scripts/run-module20-tests.mjs");
 
   for (const proof of [
     "enforces seller/store scope in SQL while keeping GMV and captured seller-order value exact and read-only",
@@ -1029,22 +1032,22 @@ function verifyReportsTests() {
 /** Confirms Module 1 Dashboard has repository/service/HTTP/integration regression proof. */
 function verifyDashboardTests() {
   const repository = readProjectFile(
-    "marketplace-backend/tests/module1/module1.repository.test.ts",
+    "backend/tests/module1/module1.repository.test.ts",
   );
   const service = readProjectFile(
-    "marketplace-backend/tests/module1/module1.service.test.ts",
+    "backend/tests/module1/module1.service.test.ts",
   );
   const http = readProjectFile(
-    "marketplace-backend/tests/module1/module1.http.test.ts",
+    "backend/tests/module1/module1.http.test.ts",
   );
   const integration = readProjectFile(
-    "marketplace-backend/tests/module1/module1.integration.test.ts",
+    "backend/tests/module1/module1.integration.test.ts",
   );
   const helpers = readProjectFile(
-    "marketplace-backend/tests/module1/module1.test-helpers.ts",
+    "backend/tests/module1/module1.test-helpers.ts",
   );
-  const backendPackage = readProjectFile("marketplace-backend/package.json");
-  const runner = readProjectFile("marketplace-backend/scripts/run-module1-tests.mjs");
+  const backendPackage = readProjectFile("backend/package.json");
+  const runner = readProjectFile("backend/scripts/run-module1-tests.mjs");
 
   for (const proof of [
     "persists preferences and saved filters only for the requested user",
@@ -1094,101 +1097,101 @@ function verifyDashboardTests() {
 /** Confirms each released business module retains repository/service/API-oriented backend regression coverage. */
 function verifyReleasedModuleTestFiles() {
   const requiredFiles = [
-    "marketplace-backend/tests/module2/module2.repository.test.ts",
-    "marketplace-backend/tests/module2/module2.integration.test.ts",
-    "marketplace-backend/tests/module2/module2.business-rules.integration.test.ts",
-    "marketplace-backend/tests/module21/module21.repository.test.ts",
-    "marketplace-backend/tests/module21/module21.service.test.ts",
-    "marketplace-backend/tests/module21/module21.integration.test.ts",
-    "marketplace-backend/tests/module3/module3.repository.test.ts",
-    "marketplace-backend/tests/module3/module3.service.test.ts",
-    "marketplace-backend/tests/module3/module3.integration.test.ts",
-    "marketplace-backend/tests/module4/module4.repository.test.ts",
-    "marketplace-backend/tests/module4/module4.service.test.ts",
-    "marketplace-backend/tests/module4/module4.integration.test.ts",
-    "marketplace-backend/tests/module5/module5.repository.test.ts",
-    "marketplace-backend/tests/module5/module5.service.test.ts",
-    "marketplace-backend/tests/module5/module5.integration.test.ts",
-    "marketplace-backend/tests/module6/module6.repository.test.ts",
-    "marketplace-backend/tests/module6/module6.service.test.ts",
-    "marketplace-backend/tests/module6/module6.integration.test.ts",
-    "marketplace-backend/tests/module7/module7.repository.test.ts",
-    "marketplace-backend/tests/module7/module7.service.test.ts",
-    "marketplace-backend/tests/module7/module7.integration.test.ts",
-    "marketplace-backend/tests/module8/module8.schemas.test.ts",
-    "marketplace-backend/tests/module8/module8.repository.test.ts",
-    "marketplace-backend/tests/module8/module8.service.test.ts",
-    "marketplace-backend/tests/module8/module8.integration.test.ts",
-    "marketplace-backend/tests/module9/module9.schemas.test.ts",
-    "marketplace-backend/tests/module9/module9.repository.test.ts",
-    "marketplace-backend/tests/module9/module9.service.test.ts",
-    "marketplace-backend/tests/module9/module9.integration.test.ts",
-    "marketplace-backend/tests/module10/module10.schemas.test.ts",
-    "marketplace-backend/tests/module10/module10.repository.test.ts",
-    "marketplace-backend/tests/module10/module10.service.test.ts",
-    "marketplace-backend/tests/module10/module10.integration.test.ts",
-    "marketplace-backend/tests/module11/module11.repository.test.ts",
-    "marketplace-backend/tests/module11/module11.service.test.ts",
-    "marketplace-backend/tests/module11/module11.http.test.ts",
-    "marketplace-backend/tests/module11/module11.integration.test.ts",
-    "marketplace-backend/tests/module19/module19.repository.test.ts",
-    "marketplace-backend/tests/module19/module19.service.test.ts",
-    "marketplace-backend/tests/module19/module19.integration.test.ts",
-    "marketplace-backend/tests/module13/module13.schemas.test.ts",
-    "marketplace-backend/tests/module13/module13.repository.test.ts",
-    "marketplace-backend/tests/module13/module13.service.test.ts",
-    "marketplace-backend/tests/module13/module13.http.test.ts",
-    "marketplace-backend/tests/module13/module13.integration.test.ts",
-    "marketplace-backend/tests/module12/module12.schemas.test.ts",
-    "marketplace-backend/tests/module12/module12.repository.test.ts",
-    "marketplace-backend/tests/module12/module12.service.test.ts",
-    "marketplace-backend/tests/module12/module12.http.test.ts",
-    "marketplace-backend/tests/module12/module12.integration.test.ts",
-    "marketplace-backend/tests/module12/module12.provider.test.ts",
-    "marketplace-backend/tests/module16/module16.repository.test.ts",
-    "marketplace-backend/tests/module16/module16.service.test.ts",
-    "marketplace-backend/tests/module16/module16.http.test.ts",
-    "marketplace-backend/tests/module16/module16.integration.test.ts",
-    "marketplace-backend/tests/module14/module14.schemas.test.ts",
-    "marketplace-backend/tests/module14/module14.repository.test.ts",
-    "marketplace-backend/tests/module14/module14.service.test.ts",
-    "marketplace-backend/tests/module14/module14.http.test.ts",
-    "marketplace-backend/tests/module14/module14.integration.test.ts",
-    "marketplace-backend/tests/module17/module17.schemas.test.ts",
-    "marketplace-backend/tests/module17/module17.repository.test.ts",
-    "marketplace-backend/tests/module17/module17.service.test.ts",
-    "marketplace-backend/tests/module17/module17.http.test.ts",
-    "marketplace-backend/tests/module17/module17.integration.test.ts",
-    "marketplace-backend/tests/module17/module17.provider.test.ts",
-    "marketplace-backend/tests/module17/module17.jobs.test.ts",
-    "marketplace-backend/tests/module15/module15.repository.test.ts",
-    "marketplace-backend/tests/module15/module15.service.test.ts",
-    "marketplace-backend/tests/module15/module15.http.test.ts",
-    "marketplace-backend/tests/module15/module15.integration.test.ts",
-    "marketplace-backend/tests/module18/module18.schemas.test.ts",
-    "marketplace-backend/tests/module18/module18.repository.test.ts",
-    "marketplace-backend/tests/module18/module18.service.test.ts",
-    "marketplace-backend/tests/module18/module18.http.test.ts",
-    "marketplace-backend/tests/module18/module18.integration.test.ts",
-    "marketplace-backend/tests/module18/module18.provider.test.ts",
-    "marketplace-backend/tests/module18/module18.jobs.test.ts",
-    "marketplace-backend/tests/module18/module18.policy.test.ts",
-    "marketplace-backend/tests/module18/module18.startup.test.ts",
-    "marketplace-backend/tests/module20/module20.schemas.test.ts",
-    "marketplace-backend/tests/module20/module20.repository.test.ts",
-    "marketplace-backend/tests/module20/module20.service.test.ts",
-    "marketplace-backend/tests/module20/module20.export.test.ts",
-    "marketplace-backend/tests/module20/module20.jobs.test.ts",
-    "marketplace-backend/tests/module20/module20.http.test.ts",
-    "marketplace-backend/tests/module20/module20.integration.test.ts",
-    "marketplace-backend/tests/module20/module20.test-helpers.ts",
-    "marketplace-backend/tests/module1/module1.schemas.test.ts",
-    "marketplace-backend/tests/module1/module1.repository.test.ts",
-    "marketplace-backend/tests/module1/module1.service.test.ts",
-    "marketplace-backend/tests/module1/module1.http.test.ts",
-    "marketplace-backend/tests/module1/module1.integration.test.ts",
-    "marketplace-backend/tests/module1/module1.test-helpers.ts",
-    "marketplace-backend/tests/regression/implemented-api-contracts.test.ts",
+    "backend/tests/module2/module2.repository.test.ts",
+    "backend/tests/module2/module2.integration.test.ts",
+    "backend/tests/module2/module2.business-rules.integration.test.ts",
+    "backend/tests/module21/module21.repository.test.ts",
+    "backend/tests/module21/module21.service.test.ts",
+    "backend/tests/module21/module21.integration.test.ts",
+    "backend/tests/module3/module3.repository.test.ts",
+    "backend/tests/module3/module3.service.test.ts",
+    "backend/tests/module3/module3.integration.test.ts",
+    "backend/tests/module4/module4.repository.test.ts",
+    "backend/tests/module4/module4.service.test.ts",
+    "backend/tests/module4/module4.integration.test.ts",
+    "backend/tests/module5/module5.repository.test.ts",
+    "backend/tests/module5/module5.service.test.ts",
+    "backend/tests/module5/module5.integration.test.ts",
+    "backend/tests/module6/module6.repository.test.ts",
+    "backend/tests/module6/module6.service.test.ts",
+    "backend/tests/module6/module6.integration.test.ts",
+    "backend/tests/module7/module7.repository.test.ts",
+    "backend/tests/module7/module7.service.test.ts",
+    "backend/tests/module7/module7.integration.test.ts",
+    "backend/tests/module8/module8.schemas.test.ts",
+    "backend/tests/module8/module8.repository.test.ts",
+    "backend/tests/module8/module8.service.test.ts",
+    "backend/tests/module8/module8.integration.test.ts",
+    "backend/tests/module9/module9.schemas.test.ts",
+    "backend/tests/module9/module9.repository.test.ts",
+    "backend/tests/module9/module9.service.test.ts",
+    "backend/tests/module9/module9.integration.test.ts",
+    "backend/tests/module10/module10.schemas.test.ts",
+    "backend/tests/module10/module10.repository.test.ts",
+    "backend/tests/module10/module10.service.test.ts",
+    "backend/tests/module10/module10.integration.test.ts",
+    "backend/tests/module11/module11.repository.test.ts",
+    "backend/tests/module11/module11.service.test.ts",
+    "backend/tests/module11/module11.http.test.ts",
+    "backend/tests/module11/module11.integration.test.ts",
+    "backend/tests/module19/module19.repository.test.ts",
+    "backend/tests/module19/module19.service.test.ts",
+    "backend/tests/module19/module19.integration.test.ts",
+    "backend/tests/module13/module13.schemas.test.ts",
+    "backend/tests/module13/module13.repository.test.ts",
+    "backend/tests/module13/module13.service.test.ts",
+    "backend/tests/module13/module13.http.test.ts",
+    "backend/tests/module13/module13.integration.test.ts",
+    "backend/tests/module12/module12.schemas.test.ts",
+    "backend/tests/module12/module12.repository.test.ts",
+    "backend/tests/module12/module12.service.test.ts",
+    "backend/tests/module12/module12.http.test.ts",
+    "backend/tests/module12/module12.integration.test.ts",
+    "backend/tests/module12/module12.provider.test.ts",
+    "backend/tests/module16/module16.repository.test.ts",
+    "backend/tests/module16/module16.service.test.ts",
+    "backend/tests/module16/module16.http.test.ts",
+    "backend/tests/module16/module16.integration.test.ts",
+    "backend/tests/module14/module14.schemas.test.ts",
+    "backend/tests/module14/module14.repository.test.ts",
+    "backend/tests/module14/module14.service.test.ts",
+    "backend/tests/module14/module14.http.test.ts",
+    "backend/tests/module14/module14.integration.test.ts",
+    "backend/tests/module17/module17.schemas.test.ts",
+    "backend/tests/module17/module17.repository.test.ts",
+    "backend/tests/module17/module17.service.test.ts",
+    "backend/tests/module17/module17.http.test.ts",
+    "backend/tests/module17/module17.integration.test.ts",
+    "backend/tests/module17/module17.provider.test.ts",
+    "backend/tests/module17/module17.jobs.test.ts",
+    "backend/tests/module15/module15.repository.test.ts",
+    "backend/tests/module15/module15.service.test.ts",
+    "backend/tests/module15/module15.http.test.ts",
+    "backend/tests/module15/module15.integration.test.ts",
+    "backend/tests/module18/module18.schemas.test.ts",
+    "backend/tests/module18/module18.repository.test.ts",
+    "backend/tests/module18/module18.service.test.ts",
+    "backend/tests/module18/module18.http.test.ts",
+    "backend/tests/module18/module18.integration.test.ts",
+    "backend/tests/module18/module18.provider.test.ts",
+    "backend/tests/module18/module18.jobs.test.ts",
+    "backend/tests/module18/module18.policy.test.ts",
+    "backend/tests/module18/module18.startup.test.ts",
+    "backend/tests/module20/module20.schemas.test.ts",
+    "backend/tests/module20/module20.repository.test.ts",
+    "backend/tests/module20/module20.service.test.ts",
+    "backend/tests/module20/module20.export.test.ts",
+    "backend/tests/module20/module20.jobs.test.ts",
+    "backend/tests/module20/module20.http.test.ts",
+    "backend/tests/module20/module20.integration.test.ts",
+    "backend/tests/module20/module20.test-helpers.ts",
+    "backend/tests/module1/module1.schemas.test.ts",
+    "backend/tests/module1/module1.repository.test.ts",
+    "backend/tests/module1/module1.service.test.ts",
+    "backend/tests/module1/module1.http.test.ts",
+    "backend/tests/module1/module1.integration.test.ts",
+    "backend/tests/module1/module1.test-helpers.ts",
+    "backend/tests/regression/implemented-api-contracts.test.ts",
   ];
 
   for (const relativePath of requiredFiles) {

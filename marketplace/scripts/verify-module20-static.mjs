@@ -10,7 +10,10 @@ function read(relativePath) {
   if (!existsSync(absolutePath)) {
     throw new Error(`Required Module 20 frontend-stage file is missing: ${relativePath}`);
   }
-  return readFileSync(absolutePath, "utf8");
+  const source = readFileSync(absolutePath, "utf8");
+  return relativePath.endsWith("package.json")
+    ? JSON.stringify(JSON.parse(source.replace(/^\uFEFF/u, "")), null, 2)
+    : source;
 }
 
 /** Requires one source fragment that proves a fixed Module 20 contract. */
@@ -22,13 +25,13 @@ function requireText(source, expected, label) {
 
 /** Confirms the append-only Module 20 persistence layer from Pass 1 remains intact. */
 function verifyDatabasePass() {
-  const schema = read("marketplace-backend/src/database/schema/reports.ts");
-  const schemaIndex = read("marketplace-backend/src/database/schema/index.ts");
-  const relations = read("marketplace-backend/src/database/relations.ts");
-  const migration = read("marketplace-backend/drizzle/0033_reports_analytics.sql");
-  const packageJson = JSON.parse(read("marketplace-backend/package.json"));
-  const ci = read("marketplace-backend/.github/workflows/ci.yml");
-  const migrations = readdirSync(path.join(root, "marketplace-backend", "drizzle"))
+  const schema = read("backend/src/database/schema/reports.ts");
+  const schemaIndex = read("backend/src/database/schema/index.ts");
+  const relations = read("backend/src/database/relations.ts");
+  const migration = read("backend/drizzle/0033_reports_analytics.sql");
+  const packageJson = JSON.parse(read("backend/package.json"));
+  const ci = read("backend/.github/workflows/ci.yml");
+  const migrations = readdirSync(path.join(root, "backend", "drizzle"))
     .filter((name) => /^\d{4}_.+\.sql$/u.test(name))
     .sort();
 
@@ -67,28 +70,28 @@ function verifyDatabasePass() {
 
 /** Confirms Pass 6 preserves contracts/HTTP behavior and adds the required backend regression proof. */
 function verifyContractPass() {
-  const constants = read("marketplace-backend/src/modules/reports/reports.constants.ts");
-  const schema = read("marketplace-backend/src/modules/reports/reports.schema.ts");
-  const index = read("marketplace-backend/src/modules/reports/index.ts");
-  const rbacSeed = read("marketplace-backend/src/database/seeds/platform-rbac.seed.ts");
-  const reportSeed = read("marketplace-backend/src/database/seeds/reports.seed.ts");
-  const tests = read("marketplace-backend/tests/module20/module20.schemas.test.ts");
-  const packageJson = JSON.parse(read("marketplace-backend/package.json"));
-  const ci = read("marketplace-backend/.github/workflows/ci.yml");
-  const e2eRunner = read("marketplace-frontend/e2e/run-e2e-ci.mjs");
+  const constants = read("backend/src/modules/reports/reports.constants.ts");
+  const schema = read("backend/src/modules/reports/reports.schema.ts");
+  const index = read("backend/src/modules/reports/index.ts");
+  const rbacSeed = read("backend/src/database/seeds/platform-rbac.seed.ts");
+  const reportSeed = read("backend/src/database/seeds/reports.seed.ts");
+  const tests = read("backend/tests/module20/module20.schemas.test.ts");
+  const packageJson = JSON.parse(read("backend/package.json"));
+  const ci = read("backend/.github/workflows/ci.yml");
+  const e2eRunner = read("frontend/e2e/run-e2e-ci.mjs");
   const releaseRunner = read("scripts/run-current-release-gate.mjs");
-  const repository = read("marketplace-backend/src/modules/reports/reports.repository.ts");
-  const service = read("marketplace-backend/src/modules/reports/reports.service.ts");
-  const jobs = read("marketplace-backend/src/modules/reports/reports.jobs.ts");
-  const exportRenderer = read("marketplace-backend/src/modules/reports/reports.export.ts");
-  const storageContract = read("marketplace-backend/src/common/storage/storage.contract.ts");
-  const documentsService = read("marketplace-backend/src/modules/documents-audit/documents-audit.service.ts");
-  const notificationPolicy = read("marketplace-backend/src/modules/notifications/notifications.policy.ts");
-  const app = read("marketplace-backend/src/app.ts");
-  const server = read("marketplace-backend/src/server.ts");
-  const controller = read("marketplace-backend/src/modules/reports/reports.controller.ts");
-  const routes = read("marketplace-backend/src/modules/reports/reports.routes.ts");
-  const openApi = read("marketplace-backend/src/http/openapi/openapi.document.ts");
+  const repository = read("backend/src/modules/reports/reports.repository.ts");
+  const service = read("backend/src/modules/reports/reports.service.ts");
+  const jobs = read("backend/src/modules/reports/reports.jobs.ts");
+  const exportRenderer = read("backend/src/modules/reports/reports.export.ts");
+  const storageContract = read("backend/src/common/storage/storage.contract.ts");
+  const documentsService = read("backend/src/modules/documents-audit/documents-audit.service.ts");
+  const notificationPolicy = read("backend/src/modules/notifications/notifications.policy.ts");
+  const app = read("backend/src/app.ts");
+  const server = read("backend/src/server.ts");
+  const controller = read("backend/src/modules/reports/reports.controller.ts");
+  const routes = read("backend/src/modules/reports/reports.routes.ts");
+  const openApi = read("backend/src/http/openapi/openapi.document.ts");
 
   for (const proof of [
     "reports.sales.read",
@@ -289,7 +292,7 @@ function verifyContractPass() {
     "Current-stage release runner",
   );
 
-  const unnecessaryBackendTypes = "marketplace-backend/src/modules/reports/reports.types.ts";
+  const unnecessaryBackendTypes = "backend/src/modules/reports/reports.types.ts";
   if (existsSync(path.join(root, unnecessaryBackendTypes))) {
     throw new Error(`Module 20 must not create an empty/manual duplicate types file: ${unnecessaryBackendTypes}`);
   }
@@ -303,19 +306,19 @@ function verifyContractPass() {
 
 /** Confirms the Module 20 React feature covers all approved reads and asynchronous export behavior. */
 function verifyFrontendPass() {
-  const api = read("marketplace-frontend/src/features/reports/api/reports.api.ts");
-  const hooks = read("marketplace-frontend/src/features/reports/hooks/use-reports.ts");
-  const form = read("marketplace-frontend/src/features/reports/forms/report-filter.form.tsx");
-  const catalog = read("marketplace-frontend/src/features/reports/pages/report-catalog.page.tsx");
-  const sales = read("marketplace-frontend/src/features/reports/pages/sales-report.page.tsx");
-  const inventory = read("marketplace-frontend/src/features/reports/pages/inventory-report.page.tsx");
-  const runPage = read("marketplace-frontend/src/features/reports/pages/report-run.page.tsx");
-  const routes = read("marketplace-frontend/src/app/routes/reports.routes.tsx");
-  const router = read("marketplace-frontend/src/app/router/router.tsx");
-  const auditPage = read("marketplace-frontend/src/features/documents-audit/pages/audit.page.tsx");
-  const tests = read("marketplace-frontend/tests/module20-reports.test.tsx");
-  const packageJson = JSON.parse(read("marketplace-frontend/package.json"));
-  const ci = read("marketplace-frontend/.github/workflows/ci.yml");
+  const api = read("frontend/src/features/reports/api/reports.api.ts");
+  const hooks = read("frontend/src/features/reports/hooks/use-reports.ts");
+  const form = read("frontend/src/features/reports/forms/report-filter.form.tsx");
+  const catalog = read("frontend/src/features/reports/pages/report-catalog.page.tsx");
+  const sales = read("frontend/src/features/reports/pages/sales-report.page.tsx");
+  const inventory = read("frontend/src/features/reports/pages/inventory-report.page.tsx");
+  const runPage = read("frontend/src/features/reports/pages/report-run.page.tsx");
+  const routes = read("frontend/src/app/routes/reports.routes.tsx");
+  const router = read("frontend/src/app/router/router.tsx");
+  const auditPage = read("frontend/src/features/documents-audit/pages/audit.page.tsx");
+  const tests = read("frontend/tests/module20-reports.test.tsx");
+  const packageJson = JSON.parse(read("frontend/package.json"));
+  const ci = read("frontend/.github/workflows/ci.yml");
 
   for (const endpoint of [
     '"/reports/catalog"',
@@ -362,17 +365,17 @@ function verifyFrontendPass() {
 
 /** Confirms Module 20 Pass 6 has repository/service/runtime/HTTP/integration proof and release wiring. */
 function verifyBackendTestsPass() {
-  const repositoryTests = read("marketplace-backend/tests/module20/module20.repository.test.ts");
-  const serviceTests = read("marketplace-backend/tests/module20/module20.service.test.ts");
-  const exportTests = read("marketplace-backend/tests/module20/module20.export.test.ts");
-  const jobsTests = read("marketplace-backend/tests/module20/module20.jobs.test.ts");
-  const httpTests = read("marketplace-backend/tests/module20/module20.http.test.ts");
-  const integrationTests = read("marketplace-backend/tests/module20/module20.integration.test.ts");
-  const helpers = read("marketplace-backend/tests/module20/module20.test-helpers.ts");
-  const runner = read("marketplace-backend/scripts/run-module20-tests.mjs");
-  const packageJson = JSON.parse(read("marketplace-backend/package.json"));
-  const ci = read("marketplace-backend/.github/workflows/ci.yml");
-  const e2eRunner = read("marketplace-frontend/e2e/run-e2e-ci.mjs");
+  const repositoryTests = read("backend/tests/module20/module20.repository.test.ts");
+  const serviceTests = read("backend/tests/module20/module20.service.test.ts");
+  const exportTests = read("backend/tests/module20/module20.export.test.ts");
+  const jobsTests = read("backend/tests/module20/module20.jobs.test.ts");
+  const httpTests = read("backend/tests/module20/module20.http.test.ts");
+  const integrationTests = read("backend/tests/module20/module20.integration.test.ts");
+  const helpers = read("backend/tests/module20/module20.test-helpers.ts");
+  const runner = read("backend/scripts/run-module20-tests.mjs");
+  const packageJson = JSON.parse(read("backend/package.json"));
+  const ci = read("backend/.github/workflows/ci.yml");
+  const e2eRunner = read("frontend/e2e/run-e2e-ci.mjs");
 
   for (const [source, proof, label] of [
     [repositoryTests, "enforces seller/store scope in SQL", "Module 20 repository tests"],
@@ -412,11 +415,11 @@ function verifyBackendTestsPass() {
 
 /** Confirms the final Module 20 browser workflow and post-browser reconciliation are release-wired. */
 function verifyFinalReleasePass() {
-  const e2eSpec = read("marketplace-frontend/e2e/module20.spec.ts");
-  const e2eRunner = read("marketplace-frontend/e2e/run-e2e-ci.mjs");
-  const frontendPackage = JSON.parse(read("marketplace-frontend/package.json"));
-  const releaseData = read("marketplace-backend/scripts/verify-module20-release-data.mjs");
-  const backendPackage = JSON.parse(read("marketplace-backend/package.json"));
+  const e2eSpec = read("frontend/e2e/module20.spec.ts");
+  const e2eRunner = read("frontend/e2e/run-e2e-ci.mjs");
+  const frontendPackage = JSON.parse(read("frontend/package.json"));
+  const releaseData = read("backend/scripts/verify-module20-release-data.mjs");
+  const backendPackage = JSON.parse(read("backend/package.json"));
 
   for (const proof of [
     "Module 20 Reports & Analytics E2E",

@@ -94,7 +94,9 @@ function DashboardQueryError({
   );
 }
 
+/** Renders dashboard workspace navigation for the current actor. */
 function DashboardWorkspaceNavigation({ user }: { user: AuthenticatedUser }) {
+  /** Returns whether the current dashboard actor owns one permission. */
   const has = (permission: string) => user.permissions.includes(permission);
   const isSeller = user.accountType === "seller";
 

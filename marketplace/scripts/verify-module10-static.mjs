@@ -11,7 +11,10 @@ function readProjectFile(relativePath) {
   if (!existsSync(absolutePath)) {
     throw new Error(`Required Checkout file is missing: ${relativePath}`);
   }
-  return readFileSync(absolutePath, "utf8");
+  const source = readFileSync(absolutePath, "utf8");
+  return relativePath.endsWith("package.json")
+    ? JSON.stringify(JSON.parse(source), null, 2)
+    : source;
 }
 
 /** Requires one permanent contract fragment in a source file. */
@@ -61,17 +64,17 @@ function verifyIndependentProjects() {
 
 /** Confirms the hardened Checkout persistence remains intact for the Pass 4 service layer. */
 function verifyCheckoutDatabaseFoundation() {
-  const schema = readProjectFile("marketplace-backend/src/database/schema/checkout.ts");
-  const customerSchema = readProjectFile("marketplace-backend/src/database/schema/customers.ts");
-  const inventorySchema = readProjectFile("marketplace-backend/src/database/schema/inventory.ts");
-  const schemaIndex = readProjectFile("marketplace-backend/src/database/schema/index.ts");
-  const relations = readProjectFile("marketplace-backend/src/database/relations.ts");
-  const baseMigration = readProjectFile("marketplace-backend/drizzle/0020_checkout.sql");
+  const schema = readProjectFile("backend/src/database/schema/checkout.ts");
+  const customerSchema = readProjectFile("backend/src/database/schema/customers.ts");
+  const inventorySchema = readProjectFile("backend/src/database/schema/inventory.ts");
+  const schemaIndex = readProjectFile("backend/src/database/schema/index.ts");
+  const relations = readProjectFile("backend/src/database/relations.ts");
+  const baseMigration = readProjectFile("backend/drizzle/0020_checkout.sql");
   const contractMigration = readProjectFile(
-    "marketplace-backend/drizzle/0022_checkout_contract_persistence.sql",
+    "backend/drizzle/0022_checkout_contract_persistence.sql",
   );
-  const verifier = readProjectFile("marketplace-backend/scripts/verify-module10-migrations.mjs");
-  const packageJson = readProjectFile("marketplace-backend/package.json");
+  const verifier = readProjectFile("backend/scripts/verify-module10-migrations.mjs");
+  const packageJson = readProjectFile("backend/package.json");
 
   for (const tableName of [
     '"checkout_quotes"',
@@ -181,16 +184,16 @@ function verifyCheckoutDatabaseFoundation() {
 /** Confirms Pass 5 exposes the approved request, header, and persisted response contracts from Patch 0004. */
 function verifyCheckoutContracts() {
   const constants = readProjectFile(
-    "marketplace-backend/src/modules/checkout/checkout.constants.ts",
+    "backend/src/modules/checkout/checkout.constants.ts",
   );
   const schema = readProjectFile(
-    "marketplace-backend/src/modules/checkout/checkout.schema.ts",
+    "backend/src/modules/checkout/checkout.schema.ts",
   );
   const moduleIndex = readProjectFile(
-    "marketplace-backend/src/modules/checkout/index.ts",
+    "backend/src/modules/checkout/index.ts",
   );
   const rbacSeed = readProjectFile(
-    "marketplace-backend/src/database/seeds/platform-rbac.seed.ts",
+    "backend/src/database/seeds/platform-rbac.seed.ts",
   );
 
   for (const permission of ["checkout.create_own", "checkout.confirm_own"]) {
@@ -290,10 +293,10 @@ function verifyCheckoutContracts() {
 /** Confirms persistence exposes only the operations needed by the frozen Checkout service. */
 function verifyCheckoutRepository() {
   const repository = readProjectFile(
-    "marketplace-backend/src/modules/checkout/checkout.repository.ts",
+    "backend/src/modules/checkout/checkout.repository.ts",
   );
   const moduleIndex = readProjectFile(
-    "marketplace-backend/src/modules/checkout/index.ts",
+    "backend/src/modules/checkout/index.ts",
   );
 
   for (const methodName of [
@@ -368,31 +371,31 @@ function verifyCheckoutRepository() {
 /** Confirms Pass 2 exposes only the narrow prerequisite service boundaries Checkout needs next. */
 function verifyCheckoutPrerequisiteServices() {
   const cartService = readProjectFile(
-    "marketplace-backend/src/modules/cart-wishlist/cart-wishlist.service.ts",
+    "backend/src/modules/cart-wishlist/cart-wishlist.service.ts",
   );
   const customersService = readProjectFile(
-    "marketplace-backend/src/modules/customers/customers.service.ts",
+    "backend/src/modules/customers/customers.service.ts",
   );
   const productsService = readProjectFile(
-    "marketplace-backend/src/modules/products/products.service.ts",
+    "backend/src/modules/products/products.service.ts",
   );
   const checkoutRepository = readProjectFile(
-    "marketplace-backend/src/modules/checkout/checkout.repository.ts",
+    "backend/src/modules/checkout/checkout.repository.ts",
   );
   const inventoryService = readProjectFile(
-    "marketplace-backend/src/modules/inventory/inventory.service.ts",
+    "backend/src/modules/inventory/inventory.service.ts",
   );
   const inventoryRepository = readProjectFile(
-    "marketplace-backend/src/modules/inventory/inventory.repository.ts",
+    "backend/src/modules/inventory/inventory.repository.ts",
   );
   const promotionsService = readProjectFile(
-    "marketplace-backend/src/modules/promotions/promotions.service.ts",
+    "backend/src/modules/promotions/promotions.service.ts",
   );
   const administrationService = readProjectFile(
-    "marketplace-backend/src/modules/administration/administration.service.ts",
+    "backend/src/modules/administration/administration.service.ts",
   );
   const prerequisiteTests = readProjectFile(
-    "marketplace-backend/tests/module10/module10.prerequisite-services.test.ts",
+    "backend/tests/module10/module10.prerequisite-services.test.ts",
   );
 
   requireText(
@@ -472,27 +475,27 @@ function verifyCheckoutServiceGate() {
   const shippingPatch = readProjectFile("REQUIREMENTS_PATCH_0003.md");
   const checkoutPatch = readProjectFile("REQUIREMENTS_PATCH_0004.md");
   const service = readProjectFile(
-    "marketplace-backend/src/modules/checkout/checkout.service.ts",
+    "backend/src/modules/checkout/checkout.service.ts",
   );
   const schema = readProjectFile(
-    "marketplace-backend/src/modules/checkout/checkout.schema.ts",
+    "backend/src/modules/checkout/checkout.schema.ts",
   );
   const constants = readProjectFile(
-    "marketplace-backend/src/modules/checkout/checkout.constants.ts",
+    "backend/src/modules/checkout/checkout.constants.ts",
   );
   const moduleIndex = readProjectFile(
-    "marketplace-backend/src/modules/checkout/index.ts",
+    "backend/src/modules/checkout/index.ts",
   );
-  const env = readProjectFile("marketplace-backend/src/config/env.ts");
-  const envExample = readProjectFile("marketplace-backend/.env.example");
+  const env = readProjectFile("backend/src/config/env.ts");
+  const envExample = readProjectFile("backend/.env.example");
   const checkoutRepository = readProjectFile(
-    "marketplace-backend/src/modules/checkout/checkout.repository.ts",
+    "backend/src/modules/checkout/checkout.repository.ts",
   );
   const inventoryService = readProjectFile(
-    "marketplace-backend/src/modules/inventory/inventory.service.ts",
+    "backend/src/modules/inventory/inventory.service.ts",
   );
   const inventoryRepository = readProjectFile(
-    "marketplace-backend/src/modules/inventory/inventory.repository.ts",
+    "backend/src/modules/inventory/inventory.repository.ts",
   );
 
   requireText(
@@ -613,20 +616,20 @@ function verifyCheckoutServiceGate() {
 /** Confirms Pass 5 publishes exactly the approved four Checkout routes with thin controllers, RBAC, and OpenAPI. */
 function verifyCheckoutHttpGate() {
   const controller = readProjectFile(
-    "marketplace-backend/src/modules/checkout/checkout.controller.ts",
+    "backend/src/modules/checkout/checkout.controller.ts",
   );
   const routes = readProjectFile(
-    "marketplace-backend/src/modules/checkout/checkout.routes.ts",
+    "backend/src/modules/checkout/checkout.routes.ts",
   );
   const schema = readProjectFile(
-    "marketplace-backend/src/modules/checkout/checkout.schema.ts",
+    "backend/src/modules/checkout/checkout.schema.ts",
   );
   const moduleIndex = readProjectFile(
-    "marketplace-backend/src/modules/checkout/index.ts",
+    "backend/src/modules/checkout/index.ts",
   );
-  const app = readProjectFile("marketplace-backend/src/app.ts");
+  const app = readProjectFile("backend/src/app.ts");
   const openApiDocument = readProjectFile(
-    "marketplace-backend/src/http/openapi/openapi.document.ts",
+    "backend/src/http/openapi/openapi.document.ts",
   );
 
   for (const method of [
@@ -739,25 +742,25 @@ function verifyCheckoutHttpGate() {
 /** Confirms Pass 6 adds direct Checkout service and Supertest/PostgreSQL regression proof. */
 function verifyCheckoutBackendProof() {
   const schemas = readProjectFile(
-    "marketplace-backend/tests/module10/module10.schemas.test.ts",
+    "backend/tests/module10/module10.schemas.test.ts",
   );
   const repository = readProjectFile(
-    "marketplace-backend/tests/module10/module10.repository.test.ts",
+    "backend/tests/module10/module10.repository.test.ts",
   );
   const service = readProjectFile(
-    "marketplace-backend/tests/module10/module10.service.test.ts",
+    "backend/tests/module10/module10.service.test.ts",
   );
   const integration = readProjectFile(
-    "marketplace-backend/tests/module10/module10.integration.test.ts",
+    "backend/tests/module10/module10.integration.test.ts",
   );
   const helpers = readProjectFile(
-    "marketplace-backend/tests/module10/module10.test-helpers.ts",
+    "backend/tests/module10/module10.test-helpers.ts",
   );
   const runner = readProjectFile(
-    "marketplace-backend/scripts/run-module10-tests.mjs",
+    "backend/scripts/run-module10-tests.mjs",
   );
-  const backendPackage = readProjectFile("marketplace-backend/package.json");
-  const backendCi = readProjectFile("marketplace-backend/.github/workflows/ci.yml");
+  const backendPackage = readProjectFile("backend/package.json");
+  const backendCi = readProjectFile("backend/.github/workflows/ci.yml");
 
   for (const proof of [
     "keeps the approved permissions, errors, events, and four route paths stable",
@@ -858,30 +861,30 @@ function verifyCheckoutBackendProof() {
 
 /** Confirms Pass 7 publishes the required Checkout React feature and focused RTL/MSW proof. */
 function verifyCheckoutFrontendGate() {
-  const frontendPackage = readProjectFile("marketplace-frontend/package.json");
-  const frontendRouter = readProjectFile("marketplace-frontend/src/app/router/router.tsx");
-  const checkoutRoutes = readProjectFile("marketplace-frontend/src/app/routes/checkout.routes.tsx");
-  const checkoutApi = readProjectFile("marketplace-frontend/src/features/checkout/api/checkout.api.ts");
-  const checkoutHooks = readProjectFile("marketplace-frontend/src/features/checkout/hooks/use-checkout.ts");
-  const checkoutForm = readProjectFile("marketplace-frontend/src/features/checkout/forms/checkout-quote.form.tsx");
-  const checkoutPage = readProjectFile("marketplace-frontend/src/features/checkout/pages/checkout.page.tsx");
-  const checkoutTests = readProjectFile("marketplace-frontend/tests/module10-checkout.test.tsx");
+  const frontendPackage = readProjectFile("frontend/package.json");
+  const frontendRouter = readProjectFile("frontend/src/app/router/router.tsx");
+  const checkoutRoutes = readProjectFile("frontend/src/app/routes/checkout.routes.tsx");
+  const checkoutApi = readProjectFile("frontend/src/features/checkout/api/checkout.api.ts");
+  const checkoutHooks = readProjectFile("frontend/src/features/checkout/hooks/use-checkout.ts");
+  const checkoutForm = readProjectFile("frontend/src/features/checkout/forms/checkout-quote.form.tsx");
+  const checkoutPage = readProjectFile("frontend/src/features/checkout/pages/checkout.page.tsx");
+  const checkoutTests = readProjectFile("frontend/tests/module10-checkout.test.tsx");
   const frontendContracts = readProjectFile("scripts/verify-frontend-feature-contracts.mjs");
 
   for (const requiredPath of [
-    "marketplace-frontend/src/features/checkout/api/checkout.api.ts",
-    "marketplace-frontend/src/features/checkout/hooks/use-checkout.ts",
-    "marketplace-frontend/src/features/checkout/forms/checkout-quote.form.tsx",
-    "marketplace-frontend/src/features/checkout/schemas/checkout.schemas.ts",
-    "marketplace-frontend/src/features/checkout/types/checkout.types.ts",
-    "marketplace-frontend/src/features/checkout/components/checkout-layout.tsx",
-    "marketplace-frontend/src/features/checkout/components/checkout-stepper.tsx",
-    "marketplace-frontend/src/features/checkout/components/checkout-quote-summary.tsx",
-    "marketplace-frontend/src/features/checkout/components/checkout-change-warning.tsx",
-    "marketplace-frontend/src/features/checkout/components/checkout-expiry-warning.tsx",
-    "marketplace-frontend/src/features/checkout/pages/checkout.page.tsx",
-    "marketplace-frontend/src/app/routes/checkout.routes.tsx",
-    "marketplace-frontend/tests/module10-checkout.test.tsx",
+    "frontend/src/features/checkout/api/checkout.api.ts",
+    "frontend/src/features/checkout/hooks/use-checkout.ts",
+    "frontend/src/features/checkout/forms/checkout-quote.form.tsx",
+    "frontend/src/features/checkout/schemas/checkout.schemas.ts",
+    "frontend/src/features/checkout/types/checkout.types.ts",
+    "frontend/src/features/checkout/components/checkout-layout.tsx",
+    "frontend/src/features/checkout/components/checkout-stepper.tsx",
+    "frontend/src/features/checkout/components/checkout-quote-summary.tsx",
+    "frontend/src/features/checkout/components/checkout-change-warning.tsx",
+    "frontend/src/features/checkout/components/checkout-expiry-warning.tsx",
+    "frontend/src/features/checkout/pages/checkout.page.tsx",
+    "frontend/src/app/routes/checkout.routes.tsx",
+    "frontend/tests/module10-checkout.test.tsx",
   ]) {
     readProjectFile(requiredPath);
   }
@@ -909,8 +912,8 @@ function verifyCheckoutFrontendGate() {
   requireText(checkoutPage, "CheckoutQuoteSummary", "Checkout quote summary composition");
   requireText(checkoutPage, "CheckoutExpiryWarning", "Checkout quote expiry warning");
   requireText(checkoutPage, "CheckoutChangeWarning", "Checkout stale-state warning");
-  requireText(checkoutPage, "Confirm &amp; pay", "Checkout confirm-and-pay action");
-  requireText(checkoutPage, "Payment capture remains owned", "Checkout Payment separation");
+  requireText(checkoutPage, "Confirm & pay", "Checkout confirm-and-pay action");
+  requireText(checkoutPage, "Payment is completed only after secure confirmation from Stripe.", "Checkout Payment separation");
 
   for (const proof of [
     "creates an authoritative quote without sending client totals and confirms it with the required retry key",
@@ -929,14 +932,14 @@ function verifyCheckoutFrontendGate() {
 
 /** Confirms Pass 8 adds real browser proof, post-browser data integrity, and one full release verifier. */
 function verifyCheckoutE2EGate() {
-  const frontendPackage = readProjectFile("marketplace-frontend/package.json");
-  const backendPackage = readProjectFile("marketplace-backend/package.json");
-  const e2eSpec = readProjectFile("marketplace-frontend/e2e/module10.spec.ts");
-  const e2eRunner = readProjectFile("marketplace-frontend/e2e/run-e2e-ci.mjs");
-  const seed = readProjectFile("marketplace-backend/src/database/seeds/module10-e2e.seed.ts");
-  const releaseData = readProjectFile("marketplace-backend/scripts/verify-module10-release-data.mjs");
+  const frontendPackage = readProjectFile("frontend/package.json");
+  const backendPackage = readProjectFile("backend/package.json");
+  const e2eSpec = readProjectFile("frontend/e2e/module10.spec.ts");
+  const e2eRunner = readProjectFile("frontend/e2e/run-e2e-ci.mjs");
+  const seed = readProjectFile("backend/src/database/seeds/module10-e2e.seed.ts");
+  const releaseData = readProjectFile("backend/scripts/verify-module10-release-data.mjs");
   const releaseVerifier = readProjectFile("scripts/verify-module10.mjs");
-  const frontendCi = readProjectFile("marketplace-frontend/.github/workflows/ci.yml");
+  const frontendCi = readProjectFile("frontend/.github/workflows/ci.yml");
   const shippingPatch = readProjectFile("REQUIREMENTS_PATCH_0003.md");
   const checkoutPatch = readProjectFile("REQUIREMENTS_PATCH_0004.md");
 

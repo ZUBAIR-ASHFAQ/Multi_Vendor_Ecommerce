@@ -18,6 +18,7 @@ export class PublicMediaService {
   private readonly repository: PublicMediaRepository;
   private readonly storage: ObjectStorage;
 
+  /** Uses production repository/storage defaults while allowing explicit test injection. */
   constructor(dependencies: PublicMediaServiceDependencies = {}) {
     this.repository = dependencies.repository ?? new PublicMediaRepository();
     this.storage = dependencies.storage ?? new S3ObjectStorage();

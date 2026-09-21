@@ -347,7 +347,11 @@ test.describe("Module 4 Seller & Store Management E2E", () => {
     expect(applicationId).not.toBe("");
     await browserLogin(page, adminEmail, adminPassword, "/admin/users");
     await page.goto("/admin/seller-applications");
-    await expect(page.getByRole("heading", { name: "Seller applications" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Seller application queue" })).toBeVisible();
+
+    const queueRow = page.getByRole("row").filter({ hasText: sellerDisplayName });
+    await expect(queueRow).toBeVisible();
+    await queueRow.getByRole("button", { name: "Review" }).click();
 
     const card = page.locator("article").filter({
       has: page.getByRole("heading", { name: sellerDisplayName, exact: true }),
@@ -568,6 +572,7 @@ test.describe("Module 4 Seller & Store Management E2E", () => {
     await page.getByLabel("Seller ID to suspend").fill(sellerId);
     await page.getByLabel("Seller suspension reason").fill("Module 4 E2E compliance hold");
     await page.getByRole("button", { name: "Suspend seller" }).click();
+    await page.getByRole("button", { name: "Confirm suspension" }).click();
     await expect(page.getByText(`Seller ${sellerDisplayName} is now suspended.`)).toBeVisible();
 
     const ownerMe = await apiContext.get(`${apiBase}/auth/me`, {

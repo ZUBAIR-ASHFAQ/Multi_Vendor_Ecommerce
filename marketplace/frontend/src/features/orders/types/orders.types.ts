@@ -1,6 +1,7 @@
 import type { PaginationMeta } from "@/types/api";
 import type {
   CustomerOrderDetail,
+  CustomerOrderListItem,
   CustomerOrderSummary,
   SellerOrderDetail,
   SellerOrderListItem,
@@ -39,7 +40,7 @@ export interface CancelOrderInput {
 }
 
 export interface PaginatedCustomerOrders {
-  items: CustomerOrderSummary[];
+  items: CustomerOrderListItem[];
   meta: PaginationMeta;
 }
 

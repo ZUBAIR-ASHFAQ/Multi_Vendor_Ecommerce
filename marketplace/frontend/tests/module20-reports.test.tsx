@@ -4,6 +4,7 @@ import { http, HttpResponse } from "msw";
 import { App } from "@/app/app";
 import { createTestRouter } from "@/app/router/router";
 import type { AuthenticatedUser } from "@/features/auth/types/auth.types";
+import { readRecentReportRuns, rememberRecentReportRun } from "@/features/reports/reports.history";
 import { clearAccessToken, setAccessToken } from "@/lib/auth-session";
 import { env } from "@/lib/env";
 import { createQueryClient } from "@/lib/query-client";
@@ -144,6 +145,32 @@ describe("Module 20 Reports & Analytics React feature", () => {
     expect(screen.getAllByRole("link", { name: "Open report" })).toHaveLength(2);
   });
 
+  it("shows recent browser-known exports only after the existing requester-owned run API revalidates them", async () => {
+    useActor(actor("platform_admin", ["reports.export"]));
+    rememberRecentReportRun(userId, {
+      id: runId,
+      reportCode: "sales",
+      outputFormat: "csv",
+      createdAt: now,
+    });
+    server.use(
+      http.get(`${env.VITE_API_BASE_URL}/reports/catalog`, () =>
+        HttpResponse.json({ success: true, data: [], requestId: "req-report-catalog-empty" }),
+      ),
+      http.get(`${env.VITE_API_BASE_URL}/reports/runs/${runId}`, () =>
+        HttpResponse.json({ success: true, data: reportRun("completed"), requestId: "req-report-history" }),
+      ),
+    );
+
+    await renderRoute("/reports");
+    expect(await screen.findByRole("heading", { name: "Recent exports" })).toBeInTheDocument();
+    expect(await screen.findByText("completed")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "View" })).toHaveAttribute(
+      "href",
+      `/reports/runs/${runId}`,
+    );
+  });
+
   it("keeps seller scope server-derived while showing GMV, captured cash, and refunds separately", async () => {
     useActor(actor("seller", ["reports.sales.read"]));
     let lastSearch = "";
@@ -197,6 +224,12 @@ describe("Module 20 Reports & Analytics React feature", () => {
     expect(exportBody).not.toHaveProperty("pageSize");
     expect(exportBody).not.toHaveProperty("sort");
     expect(await screen.findByRole("heading", { name: "Sales & orders" })).toBeInTheDocument();
+    expect(readRecentReportRuns(userId)[0]).toMatchObject({
+      id: runId,
+      reportCode: "sales",
+      outputFormat: "csv",
+      createdAt: now,
+    });
     expect(screen.getByRole("link", { name: "Download export" })).toHaveAttribute("href", "https://files.example.test/report.csv");
   });
 

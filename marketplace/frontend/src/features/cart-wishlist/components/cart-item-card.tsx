@@ -37,7 +37,7 @@ export function CartItemCard({
   }
 
   return (
-    <article className="grid gap-4 border-t border-slate-200 py-5 first:border-t-0 md:grid-cols-[104px_minmax(0,1fr)_180px]">
+    <article className="grid grid-cols-[88px_minmax(0,1fr)] gap-4 border-t border-slate-200 py-5 first:border-t-0 md:grid-cols-[104px_minmax(0,1fr)_180px]">
       <div className="overflow-hidden rounded-xl bg-slate-100">
         {item.productSlug ? (
           <Link
@@ -105,7 +105,7 @@ export function CartItemCard({
         ) : null}
       </div>
 
-      <div className="space-y-3">
+      <div className="col-span-2 space-y-3 md:col-span-1">
         <CartQuantityForm
           initialQuantity={item.quantity}
           submitLabel="Update quantity"

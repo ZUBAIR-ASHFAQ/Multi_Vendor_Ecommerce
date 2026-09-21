@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { StatusPill } from "@/components/ui/status-pill";
 import { CategoryForm } from "../forms/category-form";
 import { useUpdateCategoryMutation } from "../hooks/use-catalog-taxonomy";
 import type {
@@ -47,16 +48,16 @@ function CategoryNodeEditor({
 
   return (
     <li className="space-y-3">
-      <div className="rounded-lg border bg-white p-4 shadow-sm">
+      <div className="rounded-card border border-border bg-surface p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="font-semibold">{node.name}</h3>
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium">
+              <StatusPill tone={node.status === "active" ? "positive" : "neutral"}>
                 {node.status}
-              </span>
+              </StatusPill>
             </div>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-foreground-muted">
               /{node.slug} · sort {node.sortOrder}
             </p>
           </div>
@@ -65,7 +66,7 @@ function CategoryNodeEditor({
           </Button>
         </div>
         {editing ? (
-          <div className="mt-4 border-t pt-4">
+          <div className="mt-4 border-t border-border pt-4">
             <CategoryForm
               category={node}
               parentOptions={parentOptions}
@@ -80,7 +81,7 @@ function CategoryNodeEditor({
       </div>
 
       {node.children.length > 0 ? (
-        <ul className="ml-5 space-y-3 border-l pl-4">
+        <ul className="ml-4 space-y-3 border-l border-border-strong pl-4 md:ml-6 md:pl-5">
           {node.children.map((child) => (
             <CategoryNodeEditor key={child.id} node={child} parentOptions={parentOptions} />
           ))}

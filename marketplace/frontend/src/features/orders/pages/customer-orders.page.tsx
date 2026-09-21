@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
-import { EmptyState } from "@/components/ui/empty-state";
+import { AccessDeniedState, EmptyOrdersState } from "@/components/feedback/system-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Surface } from "@/components/ui/surface";
 import { CustomerAccountLayout } from "@/features/customers/components/customer-account-shell";
+import { SHIPPING_PERMISSION } from "@/features/shipping/shipping.constants";
 import { ApiClientError } from "@/lib/api-error";
 import { OrderPagination } from "../components/order-pagination";
 import { OrderStatus } from "../components/order-status";
@@ -31,7 +32,7 @@ function orderDate(placedAt: string | null, createdAt: string): string {
 }
 
 /** Renders the authenticated customer's parent Order history as scannable customer cards. */
-function CustomerOrdersContent() {
+function CustomerOrdersContent({ canReadShipping }: { canReadShipping: boolean }) {
   const [params, setParams] = useState<CustomerOrdersParams>({
     page: 1,
     pageSize: 20,
@@ -41,7 +42,7 @@ function CustomerOrdersContent() {
   const orders = useCustomerOrdersQuery(params);
 
   if (orders.isPending) {
-    return <LoadingState label="Loading your Orders..." />;
+    return <LoadingState label="Loading your Orders..." variant="cards" count={4} />;
   }
 
   if (orders.isError) {
@@ -97,8 +98,7 @@ function CustomerOrdersContent() {
       </Surface>
 
       {orders.data.items.length === 0 ? (
-        <EmptyState
-          title="No Orders found"
+        <EmptyOrdersState
           description={params.orderStatus ? "No Orders match this status. Choose All statuses to see your complete history." : "Orders you place will appear here with payment and fulfillment progress."}
           action={params.orderStatus ? (
             <button
@@ -128,28 +128,78 @@ function CustomerOrdersContent() {
                 </div>
               </div>
 
-              <div className="grid gap-5 px-5 py-5 sm:grid-cols-[1fr_auto] sm:items-center">
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-foreground-muted">Total</p>
-                    <p className="mt-1 text-lg font-semibold text-foreground">{displayMoney(order.currency, order.grandTotal)}</p>
+              <div className="space-y-5 px-5 py-5">
+                <div className="grid gap-5 sm:grid-cols-[1fr_auto] sm:items-center">
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wide text-foreground-muted">Total</p>
+                      <p className="mt-1 text-lg font-semibold text-foreground">{displayMoney(order.currency, order.grandTotal)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wide text-foreground-muted">Fulfillment</p>
+                      <div className="mt-1"><OrderStatus value={order.fulfillmentStatus} /></div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wide text-foreground-muted">Payment</p>
+                      <p className="mt-1 text-sm text-foreground-muted">{order.paymentStatus === "captured" ? "Payment received" : "Payment still required"}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-foreground-muted">Fulfillment</p>
-                    <div className="mt-1"><OrderStatus value={order.fulfillmentStatus} /></div>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-foreground-muted">Payment</p>
-                    <p className="mt-1 text-sm text-foreground-muted">{order.paymentStatus === "captured" ? "Payment received" : "Payment still required"}</p>
-                  </div>
+                  <Link
+                    className="inline-flex min-h-10 items-center justify-center rounded-control bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-strong"
+                    to="/orders/$orderId"
+                    params={{ orderId: order.id }}
+                  >
+                    View Order
+                  </Link>
                 </div>
-                <Link
-                  className="inline-flex min-h-10 items-center justify-center rounded-control bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-strong"
-                  to="/orders/$orderId"
-                  params={{ orderId: order.id }}
-                >
-                  View Order
-                </Link>
+
+                <div className="space-y-3 border-t border-border pt-5">
+                  {order.sellerOrders.map((sellerOrder) => (
+                    <section key={sellerOrder.id} className="rounded-control border border-border bg-surface-muted p-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-[0.12em] text-foreground-muted">Store</p>
+                          <h2 className="mt-1 text-sm font-semibold text-foreground">{sellerOrder.storeName}</h2>
+                        </div>
+                        <OrderStatus value={sellerOrder.status} />
+                      </div>
+
+                      <ul className="mt-3 space-y-2" aria-label={`${sellerOrder.storeName} Order items`}>
+                        {sellerOrder.items.map((item) => (
+                          <li key={item.id} className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
+                            <span className="font-medium text-foreground">
+                              {item.name}{item.variantTitle ? ` · ${item.variantTitle}` : ""}
+                            </span>
+                            <span className="text-foreground-muted">Qty {item.quantity}</span>
+                          </li>
+                        ))}
+                      </ul>
+
+                      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3">
+                        <div className="flex flex-wrap items-center gap-2 text-sm text-foreground-muted">
+                          <span>Shipment:</span>
+                          {sellerOrder.latestShipmentStatus ? (
+                            <OrderStatus value={sellerOrder.latestShipmentStatus} />
+                          ) : (
+                            <span>Preparing</span>
+                          )}
+                          {sellerOrder.itemCount > sellerOrder.items.length ? (
+                            <span>+{sellerOrder.itemCount - sellerOrder.items.length} more item{sellerOrder.itemCount - sellerOrder.items.length === 1 ? "" : "s"}</span>
+                          ) : null}
+                        </div>
+                        {canReadShipping && sellerOrder.latestShipmentStatus ? (
+                          <Link
+                            className="text-sm font-semibold text-brand hover:underline"
+                            to="/orders/$orderId/shipping"
+                            params={{ orderId: order.id }}
+                          >
+                            Track package
+                          </Link>
+                        ) : null}
+                      </div>
+                    </section>
+                  ))}
+                </div>
               </div>
             </article>
           ))}
@@ -171,9 +221,11 @@ export function CustomerOrdersPage() {
     <CustomerAccountLayout>
       {(user) =>
         user.permissions.includes(ORDERS_PERMISSION.READ_OWN) ? (
-          <CustomerOrdersContent />
+          <CustomerOrdersContent
+            canReadShipping={user.permissions.includes(SHIPPING_PERMISSION.READ_OWN_ORDER)}
+          />
         ) : (
-          <ErrorState title="Access denied" message="Your account does not have permission to read customer Orders." />
+          <AccessDeniedState message="Your account does not have permission to read customer Orders." />
         )
       }
     </CustomerAccountLayout>

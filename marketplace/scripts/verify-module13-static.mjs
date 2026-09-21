@@ -11,7 +11,10 @@ function readProjectFile(relativePath) {
   if (!existsSync(absolutePath)) {
     throw new Error(`Required Module 13 file is missing: ${relativePath}`);
   }
-  return readFileSync(absolutePath, "utf8");
+  const source = readFileSync(absolutePath, "utf8");
+  return relativePath.endsWith("package.json")
+    ? JSON.stringify(JSON.parse(source.replace(/^\uFEFF/u, "")), null, 2)
+    : source;
 }
 
 /** Requires one permanent contract fragment in a source file. */
@@ -88,7 +91,7 @@ function verifyPatchContracts() {
 
 /** Confirms the released Module 13 migration remains present even after later modules append migrations. */
 function verifyPass1DatabasePrerequisite() {
-  const drizzleDirectory = join(root, "marketplace-backend/drizzle");
+  const drizzleDirectory = join(root, "backend/drizzle");
   const migrations = readdirSync(drizzleDirectory)
     .filter((name) => /^\d{4}_.*\.sql$/.test(name))
     .sort();
@@ -97,10 +100,10 @@ function verifyPass1DatabasePrerequisite() {
     throw new Error("Module 13 completion requires committed migration 0027_shipping_fulfillment.sql.");
   }
 
-  const shippingSchema = readProjectFile("marketplace-backend/src/database/schema/shipping.ts");
-  const ordersSchema = readProjectFile("marketplace-backend/src/database/schema/orders.ts");
+  const shippingSchema = readProjectFile("backend/src/database/schema/shipping.ts");
+  const ordersSchema = readProjectFile("backend/src/database/schema/orders.ts");
   const migration = readProjectFile(
-    "marketplace-backend/drizzle/0027_shipping_fulfillment.sql",
+    "backend/drizzle/0027_shipping_fulfillment.sql",
   );
 
   for (const required of [
@@ -127,18 +130,18 @@ function verifyPass1DatabasePrerequisite() {
 /** Confirms the released Stage 11 shipping-options runtime remains backward compatible. */
 function verifyShippingCoreCompatibility() {
   const repository = readProjectFile(
-    "marketplace-backend/src/modules/shipping/shipping.repository.ts",
+    "backend/src/modules/shipping/shipping.repository.ts",
   );
   const service = readProjectFile(
-    "marketplace-backend/src/modules/shipping/shipping.service.ts",
+    "backend/src/modules/shipping/shipping.service.ts",
   );
   const controller = readProjectFile(
-    "marketplace-backend/src/modules/shipping/shipping.controller.ts",
+    "backend/src/modules/shipping/shipping.controller.ts",
   );
   const routes = readProjectFile(
-    "marketplace-backend/src/modules/shipping/shipping.routes.ts",
+    "backend/src/modules/shipping/shipping.routes.ts",
   );
-  const app = readProjectFile("marketplace-backend/src/app.ts");
+  const app = readProjectFile("backend/src/app.ts");
 
   requireText(repository, "listCheckoutEligibleMethods", "Shipping Core repository");
   requireText(service, "getCheckoutShippingOptions", "Shipping Core service");
@@ -159,7 +162,7 @@ function verifyShippingCoreCompatibility() {
 /** Confirms Pass 2 freezes true constants without adding empty boilerplate types. */
 function verifyFulfillmentConstants() {
   const constants = readProjectFile(
-    "marketplace-backend/src/modules/shipping/shipping.constants.ts",
+    "backend/src/modules/shipping/shipping.constants.ts",
   );
 
   for (const required of [
@@ -190,7 +193,7 @@ function verifyFulfillmentConstants() {
   }
 
   requireAbsent(
-    "marketplace-backend/src/modules/shipping/shipping.types.ts",
+    "backend/src/modules/shipping/shipping.types.ts",
     "Unnecessary Shipping types boilerplate",
   );
 }
@@ -198,7 +201,7 @@ function verifyFulfillmentConstants() {
 /** Confirms strict Zod contracts keep identity, ownership, status, and timestamps server-derived. */
 function verifyFulfillmentSchemas() {
   const schema = readProjectFile(
-    "marketplace-backend/src/modules/shipping/shipping.schema.ts",
+    "backend/src/modules/shipping/shipping.schema.ts",
   );
 
   for (const required of [
@@ -233,10 +236,10 @@ function verifyFulfillmentSchemas() {
 /** Confirms the shared Orders contract can represent Shipping-derived fulfillment states. */
 function verifyOrdersContractExtension() {
   const constants = readProjectFile(
-    "marketplace-backend/src/modules/orders/orders.constants.ts",
+    "backend/src/modules/orders/orders.constants.ts",
   );
   const schema = readProjectFile(
-    "marketplace-backend/src/modules/orders/orders.schema.ts",
+    "backend/src/modules/orders/orders.schema.ts",
   );
 
   for (const required of [
@@ -258,10 +261,10 @@ function verifyOrdersContractExtension() {
 /** Confirms focused Pass 2 tests cover strict authority, list scope, and response visibility boundaries. */
 function verifyContractTests() {
   const tests = readProjectFile(
-    "marketplace-backend/tests/module13/module13.schemas.test.ts",
+    "backend/tests/module13/module13.schemas.test.ts",
   );
   const packageJson = JSON.parse(
-    readProjectFile("marketplace-backend/package.json"),
+    readProjectFile("backend/package.json"),
   );
 
   for (const required of [
@@ -287,13 +290,13 @@ function verifyContractTests() {
 /** Confirms Pass 3 adds the scoped Drizzle Shipment persistence helpers needed by later services. */
 function verifyFulfillmentRepository() {
   const repository = readProjectFile(
-    "marketplace-backend/src/modules/shipping/shipping.repository.ts",
+    "backend/src/modules/shipping/shipping.repository.ts",
   );
   const tests = readProjectFile(
-    "marketplace-backend/tests/module13/module13.repository.test.ts",
+    "backend/tests/module13/module13.repository.test.ts",
   );
   const packageJson = JSON.parse(
-    readProjectFile("marketplace-backend/package.json"),
+    readProjectFile("backend/package.json"),
   );
 
   for (const required of [
@@ -350,19 +353,19 @@ function verifyFulfillmentRepository() {
 /** Confirms Pass 4 implements fulfillment orchestration without crossing repository boundaries. */
 function verifyFulfillmentService() {
   const service = readProjectFile(
-    "marketplace-backend/src/modules/shipping/shipping.service.ts",
+    "backend/src/modules/shipping/shipping.service.ts",
   );
   const repository = readProjectFile(
-    "marketplace-backend/src/modules/shipping/shipping.repository.ts",
+    "backend/src/modules/shipping/shipping.repository.ts",
   );
   const ordersService = readProjectFile(
-    "marketplace-backend/src/modules/orders/orders.service.ts",
+    "backend/src/modules/orders/orders.service.ts",
   );
   const ordersRepository = readProjectFile(
-    "marketplace-backend/src/modules/orders/orders.repository.ts",
+    "backend/src/modules/orders/orders.repository.ts",
   );
   const inventoryService = readProjectFile(
-    "marketplace-backend/src/modules/inventory/inventory.service.ts",
+    "backend/src/modules/inventory/inventory.service.ts",
   );
 
   for (const required of [
@@ -431,14 +434,14 @@ function verifyFulfillmentService() {
 /** Confirms Pass 5 exposes exactly the approved fulfillment HTTP/OpenAPI surface. */
 function verifyFulfillmentHttp() {
   const controller = readProjectFile(
-    "marketplace-backend/src/modules/shipping/shipping.controller.ts",
+    "backend/src/modules/shipping/shipping.controller.ts",
   );
   const routes = readProjectFile(
-    "marketplace-backend/src/modules/shipping/shipping.routes.ts",
+    "backend/src/modules/shipping/shipping.routes.ts",
   );
-  const app = readProjectFile("marketplace-backend/src/app.ts");
+  const app = readProjectFile("backend/src/app.ts");
   const openApi = readProjectFile(
-    "marketplace-backend/src/http/openapi/openapi.document.ts",
+    "backend/src/http/openapi/openapi.document.ts",
   );
 
   for (const required of [
@@ -514,28 +517,28 @@ function verifyFulfillmentHttp() {
 /** Confirms Pass 6 adds focused backend proof without changing the approved runtime surface. */
 function verifyBackendProof() {
   const serviceTests = readProjectFile(
-    "marketplace-backend/tests/module13/module13.service.test.ts",
+    "backend/tests/module13/module13.service.test.ts",
   );
   const httpTests = readProjectFile(
-    "marketplace-backend/tests/module13/module13.http.test.ts",
+    "backend/tests/module13/module13.http.test.ts",
   );
   const integrationTests = readProjectFile(
-    "marketplace-backend/tests/module13/module13.integration.test.ts",
+    "backend/tests/module13/module13.integration.test.ts",
   );
   const fulfillmentHelpers = readProjectFile(
-    "marketplace-backend/tests/module13/module13.fulfillment-test-helpers.ts",
+    "backend/tests/module13/module13.fulfillment-test-helpers.ts",
   );
   const regressionTests = readProjectFile(
-    "marketplace-backend/tests/regression/implemented-api-contracts.test.ts",
+    "backend/tests/regression/implemented-api-contracts.test.ts",
   );
   const runner = readProjectFile(
-    "marketplace-backend/scripts/run-module13-tests.mjs",
+    "backend/scripts/run-module13-tests.mjs",
   );
   const backendCi = readProjectFile(
-    "marketplace-backend/.github/workflows/ci.yml",
+    "backend/.github/workflows/ci.yml",
   );
   const packageJson = JSON.parse(
-    readProjectFile("marketplace-backend/package.json"),
+    readProjectFile("backend/package.json"),
   );
 
   for (const required of [
@@ -574,7 +577,7 @@ function verifyBackendProof() {
     "countShippingAuditEvents",
   ]) {
     const source = required === "prepareFulfillmentFixture" ? fulfillmentHelpers : readProjectFile(
-      "marketplace-backend/tests/module13/module13.test-helpers.ts",
+      "backend/tests/module13/module13.test-helpers.ts",
     );
     requireText(source, required, "Module 13 Pass 6 test helper");
   }
@@ -618,19 +621,19 @@ function verifyBackendProof() {
 
 /** Confirms Pass 7 adds the independent React Shipping feature without inventing API surface. */
 function verifyFrontendFeature() {
-  const packageJson = JSON.parse(readProjectFile("marketplace-frontend/package.json"));
-  const api = readProjectFile("marketplace-frontend/src/features/shipping/api/shipping.api.ts");
-  const hooks = readProjectFile("marketplace-frontend/src/features/shipping/hooks/use-shipping.ts");
-  const createForm = readProjectFile("marketplace-frontend/src/features/shipping/forms/create-shipment.form.tsx");
-  const trackingForm = readProjectFile("marketplace-frontend/src/features/shipping/forms/shipment-tracking.form.tsx");
-  const sellerQueue = readProjectFile("marketplace-frontend/src/features/shipping/pages/seller-shipments.page.tsx");
-  const sellerOrderShipping = readProjectFile("marketplace-frontend/src/features/shipping/pages/seller-order-shipping.page.tsx");
-  const customerTracking = readProjectFile("marketplace-frontend/src/features/shipping/pages/customer-order-shipping.page.tsx");
-  const routes = readProjectFile("marketplace-frontend/src/app/routes/shipping.routes.tsx");
-  const router = readProjectFile("marketplace-frontend/src/app/router/router.tsx");
-  const orderSchemas = readProjectFile("marketplace-frontend/src/features/orders/schemas/orders.schemas.ts");
-  const tests = readProjectFile("marketplace-frontend/tests/module13-shipping.test.tsx");
-  const frontendCi = readProjectFile("marketplace-frontend/.github/workflows/ci.yml");
+  const packageJson = JSON.parse(readProjectFile("frontend/package.json"));
+  const api = readProjectFile("frontend/src/features/shipping/api/shipping.api.ts");
+  const hooks = readProjectFile("frontend/src/features/shipping/hooks/use-shipping.ts");
+  const createForm = readProjectFile("frontend/src/features/shipping/forms/create-shipment.form.tsx");
+  const trackingForm = readProjectFile("frontend/src/features/shipping/forms/shipment-tracking.form.tsx");
+  const sellerQueue = readProjectFile("frontend/src/features/shipping/pages/seller-shipments.page.tsx");
+  const sellerOrderShipping = readProjectFile("frontend/src/features/shipping/pages/seller-order-shipping.page.tsx");
+  const customerTracking = readProjectFile("frontend/src/features/shipping/pages/customer-order-shipping.page.tsx");
+  const routes = readProjectFile("frontend/src/app/routes/shipping.routes.tsx");
+  const router = readProjectFile("frontend/src/app/router/router.tsx");
+  const orderSchemas = readProjectFile("frontend/src/features/orders/schemas/orders.schemas.ts");
+  const tests = readProjectFile("frontend/tests/module13-shipping.test.tsx");
+  const frontendCi = readProjectFile("frontend/.github/workflows/ci.yml");
 
   for (const required of [
     'apiClient.get("/seller/shipments"',
@@ -653,7 +656,7 @@ function verifyFrontendFeature() {
   requireText(sellerOrderShipping, "CreateShipmentForm", "Module 13 Shipment allocation UI");
   requireText(sellerOrderShipping, "Mark shipped", "Module 13 mark-shipped command UI");
   requireText(sellerOrderShipping, "Mark delivered", "Module 13 mark-delivered command UI");
-  requireText(customerTracking, "Only shipped or delivered Shipments are visible here.", "Module 13 customer-safe tracking language");
+  requireText(customerTracking, "Carrier updates appear here after a seller marks a Shipment as shipped.", "Module 13 customer-safe tracking language");
 
   for (const route of [
     'path: "/seller/shipments"',
@@ -699,13 +702,13 @@ function verifyFrontendFeature() {
 
 /** Confirms Pass 8 adds live Playwright proof, read-only reconciliation, and permanent release-gate wiring. */
 function verifyFinalReleasePass() {
-  const e2e = readProjectFile("marketplace-frontend/e2e/module13.spec.ts");
+  const e2e = readProjectFile("frontend/e2e/module13.spec.ts");
   const releaseVerifier = readProjectFile(
-    "marketplace-backend/scripts/verify-module13-release-data.mjs",
+    "backend/scripts/verify-module13-release-data.mjs",
   );
-  const e2eRunner = readProjectFile("marketplace-frontend/e2e/run-e2e-ci.mjs");
-  const frontendPackage = JSON.parse(readProjectFile("marketplace-frontend/package.json"));
-  const backendPackage = JSON.parse(readProjectFile("marketplace-backend/package.json"));
+  const e2eRunner = readProjectFile("frontend/e2e/run-e2e-ci.mjs");
+  const frontendPackage = JSON.parse(readProjectFile("frontend/package.json"));
+  const backendPackage = JSON.parse(readProjectFile("backend/package.json"));
   const finalVerifier = readProjectFile("scripts/verify-module13.mjs");
 
   for (const required of [

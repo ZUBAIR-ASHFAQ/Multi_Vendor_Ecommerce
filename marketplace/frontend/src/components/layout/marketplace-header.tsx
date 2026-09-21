@@ -12,6 +12,7 @@ export function MarketplaceHeader() {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
 
+  /** Navigates to the canonical marketplace search route for one query. */
   function navigateToSearch(value: string): void {
     const normalized = value.trim();
     void navigate({
@@ -25,6 +26,7 @@ export function MarketplaceHeader() {
     });
   }
 
+  /** Submits the current marketplace search query. */
   function submitSearch(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
     navigateToSearch(query);

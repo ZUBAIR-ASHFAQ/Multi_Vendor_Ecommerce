@@ -2,15 +2,24 @@ import { Link, useParams } from "@tanstack/react-router";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
+import { SectionHeader } from "@/components/ui/section-header";
+import { StatusPill } from "@/components/ui/status-pill";
+import { Surface } from "@/components/ui/surface";
 import { ApiClientError } from "@/lib/api-error";
 import { formatDateTime } from "@/lib/dates";
 import { ReportsLayout } from "../components/reports-layout";
 import { useReportRunQuery } from "../hooks/use-reports";
-import {
-  REPORT_LABELS,
-  REPORT_RUN_STATUS,
-  REPORTS_PERMISSION,
-} from "../reports.constants";
+import { REPORT_LABELS, REPORT_RUN_STATUS, REPORTS_PERMISSION } from "../reports.constants";
+
+/** Maps asynchronous export lifecycle to shared semantic status tones. */
+function runTone(status: string): "neutral" | "positive" | "warning" | "negative" | "info" {
+  if (status === REPORT_RUN_STATUS.COMPLETED) return "positive";
+  if (status === REPORT_RUN_STATUS.FAILED) return "negative";
+  if (status === REPORT_RUN_STATUS.PROCESSING) return "info";
+  if (status === REPORT_RUN_STATUS.QUEUED) return "warning";
+  return "neutral";
+}
 
 /** Renders one requester-owned asynchronous export run and its short-lived download link. */
 function ReportRunContent({ runId }: { runId: string }) {
@@ -30,31 +39,35 @@ function ReportRunContent({ runId }: { runId: string }) {
 
   const value = run.data;
   return (
-    <div className="space-y-5">
-      <section className="rounded-xl border bg-white p-5 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-          Asynchronous export
-        </p>
-        <h1 className="mt-1 text-2xl font-bold">{REPORT_LABELS[value.reportCode]}</h1>
-        <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Report export"
+        title={REPORT_LABELS[value.reportCode]}
+        description="Requester-owned asynchronous export generated from the server-authoritative report scope."
+        actions={<StatusPill tone={runTone(value.status)}>{value.status}</StatusPill>}
+      />
+
+      <Surface>
+        <SectionHeader title="Export details" />
+        <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <dt className="font-semibold">Status</dt>
-            <dd>{value.status}</dd>
+            <dt className="font-medium text-foreground-muted">Format</dt>
+            <dd className="mt-1 font-semibold text-foreground">{value.outputFormat.toUpperCase()}</dd>
           </div>
           <div>
-            <dt className="font-semibold">Format</dt>
-            <dd>{value.outputFormat.toUpperCase()}</dd>
+            <dt className="font-medium text-foreground-muted">Created</dt>
+            <dd className="mt-1 text-foreground">{formatDateTime(value.createdAt)}</dd>
           </div>
           <div>
-            <dt className="font-semibold">Created</dt>
-            <dd>{formatDateTime(value.createdAt)}</dd>
+            <dt className="font-medium text-foreground-muted">Started</dt>
+            <dd className="mt-1 text-foreground">{value.startedAt ? formatDateTime(value.startedAt) : "—"}</dd>
           </div>
           <div>
-            <dt className="font-semibold">Finished</dt>
-            <dd>{value.finishedAt ? formatDateTime(value.finishedAt) : "—"}</dd>
+            <dt className="font-medium text-foreground-muted">Finished</dt>
+            <dd className="mt-1 text-foreground">{value.finishedAt ? formatDateTime(value.finishedAt) : "—"}</dd>
           </div>
         </dl>
-      </section>
+      </Surface>
 
       {value.status === REPORT_RUN_STATUS.FAILED ? (
         <ErrorState
@@ -64,27 +77,24 @@ function ReportRunContent({ runId }: { runId: string }) {
         />
       ) : null}
 
-      {value.status === REPORT_RUN_STATUS.QUEUED ||
-      value.status === REPORT_RUN_STATUS.PROCESSING ? (
+      {value.status === REPORT_RUN_STATUS.QUEUED || value.status === REPORT_RUN_STATUS.PROCESSING ? (
         <LoadingState label="The export is still processing. This page refreshes automatically..." />
       ) : null}
 
       {value.status === REPORT_RUN_STATUS.COMPLETED && value.download ? (
-        <section className="rounded-xl border bg-white p-5 shadow-sm">
-          <h2 className="font-semibold">Export ready</h2>
-          <p className="mt-1 text-sm text-slate-600">
-            The signed link expires at {formatDateTime(value.download.expiresAt)}.
-          </p>
-          <Button className="mt-4" asChild>
-            <a
-              href={value.download.downloadUrl}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Download export
-            </a>
-          </Button>
-        </section>
+        <Surface>
+          <SectionHeader
+            title="Export ready"
+            description={`The signed download link expires at ${formatDateTime(value.download.expiresAt)}.`}
+            actions={(
+              <Button asChild>
+                <a href={value.download.downloadUrl} target="_blank" rel="noreferrer">
+                  Download export
+                </a>
+              </Button>
+            )}
+          />
+        </Surface>
       ) : null}
 
       <Button variant="outline" asChild>

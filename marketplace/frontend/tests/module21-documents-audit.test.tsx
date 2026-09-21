@@ -150,6 +150,8 @@ describe("Module 21 Documents & Audit UI", () => {
     render(<App router={router} queryClient={createQueryClient()} />);
 
     const user = userEvent.setup();
+    expect(await screen.findByLabelText("Administration navigation")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Documents/ })).toBeInTheDocument();
     await user.upload(
       await screen.findByLabelText("File"),
       new File(["evidence"], "failed.txt", { type: "text/plain" }),
@@ -212,6 +214,7 @@ describe("Module 21 Documents & Audit UI", () => {
 
     const user = userEvent.setup();
     expect(await screen.findByRole("heading", { name: "Audit log" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Administration navigation")).toBeInTheDocument();
     await user.type(screen.getByLabelText("Audit actor user ID"), actorId);
     await user.click(screen.getByRole("button", { name: "Apply filters" }));
 
@@ -222,6 +225,8 @@ describe("Module 21 Documents & Audit UI", () => {
     await user.click(await screen.findByRole("link", { name: "View" }));
 
     expect(await screen.findByRole("heading", { name: "file.linked" })).toBeInTheDocument();
+    expect(screen.getByText("Append-only record")).toBeInTheDocument();
+    expect(screen.getByLabelText("Read-only audit snapshots")).toBeInTheDocument();
     expect(screen.getByText(/\[REDACTED\]/)).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Audit export" })).not.toBeInTheDocument();
   });

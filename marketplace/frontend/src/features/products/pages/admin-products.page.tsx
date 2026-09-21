@@ -1,8 +1,16 @@
-import { useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import {
+  AdminQueueEmpty,
+  AdminQueueHeader,
+  AdminQueueTable,
+  AdminQueueTableHead,
+} from "@/features/administration/components/admin-queue";
 import { AdminLayout } from "@/features/administration/components/admin-layout";
 import { RequirePagePermission } from "@/features/administration/components/permission-gate";
 import { formatDateTime } from "@/lib/dates";
@@ -29,45 +37,55 @@ function AdminProductsContent() {
 
   return (
     <div className="space-y-5">
-      <section className="rounded-xl border bg-white p-5 shadow-sm">
-        <h1 className="text-2xl font-bold">Product approvals</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Review seller submissions before they go live. Rejections require a clear seller-visible reason.
-        </p>
-        <form
-          className="mt-5 grid gap-3 sm:grid-cols-[1fr_auto_auto]"
-          onSubmit={(event) => {
-            event.preventDefault();
-            setParams((current) => ({
-              ...current,
-              page: 1,
-              q: search.trim() || undefined,
-              publicationStatus: status,
-            }));
-          }}
-        >
-          <input
+      <AdminQueueHeader
+        eyebrow="Marketplace moderation"
+        title="Product approval queue"
+        description="Review seller submissions before publication. Search and status filters use only the existing admin product API contract."
+        meta={products.data?.meta}
+        visibleCount={products.data?.items.length}
+      />
+
+      <form
+        className="grid gap-3 rounded-card border border-border bg-surface p-4 shadow-sm sm:grid-cols-[minmax(0,1fr)_minmax(180px,240px)_auto]"
+        onSubmit={(event) => {
+          event.preventDefault();
+          setParams((current) => ({
+            ...current,
+            page: 1,
+            q: search.trim() || undefined,
+            publicationStatus: status,
+          }));
+        }}
+      >
+        <label className="text-sm font-medium text-foreground">
+          Search
+          <Input
             aria-label="Search products for moderation"
-            className="rounded-md border px-3 py-2"
-            placeholder="Search product name or slug"
+            className="mt-1"
+            placeholder="Product name or slug"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
-          <select
+        </label>
+        <label className="text-sm font-medium text-foreground">
+          Publication status
+          <Select
             aria-label="Product moderation status"
-            className="rounded-md border px-3 py-2"
+            className="mt-1"
             value={status}
             onChange={(event) => setStatus(event.target.value as ProductPublicationStatus)}
           >
             {Object.values(PRODUCT_PUBLICATION_STATUS).map((value) => (
               <option key={value} value={value}>{value.replaceAll("_", " ")}</option>
             ))}
-          </select>
-          <Button type="submit">Apply filters</Button>
-        </form>
-      </section>
+          </Select>
+        </label>
+        <div className="flex items-end">
+          <Button className="w-full sm:w-auto" type="submit">Apply filters</Button>
+        </div>
+      </form>
 
-      {products.isPending ? <LoadingState label="Loading product approval queue..." /> : null}
+      {products.isPending ? <LoadingState variant="table" label="Loading product approval queue..." /> : null}
       {products.isError ? (
         <ErrorState
           title="Product approval queue could not be loaded"
@@ -77,46 +95,45 @@ function AdminProductsContent() {
       ) : null}
 
       {products.data?.items.length === 0 ? (
-        <p className="rounded-xl border bg-white p-8 text-center text-slate-500 shadow-sm">
-          No products match the current moderation filters.
-        </p>
+        <AdminQueueEmpty
+          title="No products match these filters"
+          description="Try another publication status or clear the search text. No moderation state is changed by filtering."
+        />
       ) : null}
 
       {products.data?.items.length ? (
-        <div className="overflow-x-auto rounded-xl border bg-white shadow-sm">
-          <table className="min-w-full text-left text-sm">
-            <thead className="border-b bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
-              <tr>
-                <th className="px-4 py-3">Product</th>
-                <th className="px-4 py-3">Seller / store</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Updated</th>
-                <th className="px-4 py-3">Action</th>
+        <AdminQueueTable>
+          <AdminQueueTableHead>
+            <tr>
+              <th className="px-4 py-3">Product</th>
+              <th className="px-4 py-3">Seller / store</th>
+              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Updated</th>
+              <th className="px-4 py-3 text-right">Primary action</th>
+            </tr>
+          </AdminQueueTableHead>
+          <tbody className="divide-y divide-border">
+            {products.data.items.map((product) => (
+              <tr key={product.id} className="transition-colors hover:bg-surface-muted/60">
+                <td className="px-4 py-3">
+                  <strong className="block text-foreground">{product.name}</strong>
+                  <span className="block text-xs text-foreground-muted">/{product.slug}</span>
+                </td>
+                <td className="px-4 py-3 text-xs text-foreground-muted">
+                  <span className="block break-all">Seller {product.sellerId}</span>
+                  <span className="block break-all">Store {product.storeId}</span>
+                </td>
+                <td className="px-4 py-3"><ProductStatusBadge status={product.publicationStatus} /></td>
+                <td className="px-4 py-3 whitespace-nowrap text-foreground-muted">{formatDateTime(product.updatedAt)}</td>
+                <td className="px-4 py-3 text-right">
+                  <Button size="sm" variant="outline" asChild>
+                    <Link to="/admin/products/$productId" params={{ productId: product.id }}>Review</Link>
+                  </Button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {products.data.items.map((product) => (
-                <tr key={product.id} className="border-b last:border-0">
-                  <td className="px-4 py-3">
-                    <strong>{product.name}</strong>
-                    <span className="block text-xs text-slate-500">/{product.slug}</span>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-slate-600">
-                    <span className="block break-all">Seller: {product.sellerId}</span>
-                    <span className="block break-all">Store: {product.storeId}</span>
-                  </td>
-                  <td className="px-4 py-3"><ProductStatusBadge status={product.publicationStatus} /></td>
-                  <td className="px-4 py-3">{formatDateTime(product.updatedAt)}</td>
-                  <td className="px-4 py-3">
-                    <Button size="sm" variant="outline" asChild>
-                      <Link to="/admin/products/$productId" params={{ productId: product.id }}>Review</Link>
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </AdminQueueTable>
       ) : null}
 
       {products.data ? (

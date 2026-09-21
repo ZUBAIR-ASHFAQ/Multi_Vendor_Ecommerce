@@ -114,7 +114,7 @@ function AdminCommissionRulesContent({ canManage }: { canManage: boolean }) {
       {rules.data ? (
         <section className="rounded-xl border bg-white p-5 shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+            <table className="w-full min-w-[760px] text-left text-sm">
               <thead>
                 <tr className="border-b text-slate-500">
                   <th className="py-2">Scope</th>

@@ -29,7 +29,7 @@ function rejectText(relativePath, markers) {
   }
 }
 
-requireText("marketplace-backend/src/modules/reviews/reviews.controller.ts", [
+requireText("backend/src/modules/reviews/reviews.controller.ts", [
   "export class ReviewsController",
   "createReview = async (",
   "updateOwnReview = async (",
@@ -48,13 +48,13 @@ requireText("marketplace-backend/src/modules/reviews/reviews.controller.ts", [
   "moderateReviewBodySchema.parse(request.body)",
 ]);
 
-rejectText("marketplace-backend/src/modules/reviews/reviews.controller.ts", [
+rejectText("backend/src/modules/reviews/reviews.controller.ts", [
   "ReviewsRepository",
   "withTransaction(",
   "/database/",
 ]);
 
-requireText("marketplace-backend/src/modules/reviews/reviews.routes.ts", [
+requireText("backend/src/modules/reviews/reviews.routes.ts", [
   "export function createReviewsRouter(",
   "export function createProductReviewsRouter(",
   "export function createStoreReviewsRouter(",
@@ -85,12 +85,12 @@ requireText("marketplace-backend/src/modules/reviews/reviews.routes.ts", [
   "export const reviewsOpenApiPaths",
 ]);
 
-rejectText("marketplace-backend/src/modules/reviews/reviews.routes.ts", [
+rejectText("backend/src/modules/reviews/reviews.routes.ts", [
   "router.delete(",
   '"/api/v1/reviews/{id}/delete"',
 ]);
 
-requireText("marketplace-backend/src/app.ts", [
+requireText("backend/src/app.ts", [
   "ReviewsController",
   "createReviewsRouter",
   "createProductReviewsRouter",
@@ -107,7 +107,7 @@ requireText("marketplace-backend/src/app.ts", [
   'app.use(`${API_V1_PREFIX}/admin/reviews`, adminReviewsRouter);',
 ]);
 
-requireText("marketplace-backend/src/database/seeds/platform-rbac.seed.ts", [
+requireText("backend/src/database/seeds/platform-rbac.seed.ts", [
   "REVIEWS_PERMISSION_CATALOG",
   "...REVIEWS_PERMISSION_CATALOG",
   "REVIEWS_PERMISSION.CREATE_VERIFIED",
@@ -115,19 +115,19 @@ requireText("marketplace-backend/src/database/seeds/platform-rbac.seed.ts", [
   "REVIEWS_PERMISSION.PUBLIC_READ",
 ]);
 
-requireText("marketplace-backend/src/http/openapi/openapi.document.ts", [
+requireText("backend/src/http/openapi/openapi.document.ts", [
   "reviewsOpenApiPaths",
   'name: "Reviews & Ratings"',
   "...reviewsOpenApiPaths",
 ]);
 
-requireText("marketplace-backend/tests/regression/implemented-api-contracts.test.ts", [
+requireText("backend/tests/regression/implemented-api-contracts.test.ts", [
   "reviewsOpenApiPaths",
   "locks Module 15 Reviews & Ratings to exactly the eight approved operations",
   '"/api/v1/admin/reviews": ["get"]',
 ]);
 
-requireText("marketplace-backend/src/modules/reviews/index.ts", [
+requireText("backend/src/modules/reviews/index.ts", [
   'export * from "./reviews.controller.js";',
   'export * from "./reviews.routes.js";',
 ]);

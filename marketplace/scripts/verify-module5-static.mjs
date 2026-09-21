@@ -21,7 +21,10 @@ async function pathExists(relativePath) {
 
 /** Reads one UTF-8 source file from the delivery root. */
 async function read(relativePath) {
-  return readFile(path.join(root, relativePath), "utf8");
+  const source = await readFile(path.join(root, relativePath), "utf8");
+  return relativePath.endsWith("package.json")
+    ? JSON.stringify(JSON.parse(source.replace(/^\uFEFF/u, "")), null, 2)
+    : source;
 }
 
 /** Requires one source file to contain every listed verification marker. */
@@ -38,15 +41,15 @@ async function requireText(relativePath, markers) {
 /** Verifies the Pass 1 database foundation still exists unchanged for later Module 5 passes. */
 async function verifyDatabaseFoundation() {
   for (const file of [
-    "marketplace-backend/src/database/schema/catalog.ts",
-    "marketplace-backend/src/database/relations.ts",
-    "marketplace-backend/drizzle/0008_catalog_taxonomy.sql",
-    "marketplace-backend/scripts/verify-module5-migrations.mjs",
+    "backend/src/database/schema/catalog.ts",
+    "backend/src/database/relations.ts",
+    "backend/drizzle/0008_catalog_taxonomy.sql",
+    "backend/scripts/verify-module5-migrations.mjs",
   ]) {
     assertCondition(await pathExists(file), `${file} is missing.`);
   }
 
-  await requireText("marketplace-backend/src/database/schema/catalog.ts", [
+  await requireText("backend/src/database/schema/catalog.ts", [
     "export const categories = pgTable(",
     "export const brands = pgTable(",
     "export const attributes = pgTable(",
@@ -60,14 +63,14 @@ async function verifyDatabaseFoundation() {
     'check("category_attributes_sort_order_check"',
   ]);
 
-  await requireText("marketplace-backend/src/database/relations.ts", [
+  await requireText("backend/src/database/relations.ts", [
     "export const categoriesRelations = relations(",
     "export const attributesRelations = relations(",
     "export const attributeValuesRelations = relations(",
     "export const categoryAttributesRelations = relations(",
   ]);
 
-  await requireText("marketplace-backend/drizzle/0008_catalog_taxonomy.sql", [
+  await requireText("backend/drizzle/0008_catalog_taxonomy.sql", [
     'CREATE TABLE "categories"',
     'CREATE TABLE "brands"',
     'CREATE TABLE "attributes"',
@@ -79,7 +82,7 @@ async function verifyDatabaseFoundation() {
     'ON DELETE RESTRICT',
   ]);
 
-  await requireText("marketplace-backend/scripts/verify-module5-migrations.mjs", [
+  await requireText("backend/scripts/verify-module5-migrations.mjs", [
     "verifyColumnDefinitions",
     "verifyForeignKeyDeleteRules",
     '"categories_pkey"',
@@ -94,7 +97,7 @@ async function verifyDatabaseFoundation() {
 /** Verifies stable Module 5 permissions, errors, events, and database-aligned limits. */
 async function verifyCatalogConstants() {
   const file =
-    "marketplace-backend/src/modules/catalog-taxonomy/catalog-taxonomy.constants.ts";
+    "backend/src/modules/catalog-taxonomy/catalog-taxonomy.constants.ts";
   assertCondition(await pathExists(file), `${file} is missing.`);
 
   await requireText(file, [
@@ -120,7 +123,7 @@ async function verifyCatalogConstants() {
 /** Verifies Zod request/response contracts stay aligned with the approved Module 5 business surface. */
 async function verifyCatalogContracts() {
   const file =
-    "marketplace-backend/src/modules/catalog-taxonomy/catalog-taxonomy.schema.ts";
+    "backend/src/modules/catalog-taxonomy/catalog-taxonomy.schema.ts";
   assertCondition(await pathExists(file), `${file} is missing.`);
 
   await requireText(file, [
@@ -154,7 +157,7 @@ async function verifyCatalogContracts() {
 
 /** Verifies Module 5 RBAC is composed downstream without making earlier modules import Module 5. */
 async function verifyCatalogRbacComposition() {
-  const seedFile = "marketplace-backend/src/database/seeds/platform-rbac.seed.ts";
+  const seedFile = "backend/src/database/seeds/platform-rbac.seed.ts";
   await requireText(seedFile, [
     "CATALOG_PERMISSION",
     "CATALOG_PERMISSION_CATALOG",
@@ -165,9 +168,9 @@ async function verifyCatalogRbacComposition() {
   ]);
 
   for (const upstreamFile of [
-    "marketplace-backend/src/modules/administration/administration.constants.ts",
-    "marketplace-backend/src/modules/customers/customers.constants.ts",
-    "marketplace-backend/src/modules/sellers/sellers.constants.ts",
+    "backend/src/modules/administration/administration.constants.ts",
+    "backend/src/modules/customers/customers.constants.ts",
+    "backend/src/modules/sellers/sellers.constants.ts",
   ]) {
     const source = await read(upstreamFile);
     assertCondition(
@@ -180,7 +183,7 @@ async function verifyCatalogRbacComposition() {
 /** Verifies the Pass 3 repository contains only required scoped persistence helpers. */
 async function verifyCatalogRepository() {
   const file =
-    "marketplace-backend/src/modules/catalog-taxonomy/catalog-taxonomy.repository.ts";
+    "backend/src/modules/catalog-taxonomy/catalog-taxonomy.repository.ts";
   assertCondition(await pathExists(file), `${file} is missing.`);
 
   await requireText(file, [
@@ -249,7 +252,7 @@ async function verifyCatalogRepository() {
   );
 
   const serviceSource = await read(
-    "marketplace-backend/src/modules/catalog-taxonomy/catalog-taxonomy.service.ts",
+    "backend/src/modules/catalog-taxonomy/catalog-taxonomy.service.ts",
   );
   for (const method of expectedRepositoryMethods) {
     assertCondition(
@@ -284,7 +287,7 @@ async function verifyCatalogRepository() {
 /** Verifies Pass 4 service rules, transaction ownership, audit/outbox behavior, and downstream publication validation. */
 async function verifyCatalogService() {
   const file =
-    "marketplace-backend/src/modules/catalog-taxonomy/catalog-taxonomy.service.ts";
+    "backend/src/modules/catalog-taxonomy/catalog-taxonomy.service.ts";
   assertCondition(await pathExists(file), `${file} is missing.`);
 
   await requireText(file, [
@@ -336,7 +339,7 @@ async function verifyCatalogService() {
 /** Verifies Pass 5 thin controller methods parse Zod inputs and call only the Module 5 service. */
 async function verifyCatalogController() {
   const file =
-    "marketplace-backend/src/modules/catalog-taxonomy/catalog-taxonomy.controller.ts";
+    "backend/src/modules/catalog-taxonomy/catalog-taxonomy.controller.ts";
   assertCondition(await pathExists(file), `${file} is missing.`);
 
   await requireText(file, [
@@ -380,7 +383,7 @@ async function verifyCatalogController() {
 /** Verifies the audited Module 5 routers, RBAC prechecks, and Zod-derived OpenAPI paths. */
 async function verifyCatalogRoutes() {
   const file =
-    "marketplace-backend/src/modules/catalog-taxonomy/catalog-taxonomy.routes.ts";
+    "backend/src/modules/catalog-taxonomy/catalog-taxonomy.routes.ts";
   assertCondition(await pathExists(file), `${file} is missing.`);
 
   await requireText(file, [
@@ -450,7 +453,7 @@ async function verifyCatalogRoutes() {
 /** Verifies optional authentication supports public catalog reads without weakening protected routes. */
 async function verifyOptionalAuthentication() {
   const file =
-    "marketplace-backend/src/common/middleware/authentication.middleware.ts";
+    "backend/src/common/middleware/authentication.middleware.ts";
   await requireText(file, [
     "function optionalBearerToken(request: Request): string | null",
     "export function getOptionalRequestContext",
@@ -459,7 +462,7 @@ async function verifyOptionalAuthentication() {
     "await runtimeAuthService.authenticateAccessToken",
   ]);
 
-  const seedFile = "marketplace-backend/src/database/seeds/platform-rbac.seed.ts";
+  const seedFile = "backend/src/database/seeds/platform-rbac.seed.ts";
   await requireText(seedFile, [
     "CUSTOMER_SELF_SERVICE_PERMISSION_CODES",
     "CATALOG_PERMISSION.READ",
@@ -469,7 +472,7 @@ async function verifyOptionalAuthentication() {
 
 /** Verifies Module 5 routers are composed, mounted at the approved bases, and registered in OpenAPI. */
 async function verifyCatalogRegistration() {
-  await requireText("marketplace-backend/src/app.ts", [
+  await requireText("backend/src/app.ts", [
     'from "./modules/catalog-taxonomy/index.js"',
     "new CatalogTaxonomyService()",
     "new CatalogTaxonomyController(",
@@ -479,14 +482,14 @@ async function verifyCatalogRegistration() {
     'app.use(`${API_V1_PREFIX}/admin/catalog`, adminCatalogTaxonomyRouter)',
   ]);
 
-  await requireText("marketplace-backend/src/http/openapi/openapi.document.ts", [
+  await requireText("backend/src/http/openapi/openapi.document.ts", [
     "catalogTaxonomyOpenApiPaths",
     'name: "Catalog Taxonomy"',
     "...catalogTaxonomyOpenApiPaths",
   ]);
 
   const indexFile =
-    "marketplace-backend/src/modules/catalog-taxonomy/index.ts";
+    "backend/src/modules/catalog-taxonomy/index.ts";
   await requireText(indexFile, [
     'export * from "./catalog-taxonomy.constants.js"',
     'export * from "./catalog-taxonomy.schema.js"',
@@ -505,17 +508,17 @@ async function verifyCatalogRegistration() {
 /** Verifies Pass 6 repository/service/API tests and the focused backend regression runner remain present. */
 async function verifyCatalogBackendTests() {
   for (const file of [
-    "marketplace-backend/tests/module5/module5.test-helpers.ts",
-    "marketplace-backend/tests/module5/module5.schemas.test.ts",
-    "marketplace-backend/tests/module5/module5.service.test.ts",
-    "marketplace-backend/tests/module5/module5.repository.test.ts",
-    "marketplace-backend/tests/module5/module5.integration.test.ts",
-    "marketplace-backend/scripts/run-module5-tests.mjs",
+    "backend/tests/module5/module5.test-helpers.ts",
+    "backend/tests/module5/module5.schemas.test.ts",
+    "backend/tests/module5/module5.service.test.ts",
+    "backend/tests/module5/module5.repository.test.ts",
+    "backend/tests/module5/module5.integration.test.ts",
+    "backend/scripts/run-module5-tests.mjs",
   ]) {
     assertCondition(await pathExists(file), `${file} is missing.`);
   }
 
-  await requireText("marketplace-backend/tests/module5/module5.integration.test.ts", [
+  await requireText("backend/tests/module5/module5.integration.test.ts", [
     "prevents descendant cycles",
     "filters inactive branches",
     "rejects duplicate identifiers and invalid variant axes",
@@ -533,7 +536,7 @@ async function verifyCatalogBackendTests() {
     "CATALOG_OUTBOX_EVENT.CATEGORY_ATTRIBUTES_CHANGED",
   ]);
 
-  await requireText("marketplace-backend/tests/module5/module5.service.test.ts", [
+  await requireText("backend/tests/module5/module5.service.test.ts", [
     "rejects authenticated catalog reads",
     "rejects catalog writes before opening a transaction",
     "filters inactive category branches",
@@ -545,7 +548,7 @@ async function verifyCatalogBackendTests() {
     "required and category-scoped Product values",
   ]);
 
-  await requireText("marketplace-backend/tests/module5/module5.repository.test.ts", [
+  await requireText("backend/tests/module5/module5.repository.test.ts", [
     "deterministic sort/name order",
     "filters public brand and attribute reads",
     "exact lookup helpers used by the service",
@@ -554,7 +557,7 @@ async function verifyCatalogBackendTests() {
   ]);
 
   const packageJson = JSON.parse(
-    (await read("marketplace-backend/package.json")).replace(/^\uFEFF/, ""),
+    (await read("backend/package.json")).replace(/^\uFEFF/, ""),
   );
   assertCondition(
     packageJson.scripts?.["test:module5:specs"] === "vitest run tests/module5",
@@ -565,7 +568,7 @@ async function verifyCatalogBackendTests() {
     "Backend package.json must expose the complete Module 5 backend runner.",
   );
 
-  await requireText("marketplace-backend/scripts/run-module5-tests.mjs", [
+  await requireText("backend/scripts/run-module5-tests.mjs", [
     '"test:module5:migrations"',
     '"test:module5:specs"',
     '"test:module2:specs"',
@@ -577,7 +580,7 @@ async function verifyCatalogBackendTests() {
     '"build"',
   ]);
 
-  await requireText("marketplace-backend/.github/workflows/ci.yml", [
+  await requireText("backend/.github/workflows/ci.yml", [
     "Prepare database for Module 5 tests",
     "Run Module 5 tests",
     "npm run test:module5:specs",
@@ -587,32 +590,32 @@ async function verifyCatalogBackendTests() {
 /** Verifies Pass 7 frontend feature files, route registration, permissions, and focused tests. */
 async function verifyCatalogFrontendFeature() {
   for (const file of [
-    "marketplace-frontend/src/features/catalog-taxonomy/catalog-taxonomy.constants.ts",
-    "marketplace-frontend/src/features/catalog-taxonomy/types/catalog-taxonomy.types.ts",
-    "marketplace-frontend/src/features/catalog-taxonomy/schemas/catalog-taxonomy.schemas.ts",
-    "marketplace-frontend/src/features/catalog-taxonomy/api/catalog-taxonomy.api.ts",
-    "marketplace-frontend/src/features/catalog-taxonomy/hooks/catalog-taxonomy.query-keys.ts",
-    "marketplace-frontend/src/features/catalog-taxonomy/hooks/use-catalog-taxonomy.ts",
-    "marketplace-frontend/src/features/catalog-taxonomy/components/catalog-taxonomy-layout.tsx",
-    "marketplace-frontend/src/features/catalog-taxonomy/components/category-tree.tsx",
-    "marketplace-frontend/src/features/catalog-taxonomy/components/taxonomy-selector.tsx",
-    "marketplace-frontend/src/features/catalog-taxonomy/forms/category-form.tsx",
-    "marketplace-frontend/src/features/catalog-taxonomy/forms/brand-form.tsx",
-    "marketplace-frontend/src/features/catalog-taxonomy/forms/attribute-form.tsx",
-    "marketplace-frontend/src/features/catalog-taxonomy/forms/category-attribute-replacement-form.tsx",
-    "marketplace-frontend/src/features/catalog-taxonomy/pages/admin-categories.page.tsx",
-    "marketplace-frontend/src/features/catalog-taxonomy/pages/admin-brands.page.tsx",
-    "marketplace-frontend/src/features/catalog-taxonomy/pages/admin-attributes.page.tsx",
-    "marketplace-frontend/src/features/catalog-taxonomy/pages/admin-category-attributes.page.tsx",
-    "marketplace-frontend/src/features/catalog-taxonomy/pages/seller-taxonomy-selector.page.tsx",
-    "marketplace-frontend/src/app/routes/catalog-taxonomy.routes.tsx",
-    "marketplace-frontend/tests/module5-catalog-taxonomy.test.tsx",
+    "frontend/src/features/catalog-taxonomy/catalog-taxonomy.constants.ts",
+    "frontend/src/features/catalog-taxonomy/types/catalog-taxonomy.types.ts",
+    "frontend/src/features/catalog-taxonomy/schemas/catalog-taxonomy.schemas.ts",
+    "frontend/src/features/catalog-taxonomy/api/catalog-taxonomy.api.ts",
+    "frontend/src/features/catalog-taxonomy/hooks/catalog-taxonomy.query-keys.ts",
+    "frontend/src/features/catalog-taxonomy/hooks/use-catalog-taxonomy.ts",
+    "frontend/src/features/catalog-taxonomy/components/catalog-taxonomy-layout.tsx",
+    "frontend/src/features/catalog-taxonomy/components/category-tree.tsx",
+    "frontend/src/features/catalog-taxonomy/components/taxonomy-selector.tsx",
+    "frontend/src/features/catalog-taxonomy/forms/category-form.tsx",
+    "frontend/src/features/catalog-taxonomy/forms/brand-form.tsx",
+    "frontend/src/features/catalog-taxonomy/forms/attribute-form.tsx",
+    "frontend/src/features/catalog-taxonomy/forms/category-attribute-replacement-form.tsx",
+    "frontend/src/features/catalog-taxonomy/pages/admin-categories.page.tsx",
+    "frontend/src/features/catalog-taxonomy/pages/admin-brands.page.tsx",
+    "frontend/src/features/catalog-taxonomy/pages/admin-attributes.page.tsx",
+    "frontend/src/features/catalog-taxonomy/pages/admin-category-attributes.page.tsx",
+    "frontend/src/features/catalog-taxonomy/pages/seller-taxonomy-selector.page.tsx",
+    "frontend/src/app/routes/catalog-taxonomy.routes.tsx",
+    "frontend/tests/module5-catalog-taxonomy.test.tsx",
   ]) {
     assertCondition(await pathExists(file), `${file} is missing.`);
   }
 
   await requireText(
-    "marketplace-frontend/src/features/catalog-taxonomy/api/catalog-taxonomy.api.ts",
+    "frontend/src/features/catalog-taxonomy/api/catalog-taxonomy.api.ts",
     [
       'apiClient.get("/catalog/categories")',
       'apiClient.post("/admin/catalog/categories", input)',
@@ -626,7 +629,7 @@ async function verifyCatalogFrontendFeature() {
   );
 
   const frontendSchemaFile =
-    "marketplace-frontend/src/features/catalog-taxonomy/schemas/catalog-taxonomy.schemas.ts";
+    "frontend/src/features/catalog-taxonomy/schemas/catalog-taxonomy.schemas.ts";
   await requireText(frontendSchemaFile, [
     "Category slug is required",
     "Brand slug is required",
@@ -642,7 +645,7 @@ async function verifyCatalogFrontendFeature() {
   );
 
   await requireText(
-    "marketplace-frontend/src/features/catalog-taxonomy/forms/category-attribute-replacement-form.tsx",
+    "frontend/src/features/catalog-taxonomy/forms/category-attribute-replacement-form.tsx",
     [
       "Builds editable rows from the authoritative mapping returned by the server",
       "Loading current category mapping...",
@@ -654,7 +657,7 @@ async function verifyCatalogFrontendFeature() {
   );
 
   await requireText(
-    "marketplace-frontend/src/features/catalog-taxonomy/hooks/use-catalog-taxonomy.ts",
+    "frontend/src/features/catalog-taxonomy/hooks/use-catalog-taxonomy.ts",
     [
       "useCategoryAttributesQuery",
       "catalogTaxonomyApi.listCategoryAttributes(categoryId)",
@@ -664,7 +667,7 @@ async function verifyCatalogFrontendFeature() {
   );
 
   await requireText(
-    "marketplace-frontend/src/features/catalog-taxonomy/components/taxonomy-selector.tsx",
+    "frontend/src/features/catalog-taxonomy/components/taxonomy-selector.tsx",
     [
       "reusable read-only taxonomy selector",
       "Only attributes mapped to the selected category are shown",
@@ -677,7 +680,7 @@ async function verifyCatalogFrontendFeature() {
     ],
   );
 
-  await requireText("marketplace-frontend/src/app/routes/catalog-taxonomy.routes.tsx", [
+  await requireText("frontend/src/app/routes/catalog-taxonomy.routes.tsx", [
     'path: "/admin/catalog/categories"',
     'path: "/admin/catalog/brands"',
     'path: "/admin/catalog/attributes"',
@@ -685,7 +688,7 @@ async function verifyCatalogFrontendFeature() {
     'path: "/seller/catalog-taxonomy"',
   ]);
 
-  await requireText("marketplace-frontend/src/app/router/router.tsx", [
+  await requireText("frontend/src/app/router/router.tsx", [
     "adminCatalogCategoriesRoute",
     "adminCatalogBrandsRoute",
     "adminCatalogAttributesRoute",
@@ -693,7 +696,7 @@ async function verifyCatalogFrontendFeature() {
     "sellerCatalogTaxonomyRoute",
   ]);
 
-  await requireText("marketplace-frontend/tests/module5-catalog-taxonomy.test.tsx", [
+  await requireText("frontend/tests/module5-catalog-taxonomy.test.tsx", [
     "creates a normalized category and refreshes the hierarchy",
     "creates a brand through the approved create command",
     "creates a value-backed variant-axis attribute",
@@ -704,7 +707,7 @@ async function verifyCatalogFrontendFeature() {
   ]);
 
   const packageJson = JSON.parse(
-    (await read("marketplace-frontend/package.json")).replace(/^\uFEFF/, ""),
+    (await read("frontend/package.json")).replace(/^\uFEFF/, ""),
   );
   assertCondition(
     packageJson.scripts?.["test:module5"] ===
@@ -715,7 +718,7 @@ async function verifyCatalogFrontendFeature() {
 
 /** Verifies Pass 8 browser coverage, release orchestration, and focused E2E commands. */
 async function verifyCatalogE2eAndReleaseGate() {
-  const e2eFile = "marketplace-frontend/e2e/module5.spec.ts";
+  const e2eFile = "frontend/e2e/module5.spec.ts";
   const releaseFile = "scripts/verify-module5.mjs";
   assertCondition(await pathExists(e2eFile), `${e2eFile} is missing.`);
   assertCondition(await pathExists(releaseFile), `${releaseFile} is missing.`);
@@ -747,7 +750,7 @@ async function verifyCatalogE2eAndReleaseGate() {
   ]);
 
   const frontendPackageJson = JSON.parse(
-    (await read("marketplace-frontend/package.json")).replace(/^\uFEFF/, ""),
+    (await read("frontend/package.json")).replace(/^\uFEFF/, ""),
   );
   assertCondition(
     frontendPackageJson.scripts?.["test:e2e:module5"] ===
@@ -764,8 +767,8 @@ async function verifyPassBoundary() {
   );
 
   for (const deadFile of [
-    "marketplace-backend/src/common/constants/http.ts",
-    "marketplace-backend/src/common/errors/index.ts",
+    "backend/src/common/constants/http.ts",
+    "backend/src/common/errors/index.ts",
   ]) {
     assertCondition(
       !(await pathExists(deadFile)),
@@ -790,14 +793,14 @@ async function verifyPassBoundary() {
   }
 
   for (const generatedPath of [
-    "marketplace-backend/node_modules",
-    "marketplace-backend/dist",
-    "marketplace-backend/coverage",
-    "marketplace-frontend/node_modules",
-    "marketplace-frontend/dist",
-    "marketplace-frontend/coverage",
-    "marketplace-frontend/playwright-report",
-    "marketplace-frontend/test-results",
+    "backend/node_modules",
+    "backend/dist",
+    "backend/coverage",
+    "frontend/node_modules",
+    "frontend/dist",
+    "frontend/coverage",
+    "frontend/playwright-report",
+    "frontend/test-results",
   ]) {
     assertCondition(
       !(await pathExists(generatedPath)),

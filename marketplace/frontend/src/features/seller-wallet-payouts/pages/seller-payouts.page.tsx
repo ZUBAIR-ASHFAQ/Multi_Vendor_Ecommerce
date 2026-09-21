@@ -147,11 +147,11 @@ function SellerPayoutsContent({ canRequest }: { canRequest: boolean }) {
             <h2 className="font-semibold">Payout history</h2>
             <p className="text-xs text-slate-500">Paid and failed history is immutable; later refunds appear as new Wallet adjustments.</p>
           </div>
-          <label className="text-sm font-medium">
+          <label className="flex w-full flex-col gap-2 text-sm font-medium sm:w-auto sm:flex-row sm:items-center">
             Status
             <select
               aria-label="Seller payout status filter"
-              className="ml-2 rounded-md border px-3 py-2"
+              className="w-full rounded-md border px-3 py-2 sm:ml-2 sm:w-auto"
               value={params.status ?? ""}
               onChange={(event) => setParams((current) => ({
                 ...current,

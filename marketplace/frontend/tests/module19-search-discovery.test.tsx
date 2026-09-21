@@ -104,6 +104,25 @@ describe("Module 19 Search & Discovery UI", () => {
   });
 
 
+  it("treats the mobile Product filter surface as a keyboard-contained dialog", async () => {
+    useProductSearchApi();
+    await renderRoute("/search");
+
+    const user = userEvent.setup();
+    const trigger = await screen.findByRole("button", { name: "Filters" });
+    trigger.focus();
+    await user.click(trigger);
+
+    const dialog = screen.getByRole("dialog", { name: "Filters" });
+    expect(dialog).toHaveAttribute("aria-modal", "true");
+    expect(screen.getByRole("button", { name: "Close filters" })).toHaveFocus();
+
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog", { name: "Filters" })).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+  });
+
+
   it("resolves public Search thumbnails in one media request and renders the returned image", async () => {
     const thumbnailFileId = "77777777-7777-4777-8777-777777777777";
     server.use(
@@ -166,7 +185,7 @@ describe("Module 19 Search & Discovery UI", () => {
     await renderRoute("/search?q=headphones");
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("Search is temporarily unavailable.");
-    expect(alert).toHaveTextContent("Request ID: req-search-123");
+    expect(alert).toHaveTextContent("Technical reference: req-search-123");
   });
 
   it("shows bounded autocomplete and uses a selected suggestion without treating it as authoritative data", async () => {

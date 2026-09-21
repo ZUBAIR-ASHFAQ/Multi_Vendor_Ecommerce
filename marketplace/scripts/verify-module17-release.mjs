@@ -10,7 +10,10 @@ function read(relativePath) {
   if (!existsSync(absolutePath)) {
     throw new Error(`Required Module 17 release file is missing: ${relativePath}`);
   }
-  return readFileSync(absolutePath, "utf8");
+  const source = readFileSync(absolutePath, "utf8");
+  return relativePath.endsWith("package.json")
+    ? JSON.stringify(JSON.parse(source.replace(/^\uFEFF/u, "")), null, 2)
+    : source;
 }
 
 /** Requires one durable final-release source fragment. */
@@ -22,12 +25,12 @@ function requireText(source, expected, label) {
 
 /** Confirms production payout composition is environment-driven while test behavior stays non-production only. */
 function verifyProviderComposition() {
-  const factory = read("marketplace-backend/src/integrations/payouts/payout-provider.factory.ts");
-  const environment = read("marketplace-backend/src/config/env.ts");
-  const application = read("marketplace-backend/src/app.ts");
-  const example = read("marketplace-backend/.env.example");
-  const tests = read("marketplace-backend/tests/module17/module17.provider.test.ts");
-  const environmentTests = read("marketplace-backend/tests/unit/environment-security.test.ts");
+  const factory = read("backend/src/integrations/payouts/payout-provider.factory.ts");
+  const environment = read("backend/src/config/env.ts");
+  const application = read("backend/src/app.ts");
+  const example = read("backend/.env.example");
+  const tests = read("backend/tests/module17/module17.provider.test.ts");
+  const environmentTests = read("backend/tests/unit/environment-security.test.ts");
 
   for (const expected of [
     'UNCONFIGURED: "unconfigured"',
@@ -60,8 +63,8 @@ function verifyProviderComposition() {
 
 /** Confirms final browser proof covers paid, failed, uncertain, and post-payout refund behavior. */
 function verifyBrowserProof() {
-  const browser = read("marketplace-frontend/e2e/module17.spec.ts");
-  const packageJson = JSON.parse(read("marketplace-frontend/package.json"));
+  const browser = read("frontend/e2e/module17.spec.ts");
+  const packageJson = JSON.parse(read("frontend/package.json"));
 
   for (const expected of [
     "moves Commission earnings through delivery, hold, available, reservation, and paid Payout history",
@@ -80,8 +83,8 @@ function verifyBrowserProof() {
 
 /** Confirms post-browser reconciliation checks immutable financial truth instead of UI-only success. */
 function verifyReleaseDataProof() {
-  const releaseData = read("marketplace-backend/scripts/verify-module17-release-data.mjs");
-  const packageJson = JSON.parse(read("marketplace-backend/package.json"));
+  const releaseData = read("backend/scripts/verify-module17-release-data.mjs");
+  const packageJson = JSON.parse(read("backend/package.json"));
 
   for (const expected of [
     "Module 17 delivered Commission sale source",
@@ -104,7 +107,7 @@ function verifyReleaseDataProof() {
 
 /** Confirms the cumulative E2E runner executes Module 17 with deterministic test-only provider composition. */
 function verifyCumulativeRunner() {
-  const runner = read("marketplace-frontend/e2e/run-e2e-ci.mjs");
+  const runner = read("frontend/e2e/run-e2e-ci.mjs");
 
   for (const expected of [
     'PAYOUT_PROVIDER_MODE: "deterministic_test"',
@@ -121,9 +124,9 @@ function verifyCumulativeRunner() {
 /** Confirms failed/uncertain provider commands refresh persisted Payout state in the finance UI. */
 function verifyFrontendReconciliationRefresh() {
   const hooks = read(
-    "marketplace-frontend/src/features/seller-wallet-payouts/hooks/use-seller-wallet-payouts.ts",
+    "frontend/src/features/seller-wallet-payouts/hooks/use-seller-wallet-payouts.ts",
   );
-  const tests = read("marketplace-frontend/tests/module17-seller-wallet-payouts.test.tsx");
+  const tests = read("frontend/tests/module17-seller-wallet-payouts.test.tsx");
   const marker = hooks.indexOf("export function useSendPayoutMutation");
   const source = marker >= 0 ? hooks.slice(marker, marker + 700) : "";
 
@@ -154,7 +157,7 @@ function verifyFinalCleanup() {
 
 /** Keeps the remediation database history frozen at migration 0030. */
 function verifyMigrationFreeze() {
-  const migrations = readdirSync(path.join(root, "marketplace-backend", "drizzle"))
+  const migrations = readdirSync(path.join(root, "backend", "drizzle"))
     .filter((name) => /^\d{4}.*\.sql$/u.test(name))
     .sort();
 

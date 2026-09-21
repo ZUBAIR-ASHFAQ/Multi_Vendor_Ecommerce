@@ -419,7 +419,7 @@ describe("Module 8 Cart & Wishlist UI", () => {
     await renderRoute("/cart");
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("Cart could not be refreshed.");
-    expect(alert).toHaveTextContent("Request ID: req-cart-error");
+    expect(alert).toHaveTextContent("Technical reference: req-cart-error");
 
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "Try again" }));

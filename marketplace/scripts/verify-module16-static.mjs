@@ -8,7 +8,10 @@ const root = fileURLToPath(new URL("../", import.meta.url));
 function read(relativePath) {
   const absolutePath = join(root, relativePath);
   if (!existsSync(absolutePath)) throw new Error(`Required Module 16 file is missing: ${relativePath}`);
-  return readFileSync(absolutePath, "utf8");
+  const source = readFileSync(absolutePath, "utf8");
+  return relativePath.endsWith("package.json")
+    ? JSON.stringify(JSON.parse(source.replace(/^\uFEFF/u, "")), null, 2)
+    : source;
 }
 
 /** Requires one stable source fragment that proves an intended release behavior. */
@@ -36,7 +39,7 @@ function verifyCleanup() {
 
 /** Confirms the focused Playwright workflow proves settlement, replay, history, refund, and seller isolation. */
 function verifyPlaywrightWorkflow() {
-  const e2e = read("marketplace-frontend/e2e/module16.spec.ts");
+  const e2e = read("frontend/e2e/module16.spec.ts");
   for (const proof of [
     'test.describe("Module 16 Commissions E2E"',
     '"/admin/commissions/rules"',
@@ -61,7 +64,7 @@ function verifyPlaywrightWorkflow() {
 
 /** Confirms post-browser verification is read-only and checks immutable finance invariants. */
 function verifyReleaseDataGate() {
-  const releaseData = read("marketplace-backend/scripts/verify-module16-release-data.mjs");
+  const releaseData = read("backend/scripts/verify-module16-release-data.mjs");
   for (const proof of [
     "commission_rule_snapshots",
     "commission_entries",
@@ -84,8 +87,8 @@ function verifyReleaseDataGate() {
 
 /** Confirms package scripts keep only durable Module 16 test/release commands. */
 function verifyPackageScripts() {
-  const backend = JSON.parse(read("marketplace-backend/package.json"));
-  const frontend = JSON.parse(read("marketplace-frontend/package.json"));
+  const backend = JSON.parse(read("backend/package.json"));
+  const frontend = JSON.parse(read("frontend/package.json"));
   const durableBackendScripts = {
     "test:module16:migrations": "node scripts/verify-module16-migrations.mjs",
     "test:module16:contracts": "vitest run tests/module16/module16.schemas.test.ts",
@@ -121,7 +124,7 @@ function verifyPackageScripts() {
 
 /** Confirms the permanent cross-repository E2E gate carries Module 16 through release reconciliation. */
 function verifyE2eRunner() {
-  const runner = read("marketplace-frontend/e2e/run-e2e-ci.mjs");
+  const runner = read("frontend/e2e/run-e2e-ci.mjs");
   for (const proof of [
     '"e2e/module16.spec.ts"',
     '"test:module16"',
@@ -141,9 +144,9 @@ function verifyE2eRunner() {
 
 /** Confirms permanent CI runs Module 16 migrations/tests in each independent project. */
 function verifyCiWiring() {
-  const backendCi = read("marketplace-backend/.github/workflows/ci.yml");
-  const frontendCi = read("marketplace-frontend/.github/workflows/ci.yml");
-  const e2eCi = read("marketplace-frontend/.github/workflows/e2e.yml");
+  const backendCi = read("backend/.github/workflows/ci.yml");
+  const frontendCi = read("frontend/.github/workflows/ci.yml");
+  const e2eCi = read("frontend/.github/workflows/e2e.yml");
   requireText(backendCi, "Verify Module 16 Commissions clean and upgrade migrations", "Backend CI");
   requireText(backendCi, "npm run test:module16:migrations", "Backend CI");
   requireText(backendCi, "npm run test:module16:specs", "Backend CI");
@@ -171,7 +174,7 @@ function verifyFinalReleaseVerifier() {
 /** Confirms final documentation no longer tells developers to run obsolete remediation pass gates. */
 function verifyDocumentationCleanup() {
   const rootReadme = read("README.md");
-  const backendReadme = read("marketplace-backend/README.md");
+  const backendReadme = read("backend/README.md");
   for (const source of [rootReadme, backendReadme]) {
     rejectText(source, "verify-module16-pass", "Final Module 16 documentation");
     rejectText(source, "test:module16:backend:static", "Final Module 16 documentation");

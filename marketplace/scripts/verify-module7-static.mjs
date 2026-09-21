@@ -11,7 +11,10 @@ function readProjectFile(relativePath) {
   if (!existsSync(absolutePath)) {
     throw new Error(`Required file is missing: ${relativePath}`);
   }
-  return readFileSync(absolutePath, "utf8");
+  const source = readFileSync(absolutePath, "utf8");
+  return relativePath.endsWith("package.json")
+    ? JSON.stringify(JSON.parse(source.replace(/^\uFEFF/u, "")), null, 2)
+    : source;
 }
 
 /** Requires a known text fragment in a source file used by the cumulative Module 7 gate. */
@@ -50,8 +53,8 @@ function verifyTopologyAndStack() {
     }
   }
 
-  const backendPackage = JSON.parse(readProjectFile("marketplace-backend/package.json"));
-  const frontendPackage = JSON.parse(readProjectFile("marketplace-frontend/package.json"));
+  const backendPackage = JSON.parse(readProjectFile("backend/package.json"));
+  const frontendPackage = JSON.parse(readProjectFile("frontend/package.json"));
 
   for (const dependency of ["express", "drizzle-orm", "pg", "zod", "bullmq", "ioredis"]) {
     if (!backendPackage.dependencies?.[dependency]) {
@@ -76,14 +79,14 @@ function verifyTopologyAndStack() {
 /** Confirms Module 7 can reuse the required Foundation transaction, audit, outbox and idempotency primitives. */
 function verifyFoundationReadiness() {
   const requiredFiles = [
-    "marketplace-backend/src/database/transaction.ts",
-    "marketplace-backend/src/common/audit/audit.service.ts",
-    "marketplace-backend/src/common/outbox/outbox.service.ts",
-    "marketplace-backend/src/common/idempotency/idempotency.service.ts",
-    "marketplace-backend/src/common/schemas/api-envelope.schema.ts",
-    "marketplace-backend/src/common/schemas/pagination.schema.ts",
-    "marketplace-backend/src/common/middleware/authentication.middleware.ts",
-    "marketplace-backend/src/common/middleware/authorization.middleware.ts",
+    "backend/src/database/transaction.ts",
+    "backend/src/common/audit/audit.service.ts",
+    "backend/src/common/outbox/outbox.service.ts",
+    "backend/src/common/idempotency/idempotency.service.ts",
+    "backend/src/common/schemas/api-envelope.schema.ts",
+    "backend/src/common/schemas/pagination.schema.ts",
+    "backend/src/common/middleware/authentication.middleware.ts",
+    "backend/src/common/middleware/authorization.middleware.ts",
   ];
 
   for (const relativePath of requiredFiles) {
@@ -93,9 +96,9 @@ function verifyFoundationReadiness() {
 
 /** Confirms Product variants remain the upstream sellable-unit prerequisite for Inventory. */
 function verifyProductVariantPrerequisite() {
-  const productSchema = readProjectFile("marketplace-backend/src/database/schema/products.ts");
+  const productSchema = readProjectFile("backend/src/database/schema/products.ts");
   const productConstants = readProjectFile(
-    "marketplace-backend/src/modules/products/products.constants.ts",
+    "backend/src/modules/products/products.constants.ts",
   );
 
   requireText(productSchema, '"product_variants"', "Module 6 Product variant schema");
@@ -114,18 +117,18 @@ function verifyProductVariantPrerequisite() {
 /** Confirms Pass 1 persistence remains centralized, constrained, and append-only. */
 function verifyInventoryDatabasePass() {
   const inventorySchema = readProjectFile(
-    "marketplace-backend/src/database/schema/inventory.ts",
+    "backend/src/database/schema/inventory.ts",
   );
-  const schemaIndex = readProjectFile("marketplace-backend/src/database/schema/index.ts");
-  const relations = readProjectFile("marketplace-backend/src/database/relations.ts");
-  const migration = readProjectFile("marketplace-backend/drizzle/0011_inventory_stock.sql");
+  const schemaIndex = readProjectFile("backend/src/database/schema/index.ts");
+  const relations = readProjectFile("backend/src/database/relations.ts");
+  const migration = readProjectFile("backend/drizzle/0011_inventory_stock.sql");
   const partialShipmentMigration = readProjectFile(
-    "marketplace-backend/drizzle/0014_inventory_partial_shipment_accounting.sql",
+    "backend/drizzle/0014_inventory_partial_shipment_accounting.sql",
   );
   const migrationVerifier = readProjectFile(
-    "marketplace-backend/scripts/verify-module7-migrations.mjs",
+    "backend/scripts/verify-module7-migrations.mjs",
   );
-  const backendPackage = JSON.parse(readProjectFile("marketplace-backend/package.json"));
+  const backendPackage = JSON.parse(readProjectFile("backend/package.json"));
 
   for (const tableName of ["inventory_items", "stock_movements", "stock_reservations"]) {
     requireText(inventorySchema, `\"${tableName}\"`, "Inventory Drizzle schema");
@@ -202,13 +205,13 @@ function verifyInventoryDatabasePass() {
 /** Confirms Pass 2 owns only real Inventory constants, Zod contracts, inferred types, and RBAC catalog composition. */
 function verifyInventoryContractsPass() {
   const constants = readProjectFile(
-    "marketplace-backend/src/modules/inventory/inventory.constants.ts",
+    "backend/src/modules/inventory/inventory.constants.ts",
   );
   const schemas = readProjectFile(
-    "marketplace-backend/src/modules/inventory/inventory.schema.ts",
+    "backend/src/modules/inventory/inventory.schema.ts",
   );
   const platformRbac = readProjectFile(
-    "marketplace-backend/src/database/seeds/platform-rbac.seed.ts",
+    "backend/src/database/seeds/platform-rbac.seed.ts",
   );
 
   for (const permission of [
@@ -294,7 +297,7 @@ function verifyInventoryContractsPass() {
     "Seller Inventory permission grant",
   );
 
-  if (existsSync(join(root, "marketplace-backend/src/modules/inventory/inventory.types.ts"))) {
+  if (existsSync(join(root, "backend/src/modules/inventory/inventory.types.ts"))) {
     throw new Error("Pass 2 must not create an unnecessary Inventory types file; infer types from Zod/Drizzle.");
   }
 
@@ -303,7 +306,7 @@ function verifyInventoryContractsPass() {
 /** Confirms Pass 3 keeps Inventory persistence scoped, transaction-ready, and free of service-layer decisions. */
 function verifyInventoryRepositoryPass() {
   const repository = readProjectFile(
-    "marketplace-backend/src/modules/inventory/inventory.repository.ts",
+    "backend/src/modules/inventory/inventory.repository.ts",
   );
 
   for (const repositoryMethod of [
@@ -366,17 +369,17 @@ function verifyInventoryRepositoryPass() {
 /** Confirms Pass 4 owns Inventory business decisions, state transitions, audit/outbox, and Product service integration. */
 function verifyInventoryServicePass() {
   const service = readProjectFile(
-    "marketplace-backend/src/modules/inventory/inventory.service.ts",
+    "backend/src/modules/inventory/inventory.service.ts",
   );
-  const index = readProjectFile("marketplace-backend/src/modules/inventory/index.ts");
+  const index = readProjectFile("backend/src/modules/inventory/index.ts");
   const constants = readProjectFile(
-    "marketplace-backend/src/modules/inventory/inventory.constants.ts",
+    "backend/src/modules/inventory/inventory.constants.ts",
   );
   const productsService = readProjectFile(
-    "marketplace-backend/src/modules/products/products.service.ts",
+    "backend/src/modules/products/products.service.ts",
   );
   const productsRepository = readProjectFile(
-    "marketplace-backend/src/modules/products/products.repository.ts",
+    "backend/src/modules/products/products.repository.ts",
   );
 
   for (const serviceMethod of [
@@ -436,9 +439,9 @@ function verifyInventoryServicePass() {
   requireText(index, 'export * from "./inventory.service.js";', "Inventory module export");
 
   const maintenanceRuntime = readProjectFile(
-    "marketplace-backend/src/common/jobs/lifecycle-maintenance.runtime.ts",
+    "backend/src/common/jobs/lifecycle-maintenance.runtime.ts",
   );
-  const server = readProjectFile("marketplace-backend/src/server.ts");
+  const server = readProjectFile("backend/src/server.ts");
   requireText(
     maintenanceRuntime,
     "INVENTORY_RESERVATION_EXPIRY",
@@ -468,25 +471,25 @@ function verifyInventoryServicePass() {
 /** Confirms Pass 5 owns thin HTTP adapters, exact required routes, internal protection, app mounting, and OpenAPI. */
 function verifyInventoryHttpPass() {
   const controller = readProjectFile(
-    "marketplace-backend/src/modules/inventory/inventory.controller.ts",
+    "backend/src/modules/inventory/inventory.controller.ts",
   );
   const routes = readProjectFile(
-    "marketplace-backend/src/modules/inventory/inventory.routes.ts",
+    "backend/src/modules/inventory/inventory.routes.ts",
   );
-  const index = readProjectFile("marketplace-backend/src/modules/inventory/index.ts");
-  const app = readProjectFile("marketplace-backend/src/app.ts");
+  const index = readProjectFile("backend/src/modules/inventory/index.ts");
+  const app = readProjectFile("backend/src/app.ts");
   const openApi = readProjectFile(
-    "marketplace-backend/src/http/openapi/openapi.document.ts",
+    "backend/src/http/openapi/openapi.document.ts",
   );
   const internalMiddleware = readProjectFile(
-    "marketplace-backend/src/common/middleware/internal-service.middleware.ts",
+    "backend/src/common/middleware/internal-service.middleware.ts",
   );
   const authenticationMiddleware = readProjectFile(
-    "marketplace-backend/src/common/middleware/authentication.middleware.ts",
+    "backend/src/common/middleware/authentication.middleware.ts",
   );
-  const environment = readProjectFile("marketplace-backend/src/config/env.ts");
-  const envExample = readProjectFile("marketplace-backend/.env.example");
-  const logger = readProjectFile("marketplace-backend/src/common/logger/logger.ts");
+  const environment = readProjectFile("backend/src/config/env.ts");
+  const envExample = readProjectFile("backend/.env.example");
+  const logger = readProjectFile("backend/src/common/logger/logger.ts");
 
   for (const controllerMethod of [
     "listSellerInventory",
@@ -564,33 +567,33 @@ function verifyInventoryHttpPass() {
 /** Confirms Pass 6 provides backend schema/repository/service/API proof plus prerequisite regression gates. */
 function verifyInventoryBackendTestsPass() {
   const testFiles = [
-    "marketplace-backend/tests/module7/module7.test-helpers.ts",
-    "marketplace-backend/tests/module7/module7.schemas.test.ts",
-    "marketplace-backend/tests/module7/module7.repository.test.ts",
-    "marketplace-backend/tests/module7/module7.service.test.ts",
-    "marketplace-backend/tests/module7/module7.integration.test.ts",
+    "backend/tests/module7/module7.test-helpers.ts",
+    "backend/tests/module7/module7.schemas.test.ts",
+    "backend/tests/module7/module7.repository.test.ts",
+    "backend/tests/module7/module7.service.test.ts",
+    "backend/tests/module7/module7.integration.test.ts",
   ];
   for (const relativePath of testFiles) readProjectFile(relativePath);
 
   const schemasTest = readProjectFile(
-    "marketplace-backend/tests/module7/module7.schemas.test.ts",
+    "backend/tests/module7/module7.schemas.test.ts",
   );
   const repositoryTest = readProjectFile(
-    "marketplace-backend/tests/module7/module7.repository.test.ts",
+    "backend/tests/module7/module7.repository.test.ts",
   );
   const serviceTest = readProjectFile(
-    "marketplace-backend/tests/module7/module7.service.test.ts",
+    "backend/tests/module7/module7.service.test.ts",
   );
   const integrationTest = readProjectFile(
-    "marketplace-backend/tests/module7/module7.integration.test.ts",
+    "backend/tests/module7/module7.integration.test.ts",
   );
-  const runner = readProjectFile("marketplace-backend/scripts/run-module7-tests.mjs");
-  const ci = readProjectFile("marketplace-backend/.github/workflows/ci.yml");
-  const testEnv = readProjectFile("marketplace-backend/tests/setup/env.ts");
+  const runner = readProjectFile("backend/scripts/run-module7-tests.mjs");
+  const ci = readProjectFile("backend/.github/workflows/ci.yml");
+  const testEnv = readProjectFile("backend/tests/setup/env.ts");
   const service = readProjectFile(
-    "marketplace-backend/src/modules/inventory/inventory.service.ts",
+    "backend/src/modules/inventory/inventory.service.ts",
   );
-  const backendPackage = JSON.parse(readProjectFile("marketplace-backend/package.json"));
+  const backendPackage = JSON.parse(readProjectFile("backend/package.json"));
 
   for (const proof of [
     "bounds stock quantities",
@@ -665,36 +668,36 @@ function verifyInventoryBackendTestsPass() {
 /** Confirms Pass 7 provides the seller Inventory React feature using the required TanStack stack. */
 function verifyInventoryFrontendPass() {
   const requiredFiles = [
-    "marketplace-frontend/src/features/inventory/api/inventory.api.ts",
-    "marketplace-frontend/src/features/inventory/hooks/inventory.query-keys.ts",
-    "marketplace-frontend/src/features/inventory/hooks/use-inventory.ts",
-    "marketplace-frontend/src/features/inventory/components/inventory-pagination.tsx",
-    "marketplace-frontend/src/features/inventory/components/inventory-status.tsx",
-    "marketplace-frontend/src/features/inventory/forms/inventory-adjustment-form.tsx",
-    "marketplace-frontend/src/features/inventory/forms/inventory-reorder-level-form.tsx",
-    "marketplace-frontend/src/features/inventory/schemas/inventory.schemas.ts",
-    "marketplace-frontend/src/features/inventory/pages/seller-inventory.page.tsx",
-    "marketplace-frontend/src/features/inventory/pages/seller-inventory-variant.page.tsx",
-    "marketplace-frontend/src/features/inventory/pages/seller-inventory-movements.page.tsx",
-    "marketplace-frontend/src/app/routes/inventory.routes.tsx",
-    "marketplace-frontend/tests/module7-inventory.test.tsx",
+    "frontend/src/features/inventory/api/inventory.api.ts",
+    "frontend/src/features/inventory/hooks/inventory.query-keys.ts",
+    "frontend/src/features/inventory/hooks/use-inventory.ts",
+    "frontend/src/features/inventory/components/inventory-pagination.tsx",
+    "frontend/src/features/inventory/components/inventory-status.tsx",
+    "frontend/src/features/inventory/forms/inventory-adjustment-form.tsx",
+    "frontend/src/features/inventory/forms/inventory-reorder-level-form.tsx",
+    "frontend/src/features/inventory/schemas/inventory.schemas.ts",
+    "frontend/src/features/inventory/pages/seller-inventory.page.tsx",
+    "frontend/src/features/inventory/pages/seller-inventory-variant.page.tsx",
+    "frontend/src/features/inventory/pages/seller-inventory-movements.page.tsx",
+    "frontend/src/app/routes/inventory.routes.tsx",
+    "frontend/tests/module7-inventory.test.tsx",
   ];
   for (const relativePath of requiredFiles) readProjectFile(relativePath);
 
-  const api = readProjectFile("marketplace-frontend/src/features/inventory/api/inventory.api.ts");
-  const hooks = readProjectFile("marketplace-frontend/src/features/inventory/hooks/use-inventory.ts");
-  const inventoryPage = readProjectFile("marketplace-frontend/src/features/inventory/pages/seller-inventory.page.tsx");
-  const variantPage = readProjectFile("marketplace-frontend/src/features/inventory/pages/seller-inventory-variant.page.tsx");
-  const movementPage = readProjectFile("marketplace-frontend/src/features/inventory/pages/seller-inventory-movements.page.tsx");
-  const adjustmentForm = readProjectFile("marketplace-frontend/src/features/inventory/forms/inventory-adjustment-form.tsx");
-  const reorderForm = readProjectFile("marketplace-frontend/src/features/inventory/forms/inventory-reorder-level-form.tsx");
-  const routes = readProjectFile("marketplace-frontend/src/app/routes/inventory.routes.tsx");
-  const router = readProjectFile("marketplace-frontend/src/app/router/router.tsx");
-  const sellerLayout = readProjectFile("marketplace-frontend/src/features/sellers/components/seller-layout.tsx");
-  const authNavigation = readProjectFile("marketplace-frontend/src/features/auth/auth.navigation.ts");
-  const productEdit = readProjectFile("marketplace-frontend/src/features/products/pages/seller-product-edit.page.tsx");
-  const test = readProjectFile("marketplace-frontend/tests/module7-inventory.test.tsx");
-  const frontendPackage = JSON.parse(readProjectFile("marketplace-frontend/package.json"));
+  const api = readProjectFile("frontend/src/features/inventory/api/inventory.api.ts");
+  const hooks = readProjectFile("frontend/src/features/inventory/hooks/use-inventory.ts");
+  const inventoryPage = readProjectFile("frontend/src/features/inventory/pages/seller-inventory.page.tsx");
+  const variantPage = readProjectFile("frontend/src/features/inventory/pages/seller-inventory-variant.page.tsx");
+  const movementPage = readProjectFile("frontend/src/features/inventory/pages/seller-inventory-movements.page.tsx");
+  const adjustmentForm = readProjectFile("frontend/src/features/inventory/forms/inventory-adjustment-form.tsx");
+  const reorderForm = readProjectFile("frontend/src/features/inventory/forms/inventory-reorder-level-form.tsx");
+  const routes = readProjectFile("frontend/src/app/routes/inventory.routes.tsx");
+  const router = readProjectFile("frontend/src/app/router/router.tsx");
+  const sellerLayout = readProjectFile("frontend/src/features/sellers/components/seller-layout.tsx");
+  const authNavigation = readProjectFile("frontend/src/features/auth/auth.navigation.ts");
+  const productEdit = readProjectFile("frontend/src/features/products/pages/seller-product-edit.page.tsx");
+  const test = readProjectFile("frontend/tests/module7-inventory.test.tsx");
+  const frontendPackage = JSON.parse(readProjectFile("frontend/package.json"));
 
   for (const route of [
     '"/seller/inventory"',
@@ -751,7 +754,7 @@ function verifyInventoryFrontendPass() {
     throw new Error("Frontend package is missing the permanent Module 7 UI test command.");
   }
 
-  if (existsSync(join(root, "marketplace-frontend/src/features/inventory/types"))) {
+  if (existsSync(join(root, "frontend/src/features/inventory/types"))) {
     throw new Error("Pass 7 must not create an unnecessary Inventory types directory; current types are inferred from Zod.");
   }
 
@@ -764,14 +767,14 @@ function verifyInventoryFrontendPass() {
 
 /** Confirms Pass 8 provides the complete Module 7 browser workflow and cumulative release gate. */
 function verifyInventoryReleasePass() {
-  const e2e = readProjectFile("marketplace-frontend/e2e/module7.spec.ts");
+  const e2e = readProjectFile("frontend/e2e/module7.spec.ts");
   const releaseVerifier = readProjectFile("scripts/verify-module7.mjs");
   const releaseData = readProjectFile(
-    "marketplace-backend/scripts/verify-module7-release-data.mjs",
+    "backend/scripts/verify-module7-release-data.mjs",
   );
-  const backendPackage = JSON.parse(readProjectFile("marketplace-backend/package.json"));
-  const frontendPackage = JSON.parse(readProjectFile("marketplace-frontend/package.json"));
-  const frontendCi = readProjectFile("marketplace-frontend/.github/workflows/ci.yml");
+  const backendPackage = JSON.parse(readProjectFile("backend/package.json"));
+  const frontendPackage = JSON.parse(readProjectFile("frontend/package.json"));
+  const frontendCi = readProjectFile("frontend/.github/workflows/ci.yml");
 
   for (const proof of [
     "initializes stock, manages a reorder threshold, creates low stock, and shows immutable movements",

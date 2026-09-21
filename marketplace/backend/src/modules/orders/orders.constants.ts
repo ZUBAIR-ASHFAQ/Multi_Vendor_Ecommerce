@@ -148,6 +148,7 @@ export const ORDER_SORT_DIRECTION_VALUES = ["asc", "desc"] as const;
 
 /** Database-aligned limits shared by Module 11 contracts and future service validation. */
 export const ORDERS_LIMITS = {
+  CUSTOMER_LIST_ITEM_PREVIEW_MAX: 3,
   MONEY_PRECISION: 18,
   MONEY_SCALE: 4,
   ORDER_NUMBER_MAX_LENGTH: 40,

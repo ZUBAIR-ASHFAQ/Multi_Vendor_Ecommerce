@@ -1,11 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "@tanstack/react-router";
+import { Link, useParams } from "@tanstack/react-router";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/page-header";
+import { SectionHeader } from "@/components/ui/section-header";
+import { Select } from "@/components/ui/select";
+import { Surface } from "@/components/ui/surface";
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
 import { FormError } from "@/features/auth/components/form-error";
 import { ApiClientError } from "@/lib/api-error";
+import { formatDateTime } from "@/lib/dates";
 import type { AuthenticatedUser } from "@/features/auth/types/auth.types";
 import { AdminLayout } from "../components/admin-layout";
 import { RequirePagePermission } from "../components/permission-gate";
@@ -41,6 +47,11 @@ function roleAssignments(
 /** Returns whether the current role selection contains at least one seller-scoped role. */
 function needsSellerScope(roleIds: string[], roles: AdminRole[]): boolean {
   return roleIds.some((roleId) => roles.find((role) => role.id === roleId)?.scopeType === "seller");
+}
+
+/** Formats optional account timestamps without inventing a value for events that never happened. */
+function optionalDate(value: string | null): string {
+  return value ? formatDateTime(value) : "—";
 }
 
 /** Renders read-only user identity plus the two approved user-management commands. */
@@ -107,108 +118,161 @@ function UserDetailContent({ actor, userId }: { actor: AuthenticatedUser; userId
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-2">
-      <section className="rounded-xl border bg-white p-5 shadow-sm">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold">{user.data.displayName}</h1>
-            <p className="text-sm text-slate-600">{user.data.email}</p>
-            <p className="mt-1 text-xs text-slate-500">Account type: {user.data.accountType}</p>
-          </div>
-          <StatusBadge status={user.data.status} />
+    <div className="space-y-5">
+      <PageHeader
+        eyebrow="Access · User detail"
+        title={user.data.displayName}
+        description={user.data.email}
+        actions={(
+          <Button asChild variant="outline">
+            <Link to="/admin/users">Back to users</Link>
+          </Button>
+        )}
+      />
+
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <div className="space-y-5">
+          <Surface>
+            <SectionHeader
+              title="Account identity"
+              description="Identity and security metadata are read-only on this screen."
+              actions={<StatusBadge status={user.data.status} />}
+            />
+            <dl className="mt-5 grid gap-4 sm:grid-cols-2">
+              <div className="rounded-control bg-surface-muted p-3">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-foreground-muted">Account type</dt>
+                <dd className="mt-1 capitalize text-foreground">{user.data.accountType.replaceAll("_", " ")}</dd>
+              </div>
+              <div className="rounded-control bg-surface-muted p-3">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-foreground-muted">Email verified</dt>
+                <dd className="mt-1 text-foreground">{optionalDate(user.data.emailVerifiedAt)}</dd>
+              </div>
+              <div className="rounded-control bg-surface-muted p-3">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-foreground-muted">Last login</dt>
+                <dd className="mt-1 text-foreground">{user.data.lastLoginAt ? formatDateTime(user.data.lastLoginAt) : "Never"}</dd>
+              </div>
+              <div className="rounded-control bg-surface-muted p-3">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-foreground-muted">Password changed</dt>
+                <dd className="mt-1 text-foreground">{optionalDate(user.data.passwordChangedAt)}</dd>
+              </div>
+              <div className="rounded-control bg-surface-muted p-3">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-foreground-muted">Failed logins</dt>
+                <dd className="mt-1 text-foreground">{user.data.failedLoginAttempts}</dd>
+              </div>
+              <div className="rounded-control bg-surface-muted p-3">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-foreground-muted">Locked until</dt>
+                <dd className="mt-1 text-foreground">{optionalDate(user.data.lockedUntil)}</dd>
+              </div>
+            </dl>
+          </Surface>
+
+          {actor.permissions.includes(ADMIN_PERMISSION.USERS_STATUS_MANAGE) ? (
+            <Surface>
+              <SectionHeader
+                title="Account status"
+                description="Apply only the status transition supported by the existing administration command."
+              />
+              <div className="mt-4 space-y-3">
+                <label className="block text-sm font-medium text-foreground">
+                  Status
+                  <Select
+                    className="mt-1"
+                    value={status}
+                    onChange={(event) => setStatus(event.target.value as UserStatus)}
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="locked">Locked</option>
+                    <option value="pending">Pending</option>
+                  </Select>
+                </label>
+                <FormError error={statusMutation.error} />
+                <Button
+                  disabled={statusMutation.isPending || status === user.data.status}
+                  onClick={() => statusMutation.mutate({ status })}
+                >
+                  Save status
+                </Button>
+              </div>
+            </Surface>
+          ) : null}
         </div>
 
-        {actor.permissions.includes(ADMIN_PERMISSION.USERS_STATUS_MANAGE) && (
-          <div className="mt-6 space-y-3">
-            <label className="block text-sm font-medium">
-              Account status
-              <select
-                className="mt-1 w-full rounded-md border px-3 py-2"
-                value={status}
-                onChange={(event) => setStatus(event.target.value as UserStatus)}
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="locked">Locked</option>
-                <option value="pending">Pending</option>
-              </select>
-            </label>
-            <FormError error={statusMutation.error} />
-            <Button
-              disabled={statusMutation.isPending || status === user.data.status}
-              onClick={() => statusMutation.mutate({ status })}
-            >
-              Save status
-            </Button>
-          </div>
-        )}
-      </section>
-
-      <section className="rounded-xl border bg-white p-5 shadow-sm">
-        <h2 className="text-xl font-bold">Role assignments</h2>
-        {!canReadRoles ? (
-          <p className="mt-2 text-sm text-slate-600">
-            Role assignments are read-only because this account cannot read the Administration role catalog.
-          </p>
-        ) : roles.isPending ? (
-          <LoadingState label="Loading roles..." />
-        ) : roles.isError ? (
-          <ErrorState
-            title="Roles unavailable"
-            message={roles.error.message}
-            requestId={
-              roles.error instanceof ApiClientError ? roles.error.requestId : undefined
-            }
-            onRetry={() => void roles.refetch()}
+        <Surface>
+          <SectionHeader
+            title="Role assignments"
+            description="Assignments stay constrained by account type, role scope, seller scope, and backend authorization."
           />
-        ) : (
-          <div className="mt-4 space-y-3">
-            {assignableRoles.map((role) => (
-              <label key={role.id} className="flex gap-2 rounded-md border p-3 text-sm">
-                <input
-                  type="checkbox"
-                  disabled={!canManageRoles}
-                  checked={selectedRoleIds.includes(role.id)}
-                  onChange={(event) => toggleRole(role, event.target.checked)}
-                />
-                <span>
-                  {role.name}
-                  <span className="block text-xs text-slate-500">{role.scopeType} scope</span>
-                </span>
-              </label>
-            ))}
+          {!canReadRoles ? (
+            <p className="mt-4 text-sm text-foreground-muted">
+              Role assignments are read-only because this account cannot read the Administration role catalog.
+            </p>
+          ) : roles.isPending ? (
+            <div className="mt-4"><LoadingState label="Loading roles..." /></div>
+          ) : roles.isError ? (
+            <div className="mt-4">
+              <ErrorState
+                title="Roles unavailable"
+                message={roles.error.message}
+                requestId={roles.error instanceof ApiClientError ? roles.error.requestId : undefined}
+                onRetry={() => void roles.refetch()}
+              />
+            </div>
+          ) : (
+            <div className="mt-4 space-y-3">
+              {assignableRoles.length === 0 ? (
+                <p className="rounded-control bg-surface-muted p-4 text-sm text-foreground-muted">
+                  No active roles match this account type.
+                </p>
+              ) : (
+                assignableRoles.map((role) => (
+                  <label key={role.id} className="flex gap-3 rounded-control border border-border p-3 text-sm hover:bg-surface-muted/60">
+                    <input
+                      type="checkbox"
+                      disabled={!canManageRoles}
+                      checked={selectedRoleIds.includes(role.id)}
+                      onChange={(event) => toggleRole(role, event.target.checked)}
+                    />
+                    <span className="min-w-0">
+                      <strong className="block text-foreground">{role.name}</strong>
+                      <span className="block text-xs text-foreground-muted">
+                        {role.code} · {role.scopeType} scope
+                      </span>
+                    </span>
+                  </label>
+                ))
+              )}
 
-            {selectedNeedsSellerScope ? (
-              <label className="block text-sm font-medium">
-                Seller scope ID
-                <input
-                  aria-label="Seller scope ID"
-                  className="mt-1 w-full rounded-md border px-3 py-2 font-mono text-sm"
-                  value={sellerId}
-                  onChange={(event) => setSellerId(event.target.value.trim())}
-                  placeholder="Seller UUID"
-                />
-                {!sellerScopeIsValid ? <span className="mt-1 block text-xs text-red-600">Enter a valid seller UUID.</span> : null}
-                <span className="mt-1 block text-xs text-slate-500">
-                  Module 4 validates that this seller exists and is assignable before Administration changes the role membership.
-                </span>
-              </label>
-            ) : null}
+              {selectedNeedsSellerScope ? (
+                <label className="block text-sm font-medium text-foreground">
+                  Seller scope ID
+                  <Input
+                    aria-label="Seller scope ID"
+                    className="mt-1 font-mono"
+                    value={sellerId}
+                    onChange={(event) => setSellerId(event.target.value.trim())}
+                    placeholder="Seller UUID"
+                  />
+                  {!sellerScopeIsValid ? <span className="mt-1 block text-xs text-negative">Enter a valid seller UUID.</span> : null}
+                  <span className="mt-1 block text-xs text-foreground-muted">
+                    The seller module validates that this seller exists and is assignable before Administration changes the role membership.
+                  </span>
+                </label>
+              ) : null}
 
-            <FormError error={roleMutation.error} />
-            {canManageRoles && (
-              <Button
-                disabled={roleMutation.isPending || !sellerScopeIsValid}
-                onClick={() =>
-                  roleMutation.mutate(roleAssignments(selectedRoleIds, assignableRoles, sellerId))
-                }
-              >
-                Save roles
-              </Button>
-            )}
-          </div>
-        )}
-      </section>
+              <FormError error={roleMutation.error} />
+              {canManageRoles ? (
+                <Button
+                  disabled={roleMutation.isPending || !sellerScopeIsValid}
+                  onClick={() => roleMutation.mutate(roleAssignments(selectedRoleIds, assignableRoles, sellerId))}
+                >
+                  Save roles
+                </Button>
+              ) : null}
+            </div>
+          )}
+        </Surface>
+      </div>
     </div>
   );
 }

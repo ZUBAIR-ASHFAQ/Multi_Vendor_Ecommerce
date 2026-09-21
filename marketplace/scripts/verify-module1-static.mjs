@@ -10,7 +10,10 @@ function read(relativePath) {
   if (!existsSync(absolutePath)) {
     throw new Error(`Required Module 1 file is missing: ${relativePath}`);
   }
-  return readFileSync(absolutePath, "utf8");
+  const source = readFileSync(absolutePath, "utf8");
+  return relativePath.endsWith("package.json")
+    ? JSON.stringify(JSON.parse(source.replace(/^\uFEFF/u, "")), null, 2)
+    : source;
 }
 
 /** Requires one source fragment that proves a fixed Module 1 contract. */
@@ -22,14 +25,20 @@ function requireText(source, expected, label) {
 
 /** Confirms the append-only Dashboard persistence layer remains intact. */
 function verifyDatabasePass() {
-  const schema = read("marketplace-backend/src/database/schema/dashboard.ts");
-  const migration = read("marketplace-backend/drizzle/0034_dashboard.sql");
-  const migrations = readdirSync(path.join(root, "marketplace-backend", "drizzle"))
+  const schema = read("backend/src/database/schema/dashboard.ts");
+  const migration = read("backend/drizzle/0034_dashboard.sql");
+  const migrations = readdirSync(path.join(root, "backend", "drizzle"))
     .filter((name) => /^\d{4}_.+\.sql$/u.test(name))
     .sort();
 
-  if (migrations.length !== 35 || migrations.at(-1) !== "0034_dashboard.sql") {
-    throw new Error("Module 1 requires 35 contiguous migrations ending at 0034_dashboard.sql.");
+  if (!migrations.includes("0034_dashboard.sql")) {
+    throw new Error("Module 1 requires the immutable 0034_dashboard.sql migration in append-only history.");
+  }
+  for (let index = 0; index < migrations.length; index += 1) {
+    const expectedPrefix = String(index).padStart(4, "0");
+    if (!migrations[index].startsWith(`${expectedPrefix}_`)) {
+      throw new Error(`Migration history must remain contiguous; expected ${expectedPrefix}_*.sql, found ${migrations[index]}.`);
+    }
   }
   for (const tableName of ["dashboard_preferences", "dashboard_saved_filters"]) {
     requireText(schema, `"${tableName}"`, "Module 1 Drizzle schema");
@@ -39,12 +48,12 @@ function verifyDatabasePass() {
 
 /** Confirms Dashboard boundary contracts and central RBAC composition remain stable. */
 function verifyContractPass() {
-  const constants = read("marketplace-backend/src/modules/dashboard/dashboard.constants.ts");
-  const schema = read("marketplace-backend/src/modules/dashboard/dashboard.schema.ts");
-  const index = read("marketplace-backend/src/modules/dashboard/index.ts");
-  const rbacSeed = read("marketplace-backend/src/database/seeds/platform-rbac.seed.ts");
-  const tests = read("marketplace-backend/tests/module1/module1.schemas.test.ts");
-  const packageJson = JSON.parse(read("marketplace-backend/package.json"));
+  const constants = read("backend/src/modules/dashboard/dashboard.constants.ts");
+  const schema = read("backend/src/modules/dashboard/dashboard.schema.ts");
+  const index = read("backend/src/modules/dashboard/index.ts");
+  const rbacSeed = read("backend/src/database/seeds/platform-rbac.seed.ts");
+  const tests = read("backend/tests/module1/module1.schemas.test.ts");
+  const packageJson = JSON.parse(read("backend/package.json"));
 
   for (const expected of [
     "dashboard.read",
@@ -95,10 +104,10 @@ function verifyContractPass() {
 
 /** Confirms Pass 3 repository code keeps ownership filters and business decisions in the correct layer. */
 function verifyRepositoryPass() {
-  const repository = read("marketplace-backend/src/modules/dashboard/dashboard.repository.ts");
-  const index = read("marketplace-backend/src/modules/dashboard/index.ts");
-  const tests = read("marketplace-backend/tests/module1/module1.repository.test.ts");
-  const packageJson = JSON.parse(read("marketplace-backend/package.json"));
+  const repository = read("backend/src/modules/dashboard/dashboard.repository.ts");
+  const index = read("backend/src/modules/dashboard/index.ts");
+  const tests = read("backend/tests/module1/module1.repository.test.ts");
+  const packageJson = JSON.parse(read("backend/package.json"));
 
   for (const expected of [
     "export interface DashboardReadScope",
@@ -147,10 +156,10 @@ function verifyRepositoryPass() {
 
 /** Confirms Pass 4 owns Dashboard business orchestration without bypassing Module 20 KPI definitions. */
 function verifyServicePass() {
-  const service = read("marketplace-backend/src/modules/dashboard/dashboard.service.ts");
-  const index = read("marketplace-backend/src/modules/dashboard/index.ts");
-  const tests = read("marketplace-backend/tests/module1/module1.service.test.ts");
-  const packageJson = JSON.parse(read("marketplace-backend/package.json"));
+  const service = read("backend/src/modules/dashboard/dashboard.service.ts");
+  const index = read("backend/src/modules/dashboard/index.ts");
+  const tests = read("backend/tests/module1/module1.service.test.ts");
+  const packageJson = JSON.parse(read("backend/package.json"));
 
   for (const expected of [
     "export class DashboardService",
@@ -196,11 +205,11 @@ function verifyServicePass() {
 
 /** Confirms Pass 5 exposes only the five documented Dashboard operations with RBAC and OpenAPI parity. */
 function verifyHttpPass() {
-  const controller = read("marketplace-backend/src/modules/dashboard/dashboard.controller.ts");
-  const routes = read("marketplace-backend/src/modules/dashboard/dashboard.routes.ts");
-  const index = read("marketplace-backend/src/modules/dashboard/index.ts");
-  const app = read("marketplace-backend/src/app.ts");
-  const openApi = read("marketplace-backend/src/http/openapi/openapi.document.ts");
+  const controller = read("backend/src/modules/dashboard/dashboard.controller.ts");
+  const routes = read("backend/src/modules/dashboard/dashboard.routes.ts");
+  const index = read("backend/src/modules/dashboard/index.ts");
+  const app = read("backend/src/app.ts");
+  const openApi = read("backend/src/http/openapi/openapi.document.ts");
 
   for (const expected of [
     "export class DashboardController",
@@ -244,7 +253,7 @@ function verifyHttpPass() {
     "/api/v1/dashboard/alerts",
     "/api/v1/dashboard/preferences",
   ]) {
-    requireText(read("marketplace-backend/src/modules/dashboard/dashboard.constants.ts"), documentedPath, "Module 1 documented paths");
+    requireText(read("backend/src/modules/dashboard/dashboard.constants.ts"), documentedPath, "Module 1 documented paths");
   }
 
   requireText(index, 'export * from "./dashboard.controller.js";', "Module 1 index");
@@ -259,7 +268,7 @@ function verifyHttpPass() {
   if (routes.includes("router.post(") || routes.includes("router.put(") || routes.includes("router.delete(")) {
     throw new Error("Dashboard routes must not invent undocumented POST/PUT/DELETE CRUD operations.");
   }
-  if (existsSync(path.join(root, "marketplace-backend/src/modules/dashboard/dashboard.types.ts"))) {
+  if (existsSync(path.join(root, "backend/src/modules/dashboard/dashboard.types.ts"))) {
     throw new Error("Module 1 must not add an unnecessary dashboard.types.ts file.");
   }
 }
@@ -267,12 +276,12 @@ function verifyHttpPass() {
 
 /** Confirms Pass 6 adds direct repository/service/HTTP/integration proof and a provisioned backend runner. */
 function verifyBackendTestsPass() {
-  const http = read("marketplace-backend/tests/module1/module1.http.test.ts");
-  const integration = read("marketplace-backend/tests/module1/module1.integration.test.ts");
-  const helpers = read("marketplace-backend/tests/module1/module1.test-helpers.ts");
-  const runner = read("marketplace-backend/scripts/run-module1-tests.mjs");
-  const packageJson = JSON.parse(read("marketplace-backend/package.json"));
-  const ci = read("marketplace-backend/.github/workflows/ci.yml");
+  const http = read("backend/tests/module1/module1.http.test.ts");
+  const integration = read("backend/tests/module1/module1.integration.test.ts");
+  const helpers = read("backend/tests/module1/module1.test-helpers.ts");
+  const runner = read("backend/scripts/run-module1-tests.mjs");
+  const packageJson = JSON.parse(read("backend/package.json"));
+  const ci = read("backend/.github/workflows/ci.yml");
 
   for (const expected of [
     "Module 1 Dashboard HTTP/RBAC integration",
@@ -323,17 +332,17 @@ function verifyBackendTestsPass() {
 
 /** Confirms the React Dashboard owns the documented five-route client surface and required role-aware widgets. */
 function verifyFrontendPass() {
-  const api = read("marketplace-frontend/src/features/dashboard/api/dashboard.api.ts");
-  const hooks = read("marketplace-frontend/src/features/dashboard/hooks/use-dashboard.ts");
-  const filterForm = read("marketplace-frontend/src/features/dashboard/forms/dashboard-filter.form.tsx");
-  const preferencesForm = read("marketplace-frontend/src/features/dashboard/forms/dashboard-preferences.form.tsx");
-  const savedFilters = read("marketplace-frontend/src/features/dashboard/components/saved-dashboard-filters.tsx");
-  const page = read("marketplace-frontend/src/features/dashboard/pages/dashboard.page.tsx");
-  const routes = read("marketplace-frontend/src/app/routes/dashboard.routes.tsx");
-  const router = read("marketplace-frontend/src/app/router/router.tsx");
-  const tests = read("marketplace-frontend/tests/module1-dashboard.test.tsx");
-  const packageJson = JSON.parse(read("marketplace-frontend/package.json"));
-  const ci = read("marketplace-frontend/.github/workflows/ci.yml");
+  const api = read("frontend/src/features/dashboard/api/dashboard.api.ts");
+  const hooks = read("frontend/src/features/dashboard/hooks/use-dashboard.ts");
+  const filterForm = read("frontend/src/features/dashboard/forms/dashboard-filter.form.tsx");
+  const preferencesForm = read("frontend/src/features/dashboard/forms/dashboard-preferences.form.tsx");
+  const savedFilters = read("frontend/src/features/dashboard/components/saved-dashboard-filters.tsx");
+  const page = read("frontend/src/features/dashboard/pages/dashboard.page.tsx");
+  const routes = read("frontend/src/app/routes/dashboard.routes.tsx");
+  const router = read("frontend/src/app/router/router.tsx");
+  const tests = read("frontend/tests/module1-dashboard.test.tsx");
+  const packageJson = JSON.parse(read("frontend/package.json"));
+  const ci = read("frontend/.github/workflows/ci.yml");
 
   for (const expected of [
     'apiClient.get("/dashboard/summary"',
@@ -392,11 +401,11 @@ function verifyFrontendPass() {
 
 /** Confirms Pass 8 browser coverage, reconciliation, and the final release gate are wired. */
 function verifyFinalReleasePass() {
-  const e2eSpec = read("marketplace-frontend/e2e/module1.spec.ts");
-  const e2eRunner = read("marketplace-frontend/e2e/run-e2e-ci.mjs");
-  const frontendPackage = JSON.parse(read("marketplace-frontend/package.json"));
-  const releaseData = read("marketplace-backend/scripts/verify-module1-release-data.mjs");
-  const backendPackage = JSON.parse(read("marketplace-backend/package.json"));
+  const e2eSpec = read("frontend/e2e/module1.spec.ts");
+  const e2eRunner = read("frontend/e2e/run-e2e-ci.mjs");
+  const frontendPackage = JSON.parse(read("frontend/package.json"));
+  const releaseData = read("backend/scripts/verify-module1-release-data.mjs");
+  const backendPackage = JSON.parse(read("backend/package.json"));
   const releaseRunner = read("scripts/run-current-release-gate.mjs");
 
   for (const proof of [

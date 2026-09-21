@@ -931,16 +931,18 @@ test.describe("Module 14 Returns, Refunds & Disputes E2E", () => {
       expect(received.items[0]).toMatchObject({ resolution: "refund_restock", restockQty: 1 });
 
       await adminBrowser.page.goto("/admin/returns");
-      await expect(adminBrowser.page.getByRole("heading", { name: "Returns & dispute review" })).toBeVisible();
-      const adminCard = adminBrowser.page.locator("article").filter({ hasText: created.returnNo });
-      await expect(adminCard).toBeVisible();
-      await adminCard.getByLabel("Return refund note").fill("Refund after accepted inspection");
+      await expect(adminBrowser.page.getByRole("heading", { name: "Returns & dispute queue" })).toBeVisible();
+      const adminRow = adminBrowser.page.getByRole("row").filter({ hasText: created.returnNo });
+      await expect(adminRow).toBeVisible();
+      await adminRow.getByRole("button", { name: "Review" }).click();
+      await adminBrowser.page.getByLabel("Return refund note").fill("Refund after accepted inspection");
       const refundResponsePromise = adminBrowser.page.waitForResponse(
         (response) =>
           response.url().endsWith(`/api/v1/returns/${created.id}/refund`) &&
           response.request().method() === "POST",
       );
-      await adminCard.getByRole("button", { name: "Issue Refund" }).click();
+      await adminBrowser.page.getByRole("button", { name: "Issue Refund" }).click();
+      await adminBrowser.page.getByRole("button", { name: "Confirm refund" }).click();
       const refundResponse = await refundResponsePromise;
       expect(refundResponse.status()).toBe(200);
       const refund = ((await refundResponse.json()) as ApiEnvelope<ReturnRefundResult>).data;

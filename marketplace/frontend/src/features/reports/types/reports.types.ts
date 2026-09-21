@@ -3,10 +3,14 @@ import type { z } from "zod";
 import type {
   reportExportCommandSchema,
   reportFilterPresetSchema,
+  reportRunHistoryEntrySchema,
+  reportRunSchema,
 } from "../schemas/reports.schemas";
 
 export type ReportExportCommand = z.infer<typeof reportExportCommandSchema>;
 export type ReportFilterPreset = z.infer<typeof reportFilterPresetSchema>;
+export type ReportRun = z.infer<typeof reportRunSchema>;
+export type ReportRunHistoryEntry = z.infer<typeof reportRunHistoryEntrySchema>;
 
 /** Shared bounded pagination fields for interactive Reports reads. */
 export interface ReportPaginationParams {

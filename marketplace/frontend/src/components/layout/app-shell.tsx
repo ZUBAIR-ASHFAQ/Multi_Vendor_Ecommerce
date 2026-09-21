@@ -41,9 +41,10 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <div className={`marketplace-app min-h-screen text-slate-950${isPublicChrome ? " marketplace-app-public" : ""}`}>
+      <a className="skip-link" href="#main-content">Skip to main content</a>
       {isCheckout ? <CheckoutHeader /> : <MarketplaceHeader />}
 
-      <main className={mainClassName}>{children}</main>
+      <main id="main-content" tabIndex={-1} className={mainClassName}>{children}</main>
 
       {isPublicChrome ? <MarketplaceFooter /> : null}
       {isPublicChrome ? <MobileMarketplaceNav /> : null}

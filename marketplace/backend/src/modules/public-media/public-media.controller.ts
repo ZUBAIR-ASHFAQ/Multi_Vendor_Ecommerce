@@ -6,6 +6,7 @@ import { PublicMediaService } from "./public-media.service.js";
 
 /** Thin unauthenticated HTTP adapter for the public media resolver. */
 export class PublicMediaController {
+  /** Receives the resolver service so the HTTP adapter stays thin and testable. */
   constructor(private readonly service: PublicMediaService) {}
 
   /** Resolves only file IDs already proven public by the service/repository boundary. */

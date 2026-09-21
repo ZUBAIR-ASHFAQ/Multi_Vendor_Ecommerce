@@ -19,7 +19,7 @@ export function WalletLedgerTable({ entries }: { entries: SellerWalletEntry[] })
 
   return (
     <div className="overflow-x-auto rounded-lg border">
-      <table className="min-w-full text-left text-sm">
+      <table className="w-full min-w-[720px] text-left text-sm">
         <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
           <tr>
             <th className="px-3 py-2">Date</th>

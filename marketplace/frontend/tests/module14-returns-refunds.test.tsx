@@ -445,9 +445,12 @@ describe("Module 14 Returns, Refunds & Disputes UI", () => {
     );
 
     await renderRoute("/admin/returns");
-    expect(await screen.findByRole("heading", { name: "Returns & dispute review" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Returns & dispute queue" })).toBeInTheDocument();
     const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Review" }));
     await user.click(screen.getByRole("button", { name: "Issue Refund" }));
+    expect(screen.getByRole("alertdialog", { name: "Issue this refund?" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Confirm refund" }));
 
     await waitFor(() => expect(idempotencyKey.length).toBeGreaterThan(10));
     expect(refundBody).toEqual({});

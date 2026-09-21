@@ -11,7 +11,10 @@ function readProjectFile(relativePath) {
   if (!existsSync(absolutePath)) {
     throw new Error(`Required file is missing: ${relativePath}`);
   }
-  return readFileSync(absolutePath, "utf8");
+  const source = readFileSync(absolutePath, "utf8");
+  return relativePath.endsWith("package.json")
+    ? JSON.stringify(JSON.parse(source.replace(/^\uFEFF/u, "")), null, 2)
+    : source;
 }
 
 /** Requires a known text fragment in one source file. */
@@ -101,8 +104,8 @@ function verifyTopologyAndStack() {
     }
   }
 
-  const backendPackage = JSON.parse(readProjectFile("marketplace-backend/package.json"));
-  const frontendPackage = JSON.parse(readProjectFile("marketplace-frontend/package.json"));
+  const backendPackage = JSON.parse(readProjectFile("backend/package.json"));
+  const frontendPackage = JSON.parse(readProjectFile("frontend/package.json"));
 
   for (const dependency of ["express", "drizzle-orm", "pg", "zod", "bullmq", "ioredis"]) {
     if (!backendPackage.dependencies?.[dependency]) {
@@ -140,21 +143,21 @@ function verifyTopologyAndStack() {
 
 /** Confirms the durable event/job primitives required by eventual Search synchronization already exist. */
 function verifyFoundationSearchReadiness() {
-  const transaction = readProjectFile("marketplace-backend/src/database/transaction.ts");
+  const transaction = readProjectFile("backend/src/database/transaction.ts");
   const outboxService = readProjectFile(
-    "marketplace-backend/src/common/outbox/outbox.service.ts",
+    "backend/src/common/outbox/outbox.service.ts",
   );
   const eventPublisher = readProjectFile(
-    "marketplace-backend/src/common/outbox/bullmq-event.publisher.ts",
+    "backend/src/common/outbox/bullmq-event.publisher.ts",
   );
   const queueFactory = readProjectFile(
-    "marketplace-backend/src/common/jobs/queue.factory.ts",
+    "backend/src/common/jobs/queue.factory.ts",
   );
   const pagination = readProjectFile(
-    "marketplace-backend/src/common/schemas/pagination.schema.ts",
+    "backend/src/common/schemas/pagination.schema.ts",
   );
   const apiEnvelope = readProjectFile(
-    "marketplace-backend/src/common/schemas/api-envelope.schema.ts",
+    "backend/src/common/schemas/api-envelope.schema.ts",
   );
 
   requireText(transaction, "withTransaction", "Foundation transaction helper");
@@ -169,19 +172,19 @@ function verifyFoundationSearchReadiness() {
 /** Confirms Catalog, Product, and Inventory expose the upstream data/events Search depends on. */
 function verifySourceModuleReadiness() {
   const catalogConstants = readProjectFile(
-    "marketplace-backend/src/modules/catalog-taxonomy/catalog-taxonomy.constants.ts",
+    "backend/src/modules/catalog-taxonomy/catalog-taxonomy.constants.ts",
   );
   const productConstants = readProjectFile(
-    "marketplace-backend/src/modules/products/products.constants.ts",
+    "backend/src/modules/products/products.constants.ts",
   );
   const productService = readProjectFile(
-    "marketplace-backend/src/modules/products/products.service.ts",
+    "backend/src/modules/products/products.service.ts",
   );
   const inventoryConstants = readProjectFile(
-    "marketplace-backend/src/modules/inventory/inventory.constants.ts",
+    "backend/src/modules/inventory/inventory.constants.ts",
   );
   const inventoryService = readProjectFile(
-    "marketplace-backend/src/modules/inventory/inventory.service.ts",
+    "backend/src/modules/inventory/inventory.service.ts",
   );
 
   for (const eventCode of [
@@ -229,7 +232,7 @@ function verifySourceModuleReadiness() {
 
 /** Verifies the PostgreSQL Search read model and append-only migration contract. */
 function verifySearchDatabase() {
-  const drizzleDir = join(root, "marketplace-backend/drizzle");
+  const drizzleDir = join(root, "backend/drizzle");
   const migrations = readdirSync(drizzleDir)
     .filter((name) => /^\d{4}_.+\.sql$/.test(name))
     .sort();
@@ -243,20 +246,20 @@ function verifySearchDatabase() {
   }
 
   const schema = readProjectFile(
-    "marketplace-backend/src/database/schema/search-discovery.ts",
+    "backend/src/database/schema/search-discovery.ts",
   );
-  const schemaIndex = readProjectFile("marketplace-backend/src/database/schema/index.ts");
-  const relations = readProjectFile("marketplace-backend/src/database/relations.ts");
+  const schemaIndex = readProjectFile("backend/src/database/schema/index.ts");
+  const relations = readProjectFile("backend/src/database/relations.ts");
   const migration = readProjectFile(
-    "marketplace-backend/drizzle/0012_search_discovery.sql",
+    "backend/drizzle/0012_search_discovery.sql",
   );
   const repositoryRemediationMigration = readProjectFile(
-    "marketplace-backend/drizzle/0013_search_reindex_error_code.sql",
+    "backend/drizzle/0013_search_reindex_error_code.sql",
   );
   const migrationVerifier = readProjectFile(
-    "marketplace-backend/scripts/verify-module19-migrations.mjs",
+    "backend/scripts/verify-module19-migrations.mjs",
   );
-  const backendPackage = JSON.parse(readProjectFile("marketplace-backend/package.json"));
+  const backendPackage = JSON.parse(readProjectFile("backend/package.json"));
 
   for (const tableName of [
     "product_search_documents",
@@ -349,13 +352,13 @@ function verifySearchDatabase() {
 /** Verifies bounded Search contracts, stable constants, inferred types, and RBAC composition. */
 function verifySearchContracts() {
   const constants = readProjectFile(
-    "marketplace-backend/src/modules/search-discovery/search-discovery.constants.ts",
+    "backend/src/modules/search-discovery/search-discovery.constants.ts",
   );
   const schemas = readProjectFile(
-    "marketplace-backend/src/modules/search-discovery/search-discovery.schema.ts",
+    "backend/src/modules/search-discovery/search-discovery.schema.ts",
   );
   const platformRbac = readProjectFile(
-    "marketplace-backend/src/database/seeds/platform-rbac.seed.ts",
+    "backend/src/database/seeds/platform-rbac.seed.ts",
   );
 
   for (const permission of ["search.public", "admin.search.manage"]) {
@@ -429,7 +432,7 @@ function verifySearchContracts() {
   requireText(platformRbac, "SEARCH_PERMISSION_CATALOG", "Platform Search permission composition");
   requireText(platformRbac, "SEARCH_PERMISSION.PUBLIC", "Authenticated public Search permission grant");
 
-  if (existsSync(join(root, "marketplace-backend/src/modules/search-discovery/search-discovery.types.ts"))) {
+  if (existsSync(join(root, "backend/src/modules/search-discovery/search-discovery.types.ts"))) {
     throw new Error(
       "Do not create an unnecessary Search types file; infer types from Zod/Drizzle.",
     );
@@ -439,7 +442,7 @@ function verifySearchContracts() {
 /** Verifies Search repositories stay persistence-focused and expose only required lifecycle helpers. */
 function verifySearchRepository() {
   const repository = readProjectFile(
-    "marketplace-backend/src/modules/search-discovery/search-discovery.repository.ts",
+    "backend/src/modules/search-discovery/search-discovery.repository.ts",
   );
 
   for (const methodName of [
@@ -508,16 +511,16 @@ function verifySearchRepository() {
 /** Verifies Search service orchestration, source-service composition, durable events, and retry-safe reindex jobs. */
 function verifySearchService() {
   const service = readProjectFile(
-    "marketplace-backend/src/modules/search-discovery/search-discovery.service.ts",
+    "backend/src/modules/search-discovery/search-discovery.service.ts",
   );
   const jobs = readProjectFile(
-    "marketplace-backend/src/modules/search-discovery/search-discovery.jobs.ts",
+    "backend/src/modules/search-discovery/search-discovery.jobs.ts",
   );
   const index = readProjectFile(
-    "marketplace-backend/src/modules/search-discovery/index.ts",
+    "backend/src/modules/search-discovery/index.ts",
   );
   const repository = readProjectFile(
-    "marketplace-backend/src/modules/search-discovery/search-discovery.repository.ts",
+    "backend/src/modules/search-discovery/search-discovery.repository.ts",
   );
 
   for (const methodName of [
@@ -615,20 +618,20 @@ function verifySearchService() {
 /** Verifies the five required Search HTTP routes, thin controllers, and policy boundaries. */
 function verifySearchHttp() {
   const controller = readProjectFile(
-    "marketplace-backend/src/modules/search-discovery/search-discovery.controller.ts",
+    "backend/src/modules/search-discovery/search-discovery.controller.ts",
   );
   const routes = readProjectFile(
-    "marketplace-backend/src/modules/search-discovery/search-discovery.routes.ts",
+    "backend/src/modules/search-discovery/search-discovery.routes.ts",
   );
   const constants = readProjectFile(
-    "marketplace-backend/src/modules/search-discovery/search-discovery.constants.ts",
+    "backend/src/modules/search-discovery/search-discovery.constants.ts",
   );
   const index = readProjectFile(
-    "marketplace-backend/src/modules/search-discovery/index.ts",
+    "backend/src/modules/search-discovery/index.ts",
   );
-  const app = readProjectFile("marketplace-backend/src/app.ts");
+  const app = readProjectFile("backend/src/app.ts");
   const openApi = readProjectFile(
-    "marketplace-backend/src/http/openapi/openapi.document.ts",
+    "backend/src/http/openapi/openapi.document.ts",
   );
 
   for (const methodName of [
@@ -703,11 +706,11 @@ function verifySearchHttp() {
 /** Verifies the required Search backend contracts, repository behavior, services, and API regression tests. */
 function verifySearchBackendTests() {
   const testFiles = [
-    "marketplace-backend/tests/module19/module19.schemas.test.ts",
-    "marketplace-backend/tests/module19/module19.repository.test.ts",
-    "marketplace-backend/tests/module19/module19.service.test.ts",
-    "marketplace-backend/tests/module19/module19.integration.test.ts",
-    "marketplace-backend/tests/module19/module19.test-helpers.ts",
+    "backend/tests/module19/module19.schemas.test.ts",
+    "backend/tests/module19/module19.repository.test.ts",
+    "backend/tests/module19/module19.service.test.ts",
+    "backend/tests/module19/module19.integration.test.ts",
+    "backend/tests/module19/module19.test-helpers.ts",
   ];
   for (const relativePath of testFiles) {
     if (!existsSync(join(root, relativePath))) {
@@ -719,9 +722,9 @@ function verifySearchBackendTests() {
   const repositoryTests = readProjectFile(testFiles[1]);
   const serviceTests = readProjectFile(testFiles[2]);
   const integrationTests = readProjectFile(testFiles[3]);
-  const runner = readProjectFile("marketplace-backend/scripts/run-module19-tests.mjs");
-  const backendPackage = JSON.parse(readProjectFile("marketplace-backend/package.json"));
-  const ci = readProjectFile("marketplace-backend/.github/workflows/ci.yml");
+  const runner = readProjectFile("backend/scripts/run-module19-tests.mjs");
+  const backendPackage = JSON.parse(readProjectFile("backend/package.json"));
+  const ci = readProjectFile("backend/.github/workflows/ci.yml");
 
   for (const proof of [
     "SEARCH_QUERY_INVALID",
@@ -781,7 +784,7 @@ function verifySearchBackendTests() {
   requireText(ci, "Run Module 19 tests", "Backend CI Module 19 test gate");
 
   const pathsThatMustNotExist = [
-    "marketplace-backend/src/integrations/search",
+    "backend/src/integrations/search",
   ];
   for (const relativePath of pathsThatMustNotExist) {
     if (existsSync(join(root, relativePath))) {
@@ -793,20 +796,20 @@ function verifySearchBackendTests() {
 /** Verifies the required public Search frontend, API hooks, forms, components, and RTL tests. */
 function verifySearchFrontend() {
   const requiredFiles = [
-    "marketplace-frontend/src/features/search-discovery/search-discovery.constants.ts",
-    "marketplace-frontend/src/features/search-discovery/schemas/search-discovery.schemas.ts",
-    "marketplace-frontend/src/features/search-discovery/api/search-discovery.api.ts",
-    "marketplace-frontend/src/features/search-discovery/hooks/search-discovery.query-keys.ts",
-    "marketplace-frontend/src/features/search-discovery/hooks/use-search-discovery.ts",
-    "marketplace-frontend/src/features/search-discovery/forms/search-filters.form.tsx",
-    "marketplace-frontend/src/features/search-discovery/components/search-autocomplete.tsx",
-    "marketplace-frontend/src/features/search-discovery/components/search-facets.tsx",
-    "marketplace-frontend/src/features/search-discovery/components/search-product-card.tsx",
-    "marketplace-frontend/src/features/search-discovery/components/search-pagination.tsx",
-    "marketplace-frontend/src/features/search-discovery/pages/search-products.page.tsx",
-    "marketplace-frontend/src/features/search-discovery/pages/search-stores.page.tsx",
-    "marketplace-frontend/src/app/routes/search-discovery.routes.tsx",
-    "marketplace-frontend/tests/module19-search-discovery.test.tsx",
+    "frontend/src/features/search-discovery/search-discovery.constants.ts",
+    "frontend/src/features/search-discovery/schemas/search-discovery.schemas.ts",
+    "frontend/src/features/search-discovery/api/search-discovery.api.ts",
+    "frontend/src/features/search-discovery/hooks/search-discovery.query-keys.ts",
+    "frontend/src/features/search-discovery/hooks/use-search-discovery.ts",
+    "frontend/src/features/search-discovery/forms/search-filters.form.tsx",
+    "frontend/src/features/search-discovery/components/search-autocomplete.tsx",
+    "frontend/src/features/search-discovery/components/search-facets.tsx",
+    "frontend/src/features/search-discovery/components/search-product-card.tsx",
+    "frontend/src/features/search-discovery/components/search-pagination.tsx",
+    "frontend/src/features/search-discovery/pages/search-products.page.tsx",
+    "frontend/src/features/search-discovery/pages/search-stores.page.tsx",
+    "frontend/src/app/routes/search-discovery.routes.tsx",
+    "frontend/tests/module19-search-discovery.test.tsx",
   ];
   for (const relativePath of requiredFiles) {
     if (!existsSync(join(root, relativePath))) {
@@ -821,14 +824,15 @@ function verifySearchFrontend() {
   const autocomplete = readProjectFile(requiredFiles[6]);
   const facets = readProjectFile(requiredFiles[7]);
   const card = readProjectFile(requiredFiles[8]);
+  const sharedCard = readProjectFile("frontend/src/features/products/components/marketplace-product-card.tsx");
   const productsPage = readProjectFile(requiredFiles[10]);
   const storesPage = readProjectFile(requiredFiles[11]);
   const routes = readProjectFile(requiredFiles[12]);
   const tests = readProjectFile(requiredFiles[13]);
-  const router = readProjectFile("marketplace-frontend/src/app/router/router.tsx");
-  const shell = readProjectFile("marketplace-frontend/src/components/layout/app-shell.tsx");
-  const frontendPackage = JSON.parse(readProjectFile("marketplace-frontend/package.json"));
-  const ci = readProjectFile("marketplace-frontend/.github/workflows/ci.yml");
+  const router = readProjectFile("frontend/src/app/router/router.tsx");
+  const mobileNav = readProjectFile("frontend/src/components/layout/mobile-marketplace-nav.tsx");
+  const frontendPackage = JSON.parse(readProjectFile("frontend/package.json"));
+  const ci = readProjectFile("frontend/.github/workflows/ci.yml");
 
   for (const proof of [
     "searchProductsRouteSearchSchema",
@@ -856,13 +860,14 @@ function verifySearchFrontend() {
   requireText(form, "searchFiltersFormSchema", "Zod Search form validation");
   requireText(autocomplete, "useSearchSuggestionsQuery", "Search autocomplete UI");
 
-  for (const proof of ["Categories", "Brands", "attributes", "Availability"]) {
+  for (const proof of ["Categories", "Brands", "attributes", "in stock"]) {
     requireText(facets, proof, "Search facet UI");
   }
-  requireText(card, 'to="/products/$slug"', "Search Product card source-detail link");
-  requireText(card, "Search price and stock are discovery hints", "Search non-authoritative cache warning");
-  requireText(productsPage, "Refreshing Search results", "Search stale-data state");
-  requireText(productsPage, "No Products found", "Search empty state");
+  requireText(card, "MarketplaceProductCard", "Search shared Product card adapter");
+  requireText(sharedCard, 'to="/products/$slug"', "Search Product card source-detail link");
+  requireText(card, "inStock: product.inStock", "Search non-authoritative discovery projection");
+  requireText(productsPage, "Updating results…", "Search stale-data state");
+  requireText(productsPage, "EmptySearchState", "Search empty state");
   requireText(productsPage, "INDEX_UNAVAILABLE", "Search unavailable state");
   requireText(storesPage, 'to="/stores/$slug"', "Public Store Search result link");
 
@@ -871,7 +876,7 @@ function verifySearchFrontend() {
   requireText(routes, "validateSearch", "URL-backed Search route validation");
   requireText(router, "searchProductsRoute", "Search router registration");
   requireText(router, "searchStoresRoute", "Store Search router registration");
-  requireText(shell, 'to="/search"', "Storefront Search navigation");
+  requireText(mobileNav, 'to="/search"', "Storefront Search navigation");
 
   for (const proof of [
     "URL-backed category, attribute, sort, and pagination filters",
@@ -886,7 +891,7 @@ function verifySearchFrontend() {
   }
   requireText(ci, "Run Module 19 Search frontend tests", "Frontend CI Module 19 test gate");
 
-  if (existsSync(join(root, "marketplace-frontend/src/features/search-discovery/types"))) {
+  if (existsSync(join(root, "frontend/src/features/search-discovery/types"))) {
     throw new Error("Module 19 frontend must infer its feature types from Zod instead of adding a redundant types directory.");
   }
 }
@@ -894,9 +899,9 @@ function verifySearchFrontend() {
 /** Confirms the release stage wires the live Search runtime, browser workflow, integrity checks, and cumulative gate. */
 function verifySearchRelease() {
   const requiredFiles = [
-    "marketplace-backend/src/modules/search-discovery/search-discovery.runtime.ts",
-    "marketplace-backend/scripts/verify-module19-release-data.mjs",
-    "marketplace-frontend/e2e/module19.spec.ts",
+    "backend/src/modules/search-discovery/search-discovery.runtime.ts",
+    "backend/scripts/verify-module19-release-data.mjs",
+    "frontend/e2e/module19.spec.ts",
     "scripts/verify-module19.mjs",
   ];
   for (const relativePath of requiredFiles) {
@@ -909,17 +914,17 @@ function verifySearchRelease() {
   const releaseData = readProjectFile(requiredFiles[1]);
   const e2e = readProjectFile(requiredFiles[2]);
   const releaseVerifier = readProjectFile(requiredFiles[3]);
-  const app = readProjectFile("marketplace-backend/src/app.ts");
-  const server = readProjectFile("marketplace-backend/src/server.ts");
+  const app = readProjectFile("backend/src/app.ts");
+  const server = readProjectFile("backend/src/server.ts");
   const outboxRuntime = readProjectFile(
-    "marketplace-backend/src/common/outbox/outbox-worker.ts",
+    "backend/src/common/outbox/outbox-worker.ts",
   );
   const outboxPublisher = readProjectFile(
-    "marketplace-backend/src/common/outbox/bullmq-event.publisher.ts",
+    "backend/src/common/outbox/bullmq-event.publisher.ts",
   );
-  const index = readProjectFile("marketplace-backend/src/modules/search-discovery/index.ts");
-  const backendPackage = JSON.parse(readProjectFile("marketplace-backend/package.json"));
-  const frontendPackage = JSON.parse(readProjectFile("marketplace-frontend/package.json"));
+  const index = readProjectFile("backend/src/modules/search-discovery/index.ts");
+  const backendPackage = JSON.parse(readProjectFile("backend/package.json"));
+  const frontendPackage = JSON.parse(readProjectFile("frontend/package.json"));
 
   for (const proof of [
     "SEARCH_JOB.SOURCE_EVENT_QUEUE",
@@ -960,7 +965,7 @@ function verifySearchRelease() {
   for (const proof of [
     "searches, autocompletes, filters by facets/price/stock",
     "blocks invalid Search price filters with readable browser validation",
-    "Request ID: e2e-search-request-123",
+    "Technical reference: e2e-search-request-123",
     "reflects source name, price, and availability changes",
     "completes the privileged full-reindex lifecycle",
     "removes an unpublished Product from Search",
