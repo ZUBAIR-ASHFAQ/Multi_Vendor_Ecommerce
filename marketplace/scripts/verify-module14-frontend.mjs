@@ -69,7 +69,8 @@ function verifyStateAndForms() {
   requireText(requestForm, "useForm({", "Module 14 Return Request form");
   requireText(requestForm, "returnRequestFormSchema", "Module 14 Return Request Zod validation");
   requireText(inspectionForm, "receiveReturnFormSchema", "Module 14 inspection Zod validation");
-  requireText(refundForm, "crypto.randomUUID()", "Module 14 refund retry key");
+  requireText(refundForm, "useStableIdempotencyKey", "Module 14 retry-stable idempotency controller");
+  requireText(refundForm, "commandKey.keyFor(fingerprint)", "Module 14 refund retry key reuse");
   requireText(schemas, "returnMoneySchema", "Module 14 scale-4 response contract");
   requireText(schemas, "refundAmount: returnMoneySchema", "Module 14 refund response parsing");
   requireText(schemas, "restockQty: z.number().int().nonnegative()", "Module 14 restock response parsing");

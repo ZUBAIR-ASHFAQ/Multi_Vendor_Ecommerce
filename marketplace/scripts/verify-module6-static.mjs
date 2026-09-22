@@ -828,6 +828,25 @@ function verifyFrontendPass() {
   requireText(hooks, "documentsAuditApi.signUpload", "Signed Product media upload");
   requireText(hooks, "documentsAuditApi.confirmUpload", "Confirmed Product media upload");
 
+  const addVariantHook = hooks.slice(
+    hooks.indexOf("export function useAddProductVariantMutation"),
+    hooks.indexOf("export function useUpdateProductVariantMutation"),
+  );
+  const uploadMediaHook = hooks.slice(
+    hooks.indexOf("export function useUploadProductMediaMutation"),
+    hooks.indexOf("export function usePublishProductMutation"),
+  );
+  for (const [hookSource, label] of [
+    [addVariantHook, "Add Product variant cache invalidation"],
+    [uploadMediaHook, "Upload Product media cache invalidation"],
+  ]) {
+    requireText(
+      hookSource,
+      "invalidateProductCommerceState(queryClient)",
+      label,
+    );
+  }
+
   for (const required of [
     "useForm({",
     "ProductAttributeFields",

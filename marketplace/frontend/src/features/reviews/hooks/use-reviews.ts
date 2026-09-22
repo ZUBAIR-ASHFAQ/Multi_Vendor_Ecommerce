@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { invalidateRatingCommerceState } from "@/lib/commerce-cache-invalidation";
 import { reviewsApi } from "../api/reviews.api";
 import type {
   AdminReviewListParams,
@@ -41,7 +42,7 @@ export function useCreateReviewMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateReviewInput) => reviewsApi.createReview(input),
-    onSuccess: async () => queryClient.invalidateQueries({ queryKey: reviewsQueryKeys.all }),
+    onSuccess: async () => invalidateRatingCommerceState(queryClient),
   });
 }
 
@@ -51,7 +52,7 @@ export function useUpdateOwnReviewMutation() {
   return useMutation({
     mutationFn: ({ reviewId, input }: { reviewId: string; input: UpdateReviewInput }) =>
       reviewsApi.updateOwnReview(reviewId, input),
-    onSuccess: async () => queryClient.invalidateQueries({ queryKey: reviewsQueryKeys.all }),
+    onSuccess: async () => invalidateRatingCommerceState(queryClient),
   });
 }
 
@@ -69,7 +70,7 @@ export function useHideReviewMutation(reviewId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: ModerateReviewInput) => reviewsApi.hideReview(reviewId, input),
-    onSuccess: async () => queryClient.invalidateQueries({ queryKey: reviewsQueryKeys.all }),
+    onSuccess: async () => invalidateRatingCommerceState(queryClient),
   });
 }
 
@@ -78,6 +79,6 @@ export function usePublishReviewMutation(reviewId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: ModerateReviewInput) => reviewsApi.publishReview(reviewId, input),
-    onSuccess: async () => queryClient.invalidateQueries({ queryKey: reviewsQueryKeys.all }),
+    onSuccess: async () => invalidateRatingCommerceState(queryClient),
   });
 }

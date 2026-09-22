@@ -2,6 +2,7 @@ import type { AuthenticatedUser } from "./types/auth.types";
 
 export type PostLoginPath =
   | "/account"
+  | "/dashboard"
   | "/admin/users"
   | "/admin/roles"
   | "/admin/settings"
@@ -22,7 +23,7 @@ export type PostLoginPath =
   | "/seller/staff"
   | "/documents"
   | "/audit"
-  | "/orders";
+  | "/products";
 
 /** Selects the first useful page that the authenticated actor can actually open. */
 export function getPostLoginPath(user: AuthenticatedUser): PostLoginPath {
@@ -36,6 +37,9 @@ export function getPostLoginPath(user: AuthenticatedUser): PostLoginPath {
   if (user.permissions.includes("admin.promotions.manage")) return "/admin/promotions";
   if (user.permissions.includes("admin.orders.read")) return "/admin/orders";
   if (user.permissions.includes("admin.reviews.moderate")) return "/admin/reviews";
+  if (user.accountType === "seller" && user.permissions.includes("dashboard.read")) {
+    return "/dashboard";
+  }
   if (user.accountType === "seller" && user.permissions.includes("seller.orders.read")) {
     return "/seller/orders";
   }
@@ -60,6 +64,7 @@ export function getPostLoginPath(user: AuthenticatedUser): PostLoginPath {
   if (user.accountType === "seller" && user.permissions.includes("catalog.read")) {
     return "/seller/catalog-taxonomy";
   }
+  if (user.accountType === "customer") return "/products";
   if (
     user.permissions.some((permission) =>
       ["documents.upload", "documents.read", "documents.link"].includes(permission),
@@ -68,6 +73,5 @@ export function getPostLoginPath(user: AuthenticatedUser): PostLoginPath {
     return "/documents";
   }
   if (user.permissions.includes("audit.read")) return "/audit";
-  if (user.accountType === "customer" && user.permissions.includes("orders.read_own")) return "/orders";
   return "/account";
 }

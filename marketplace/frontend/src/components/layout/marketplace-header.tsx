@@ -1,16 +1,33 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
+import { CART_WISHLIST_PERMISSION } from "@/features/cart-wishlist/cart-wishlist.constants";
 import { MiniCart } from "@/features/cart-wishlist/components/mini-cart";
+import type { AuthenticatedUser } from "@/features/auth/types/auth.types";
+import { NOTIFICATIONS_PERMISSION } from "@/features/notifications/notifications.constants";
 import { NotificationBell } from "@/features/notifications/components/notification-bell";
 import { SearchAutocomplete } from "@/features/search-discovery/components/search-autocomplete";
 import { SEARCH_UI_LIMITS } from "@/features/search-discovery/search-discovery.constants";
 import { env } from "@/lib/env";
 import { BrandMark } from "./brand-mark";
 
+interface MarketplaceHeaderProps {
+  user?: AuthenticatedUser;
+  isSessionLoading: boolean;
+}
+
 /** Public marketplace header. It reuses the existing Search, Cart, Notification, and Auth routes. */
-export function MarketplaceHeader() {
+export function MarketplaceHeader({ user, isSessionLoading }: MarketplaceHeaderProps) {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
+  const isCustomer = user?.accountType === "customer";
+  const canManageCart =
+    isCustomer && user.permissions.includes(CART_WISHLIST_PERMISSION.CART_MANAGE_OWN);
+  const canManageWishlist =
+    isCustomer && user.permissions.includes(CART_WISHLIST_PERMISSION.WISHLIST_MANAGE_OWN);
+  const canReadNotifications =
+    user?.permissions.includes(NOTIFICATIONS_PERMISSION.READ_OWN) ?? false;
+  const canStartSelling = !user || isCustomer;
+  const avatarLabel = user?.displayName.trim().charAt(0).toUpperCase() || "A";
 
   /** Navigates to the canonical marketplace search route for one query. */
   function navigateToSearch(value: string): void {
@@ -72,18 +89,22 @@ export function MarketplaceHeader() {
         </div>
 
         <nav className="marketplace-actions" aria-label="Global navigation">
-          <Link to="/wishlist" className="marketplace-action-link marketplace-wishlist-link">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z" /></svg>
-            <span>Wishlist</span>
-          </Link>
-          <MiniCart load={false} />
-          <NotificationBell />
-          <Link to="/seller/apply" className="marketplace-sell-link">Start selling</Link>
-          <Link to="/account" className="marketplace-avatar-link" aria-label="Account">
-            <span className="marketplace-avatar">A</span>
-            <span className="marketplace-avatar-copy">Account</span>
-          </Link>
-          <Link to="/login" className="marketplace-signin">Sign in</Link>
+          {canManageWishlist ? (
+            <Link to="/wishlist" className="marketplace-action-link marketplace-wishlist-link">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z" /></svg>
+              <span>Wishlist</span>
+            </Link>
+          ) : null}
+          {!user || isCustomer ? <MiniCart load={Boolean(canManageCart)} /> : null}
+          <NotificationBell enabled={canReadNotifications} />
+          {canStartSelling ? <Link to="/seller/apply" className="marketplace-sell-link">Start selling</Link> : null}
+          {user ? (
+            <Link to="/account" className="marketplace-avatar-link" aria-label="Account">
+              <span className="marketplace-avatar">{avatarLabel}</span>
+              <span className="marketplace-avatar-copy">Account</span>
+            </Link>
+          ) : null}
+          {!user && !isSessionLoading ? <Link to="/login" className="marketplace-signin">Sign in</Link> : null}
         </nav>
       </div>
     </header>

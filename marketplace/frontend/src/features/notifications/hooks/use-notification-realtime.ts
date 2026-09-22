@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { io, type Socket } from "socket.io-client";
+import { authQueryKeys } from "@/features/auth/hooks/auth.query-keys";
+import type { AuthenticatedUser } from "@/features/auth/types/auth.types";
 import {
   getAccessToken,
   subscribeAccessToken,
@@ -51,6 +53,11 @@ export function useNotificationRealtime(enabled: boolean): void {
         void queryClient.invalidateQueries({
           queryKey: notificationsQueryKeys.all,
         });
+
+        const currentUser = queryClient.getQueryData<AuthenticatedUser>(authQueryKeys.me);
+        if (currentUser?.accountType === "customer") {
+          void queryClient.invalidateQueries({ queryKey: authQueryKeys.me });
+        }
       });
     }
 

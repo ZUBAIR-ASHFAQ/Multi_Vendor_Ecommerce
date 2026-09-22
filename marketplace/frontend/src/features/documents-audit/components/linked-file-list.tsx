@@ -45,9 +45,10 @@ export function LinkedFileList({
                   size="sm"
                   disabled={unlink.isPending}
                   onClick={() => {
-                    void unlink
-                      .mutateAsync({ fileId: file.id, linkId: link.id })
-                      .then(() => onUnlinked(link.id));
+                    unlink.mutate(
+                      { fileId: file.id, linkId: link.id },
+                      { onSuccess: () => onUnlinked(link.id) },
+                    );
                   }}
                 >
                   Unlink

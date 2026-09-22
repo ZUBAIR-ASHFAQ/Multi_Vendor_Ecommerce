@@ -7,6 +7,10 @@ const browserEnvSchema = z.object({
     .string()
     .trim()
     .regex(/^pk_(?:test|live)_/, "Stripe publishable key must start with pk_test_ or pk_live_."),
+  VITE_LOCAL_DEMO_PROVIDERS: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((value) => value === "true"),
 });
 
 const parsedEnv = browserEnvSchema.safeParse(import.meta.env);

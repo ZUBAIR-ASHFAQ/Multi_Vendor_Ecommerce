@@ -71,7 +71,7 @@ export const sellerWalletPayoutsApi = {
   listSellerPayouts: (params: SellerPayoutListParams) =>
     payouts(apiClient.get("/seller/payouts", { params: queryParams(params) })),
 
-  /** Requests one Payout using a fresh Foundation idempotency key. */
+  /** Requests one Payout using the caller-owned retry-stable Foundation idempotency key. */
   requestPayout: (input: RequestPayoutInput, idempotencyKey: string) =>
     one(
       apiClient.post("/seller/payouts", input, {

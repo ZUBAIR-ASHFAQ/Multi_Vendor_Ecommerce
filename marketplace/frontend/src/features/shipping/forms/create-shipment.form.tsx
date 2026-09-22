@@ -1,6 +1,7 @@
 import { useForm } from "@tanstack/react-form";
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/features/auth/components/form-error";
+import { useStableIdempotencyKey } from "@/lib/use-stable-idempotency-key";
 import { createShipmentFormSchema } from "../schemas/shipping.schemas";
 import type { CreateShipmentInput } from "../types/shipping.types";
 
@@ -34,6 +35,7 @@ export function CreateShipmentForm({
   error: unknown;
   onSubmit: (input: CreateShipmentInput, idempotencyKey: string) => Promise<void>;
 }) {
+  const commandKey = useStableIdempotencyKey();
   const form = useForm({
     defaultValues: {
       items: items.map((item) => ({
@@ -55,11 +57,15 @@ export function CreateShipmentForm({
           })),
       };
 
+      const fingerprint = JSON.stringify(input);
+      const idempotencyKey = commandKey.keyFor(fingerprint);
+
       try {
-        await onSubmit(input, crypto.randomUUID());
+        await onSubmit(input, idempotencyKey);
+        commandKey.complete(fingerprint);
         form.reset();
       } catch {
-        // TanStack Query owns the normalized API error rendered below.
+        // Keep the key so retrying the same allocation replays the same server command.
       }
     },
   });

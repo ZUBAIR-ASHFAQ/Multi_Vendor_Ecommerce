@@ -2,6 +2,7 @@ import { useForm } from "@tanstack/react-form";
 import { useState } from "react";
 import { ConfirmationDialog } from "@/components/feedback/confirmation-dialog";
 import { Button } from "@/components/ui/button";
+import { useStableIdempotencyKey } from "@/lib/use-stable-idempotency-key";
 import {
   firstFieldError,
   FormError,
@@ -27,7 +28,8 @@ export function OrderCancellationForm({
   error: unknown;
   onSubmit: (input: CancelOrderInput, idempotencyKey: string) => Promise<void>;
 }) {
-  const [pendingCancellation, setPendingCancellation] = useState<{ input: CancelOrderInput; idempotencyKey: string } | null>(null);
+  const [pendingCancellation, setPendingCancellation] = useState<{ input: CancelOrderInput; idempotencyKey: string; fingerprint: string } | null>(null);
+  const commandKey = useStableIdempotencyKey();
   const form = useForm({
     defaultValues: {
       orderItemId: "",
@@ -49,7 +51,12 @@ export function OrderCancellationForm({
       }
       if (parsed.reason) input.reason = parsed.reason;
 
-      setPendingCancellation({ input, idempotencyKey: crypto.randomUUID() });
+      const fingerprint = JSON.stringify(input);
+      setPendingCancellation({
+        input,
+        fingerprint,
+        idempotencyKey: commandKey.keyFor(fingerprint),
+      });
     },
   });
 
@@ -159,11 +166,14 @@ export function OrderCancellationForm({
         if (!pendingCancellation) return;
         void onSubmit(pendingCancellation.input, pendingCancellation.idempotencyKey)
           .then(() => {
+            commandKey.complete(pendingCancellation.fingerprint);
             form.reset();
             setPendingCancellation(null);
           })
-          .catch(() => undefined)
-          .finally(() => setPendingCancellation(null));
+          .catch(() => {
+            // Keep the retry key so an uncertain network failure replays the same command.
+            setPendingCancellation(null);
+          });
       }}
     />
     </>

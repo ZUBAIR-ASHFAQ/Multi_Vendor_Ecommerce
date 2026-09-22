@@ -92,6 +92,106 @@ describe("global marketplace shell", () => {
     });
   });
 
+
+  it("restores a refresh-cookie session in the global shell and then loads customer header state", async () => {
+    let currentUserCalls = 0;
+    let refreshCalls = 0;
+    const customer: AuthenticatedUser = {
+      id: userId,
+      email: "buyer@example.com",
+      displayName: "Buyer Example",
+      accountType: "customer",
+      status: "active",
+      roles: [],
+      permissions: [
+        "cart.manage_own",
+        "wishlist.manage_own",
+        "orders.read_own",
+        "notifications.read_own",
+      ],
+      scopes: { sellerIds: [], storeIds: [] },
+    };
+
+    server.use(
+      http.get(`${env.VITE_API_BASE_URL}/auth/me`, ({ request }) => {
+        currentUserCalls += 1;
+        if (request.headers.get("Authorization") !== "Bearer refreshed-shell-token") {
+          return HttpResponse.json(
+            {
+              success: false,
+              error: { code: "AUTH_REQUIRED", message: "Authentication is required." },
+              requestId: "req-shell-me-before-refresh",
+            },
+            { status: 401 },
+          );
+        }
+        return HttpResponse.json({ success: true, data: customer, requestId: "req-shell-me-after-refresh" });
+      }),
+      http.post(`${env.VITE_API_BASE_URL}/auth/refresh`, () => {
+        refreshCalls += 1;
+        return HttpResponse.json({
+          success: true,
+          data: { accessToken: "refreshed-shell-token" },
+          requestId: "req-shell-refresh",
+        });
+      }),
+      http.get(`${env.VITE_API_BASE_URL}/cart`, () =>
+        HttpResponse.json({
+          success: true,
+          data: {
+            id: "22222222-2222-4222-8222-222222222222",
+            currency: "USD",
+            items: [
+              {
+                id: "33333333-3333-4333-8333-333333333333",
+                productId: "44444444-4444-4444-8444-444444444444",
+                variantId: "55555555-5555-4555-8555-555555555555",
+                productName: "Shell Product",
+                productSlug: "shell-product",
+                storeId: "66666666-6666-4666-8666-666666666666",
+                storeSlug: "shell-store",
+                storeName: "Shell Store",
+                thumbnailFileId: null,
+                variantTitle: "Default",
+                sku: "SHELL-1",
+                currentUnitPrice: "10.00",
+                currency: "USD",
+                quantity: 2,
+                previewLineSubtotal: "20.00",
+                inStock: true,
+                isPurchasable: true,
+                addedAt: now,
+                updatedAt: now,
+              },
+            ],
+            previewSubtotal: "20.00",
+            hasUnavailableItems: false,
+            updatedAt: now,
+          },
+          requestId: "req-shell-restored-cart",
+        }),
+      ),
+      http.get(`${env.VITE_API_BASE_URL}/notifications`, () =>
+        HttpResponse.json({
+          success: true,
+          data: [],
+          meta: { page: 1, pageSize: 1, totalItems: 0, totalPages: 0, unreadCount: 3 },
+          requestId: "req-shell-restored-notifications",
+        }),
+      ),
+    );
+
+    await renderRoute("/login");
+
+    expect(await screen.findByRole("link", { name: "Mini Cart with 2 items" })).toBeInTheDocument();
+    expect(await screen.findByLabelText("Notifications, 3 unread")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Account" })).toHaveAttribute("href", "/account");
+    expect(screen.getAllByRole("link", { name: "Wishlist" }).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("link", { name: "Sign in" })).not.toBeInTheDocument();
+    expect(refreshCalls).toBe(1);
+    expect(currentUserCalls).toBe(2);
+  });
+
   it("uses enclosed checkout chrome without the marketplace footer or mobile navigation", async () => {
     setAccessToken("patch002-checkout-token");
     server.use(

@@ -3,11 +3,12 @@ import { useState } from "react";
 import { ConfirmationDialog } from "@/components/feedback/confirmation-dialog";
 import { SuccessFeedback } from "@/components/feedback/system-state";
 import { Button } from "@/components/ui/button";
+import { useStableIdempotencyKey } from "@/lib/use-stable-idempotency-key";
 import { FormError } from "@/features/auth/components/form-error";
 import { returnRefundFormSchema } from "../schemas/returns-refunds.schemas";
 import type { IssueReturnRefundInput, ReturnRefundResult } from "../types/returns-refunds.types";
 
-/** Executes the privileged provider refund with a fresh retry key and no browser-owned amount fields. */
+/** Executes the privileged provider refund with a retry-stable key and no browser-owned amount fields. */
 export function ReturnRefundForm({
   isPending,
   error,
@@ -19,15 +20,19 @@ export function ReturnRefundForm({
   result?: ReturnRefundResult;
   onSubmit: (input: IssueReturnRefundInput, idempotencyKey: string) => Promise<void>;
 }) {
-  const [pendingRefund, setPendingRefund] = useState<{ input: IssueReturnRefundInput; idempotencyKey: string } | null>(null);
+  const [pendingRefund, setPendingRefund] = useState<{ input: IssueReturnRefundInput; idempotencyKey: string; fingerprint: string } | null>(null);
+  const commandKey = useStableIdempotencyKey();
   const form = useForm({
     defaultValues: { note: "" },
     validators: { onChange: returnRefundFormSchema },
     onSubmit: async ({ value }) => {
       const parsed = returnRefundFormSchema.parse(value);
+      const input: IssueReturnRefundInput = parsed.note ? { note: parsed.note } : {};
+      const fingerprint = JSON.stringify(input);
       setPendingRefund({
-        input: parsed.note ? { note: parsed.note } : {},
-        idempotencyKey: crypto.randomUUID(),
+        input,
+        fingerprint,
+        idempotencyKey: commandKey.keyFor(fingerprint),
       });
     },
   });
@@ -80,9 +85,14 @@ export function ReturnRefundForm({
       onConfirm={() => {
         if (!pendingRefund) return;
         void onSubmit(pendingRefund.input, pendingRefund.idempotencyKey)
-          .then(() => setPendingRefund(null))
-          .catch(() => undefined)
-          .finally(() => setPendingRefund(null));
+          .then(() => {
+            commandKey.complete(pendingRefund.fingerprint);
+            setPendingRefund(null);
+          })
+          .catch(() => {
+            // Keep the retry key so an uncertain network failure replays the same refund command.
+            setPendingRefund(null);
+          });
       }}
     />
     </>

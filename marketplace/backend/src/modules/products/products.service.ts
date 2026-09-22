@@ -1114,7 +1114,7 @@ export class ProductsService {
       .map(([sellerId]) => sellerId);
     const storeIds = [...context.storeIds];
 
-    if (sellerIds.length === 0 || storeIds.length === 0) {
+    if (sellerIds.length === 0) {
       throw this.productScopeForbidden();
     }
     return { sellerIds, storeIds };

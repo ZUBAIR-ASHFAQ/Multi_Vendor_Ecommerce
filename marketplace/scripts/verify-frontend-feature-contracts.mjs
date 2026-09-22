@@ -878,7 +878,8 @@ function verifyReturnsRefundsFeature() {
   requireText(requestForm, "useForm({", "Module 14 Return Request form");
   requireText(requestForm, "returnRequestFormSchema", "Module 14 Zod Return Request validation");
   requireText(inspectionForm, "receiveReturnFormSchema", "Module 14 inspection validation");
-  requireText(refundForm, "crypto.randomUUID()", "Module 14 refund idempotency key");
+  requireText(refundForm, "useStableIdempotencyKey", "Module 14 retry-stable idempotency controller");
+  requireText(refundForm, "commandKey.keyFor(fingerprint)", "Module 14 refund idempotency key reuse");
 
   for (const route of [
     'path: "/returns"',

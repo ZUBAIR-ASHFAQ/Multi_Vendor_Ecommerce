@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { invalidateInventoryCommerceState } from "@/lib/commerce-cache-invalidation";
 import { inventoryApi } from "../api/inventory.api";
 import type {
   SellerInventoryListParams,
@@ -35,7 +36,7 @@ export function useAdjustStockMutation(variantId: string) {
     mutationFn: (quantityDelta: number) => inventoryApi.adjustStock(variantId, quantityDelta),
     onSuccess: async () => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.seller }),
+        invalidateInventoryCommerceState(queryClient),
         queryClient.invalidateQueries({ queryKey: ["inventory", "seller", "movements", variantId] }),
       ]);
     },

@@ -18,6 +18,7 @@ import { FormError } from "@/features/auth/components/form-error";
 import { ApiClientError } from "@/lib/api-error";
 import { formatDateTime } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
+import { useStableIdempotencyKey } from "@/lib/use-stable-idempotency-key";
 import { PayoutPagination } from "../components/payout-pagination";
 import { PayoutReconciliation } from "../components/payout-reconciliation";
 import { PayoutStatus } from "../components/payout-status";
@@ -39,6 +40,29 @@ function FinancePayoutActions({ payout, canManage }: { payout: Payout; canManage
   const [pendingAction, setPendingAction] = useState<"approve" | "send" | null>(null);
   const approve = useApprovePayoutMutation(payout.id);
   const send = useSendPayoutMutation(payout.id);
+  const commandKey = useStableIdempotencyKey();
+
+  /** Runs one finance command while retaining its key across failed retries. */
+  const runPayoutCommand = (action: "approve" | "send"): void => {
+    const fingerprint = `${payout.id}:${action}`;
+    const idempotencyKey = commandKey.keyFor(fingerprint);
+    const callbacks = {
+      onSuccess: () => {
+        commandKey.complete(fingerprint);
+        setPendingAction(null);
+      },
+      onError: () => {
+        // Keep the key so a retry after an uncertain provider/network failure replays safely.
+        setPendingAction(null);
+      },
+    };
+
+    if (action === "approve") {
+      approve.mutate(idempotencyKey, callbacks);
+    } else {
+      send.mutate(idempotencyKey, callbacks);
+    }
+  };
 
   if (!canManage) return null;
 
@@ -62,7 +86,7 @@ function FinancePayoutActions({ payout, canManage }: { payout: Payout; canManage
             disabled={send.isPending}
             onClick={() => {
               if (payout.status === "processing") {
-                send.mutate(crypto.randomUUID());
+                runPayoutCommand("send");
                 return;
               }
               setPendingAction("send");
@@ -85,9 +109,9 @@ function FinancePayoutActions({ payout, canManage }: { payout: Payout; canManage
         onCancel={() => setPendingAction(null)}
         onConfirm={() => {
           if (pendingAction === "approve") {
-            approve.mutate(crypto.randomUUID(), { onSettled: () => setPendingAction(null) });
+            runPayoutCommand("approve");
           } else if (pendingAction === "send") {
-            send.mutate(crypto.randomUUID(), { onSettled: () => setPendingAction(null) });
+            runPayoutCommand("send");
           }
         }}
       />

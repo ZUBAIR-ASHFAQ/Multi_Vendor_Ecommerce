@@ -8,11 +8,35 @@ function validEnvironment(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv 
     DATABASE_URL: "postgresql://marketplace:marketplace@localhost:5432/marketplace",
     JWT_ACCESS_SECRET: "test-access-secret-that-is-at-least-32-characters-long",
     STORAGE_BUCKET: "marketplace-test",
+    STRIPE_SECRET_KEY: "sk_test_environment_security",
+    STRIPE_WEBHOOK_SECRET: "whsec_environment_security",
+    STRIPE_CURRENCY_EXPONENTS_JSON: JSON.stringify({ USD: 2, PKR: 2 }),
     ...overrides,
   };
 }
 
 describe("Foundation environment security", () => {
+  it("requires Stripe credentials because Payments is always composed at startup", () => {
+    const input = validEnvironment({
+      STRIPE_SECRET_KEY: undefined,
+      STRIPE_WEBHOOK_SECRET: undefined,
+    });
+
+    expect(() => parseEnvironment(input)).toThrow(
+      "STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET are required because the Payments service is always enabled.",
+    );
+  });
+
+  it("requires both Stripe credentials when either one is configured", () => {
+    const input = validEnvironment({
+      STRIPE_WEBHOOK_SECRET: undefined,
+    });
+
+    expect(() => parseEnvironment(input)).toThrow(
+      "STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET are required because the Payments service is always enabled.",
+    );
+  });
+
   it("rejects an insecure refresh cookie configuration in production", () => {
     const input = validEnvironment({
       NODE_ENV: "production",

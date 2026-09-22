@@ -1,6 +1,7 @@
 import { useForm } from "@tanstack/react-form";
 import { Button } from "@/components/ui/button";
 import { firstFieldError, FormError } from "@/features/auth/components/form-error";
+import { useStableIdempotencyKey } from "@/lib/use-stable-idempotency-key";
 import {
   normalizeScale4Money,
   payoutRequestFormSchema,
@@ -22,6 +23,7 @@ export function PayoutRequestForm({
   error: unknown;
   onSubmit: (input: RequestPayoutInput, idempotencyKey: string) => Promise<void>;
 }) {
+  const commandKey = useStableIdempotencyKey();
   const activeAccounts = accounts.filter((account) => account.status === "active" && account.verifiedAt);
   const form = useForm({
     defaultValues: {
@@ -37,10 +39,14 @@ export function PayoutRequestForm({
         amount: normalizeScale4Money(parsed.amount),
         currency: parsed.currency,
       };
+      const fingerprint = JSON.stringify(input);
+      const idempotencyKey = commandKey.keyFor(fingerprint);
+
       try {
-        await onSubmit(input, crypto.randomUUID());
+        await onSubmit(input, idempotencyKey);
+        commandKey.complete(fingerprint);
       } catch {
-        // TanStack Query owns the normalized API error rendered below.
+        // Keep the key so retrying the same payout request cannot reserve twice.
       }
     },
   });

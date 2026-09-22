@@ -59,7 +59,7 @@ function SellerOrderDetailContent({
               </Button>
             ) : null}
             {canManage && order.data.status === "pending_acceptance" ? (
-              <Button disabled={accept.isPending} onClick={() => void accept.mutateAsync()}>
+              <Button disabled={accept.isPending} onClick={() => accept.mutate()}>
                 {accept.isPending ? "Accepting..." : "Accept Seller Order"}
               </Button>
             ) : null}

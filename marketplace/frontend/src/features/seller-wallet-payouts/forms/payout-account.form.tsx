@@ -1,6 +1,7 @@
 import { useForm } from "@tanstack/react-form";
 import { Button } from "@/components/ui/button";
 import { firstFieldError, FormError } from "@/features/auth/components/form-error";
+import { env } from "@/lib/env";
 import { payoutAccountFormSchema } from "../schemas/seller-wallet-payouts.schemas";
 import type { CreatePayoutAccountInput } from "../types/seller-wallet-payouts.types";
 
@@ -15,7 +16,10 @@ export function PayoutAccountForm({
   onSubmit: (input: CreatePayoutAccountInput) => Promise<void>;
 }) {
   const form = useForm({
-    defaultValues: { providerType: "", providerAccountRef: "" },
+    defaultValues: {
+      providerType: env.VITE_LOCAL_DEMO_PROVIDERS ? "local_dev" : "",
+      providerAccountRef: "",
+    },
     validators: { onChange: payoutAccountFormSchema },
     onSubmit: async ({ value }) => {
       const parsed = payoutAccountFormSchema.parse(value);
@@ -41,6 +45,14 @@ export function PayoutAccountForm({
         <p className="mt-1 text-xs text-slate-600">
           Enter a token/reference created by your configured payout provider. Do not enter raw bank account or card credentials here.
         </p>
+        {env.VITE_LOCAL_DEMO_PROVIDERS ? (
+          <p className="mt-2 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            Local demo provider is active. Keep provider type <strong>local_dev</strong> and use
+            <code className="mx-1">paid:demo_account</code> for success,
+            <code className="mx-1">failed:demo_account</code> for failure, or
+            <code className="mx-1">unknown_then_paid:demo_account</code> to exercise reconciliation.
+          </p>
+        ) : null}
       </div>
       <form.Field name="providerType">
         {(field) => {
@@ -51,7 +63,7 @@ export function PayoutAccountForm({
               <input
                 aria-label="Payout provider type"
                 className="mt-1 w-full rounded-md border px-3 py-2"
-                placeholder="configured_provider"
+                placeholder={env.VITE_LOCAL_DEMO_PROVIDERS ? "local_dev" : "configured_provider"}
                 value={field.state.value}
                 onChange={(event) => field.handleChange(event.target.value.toLowerCase())}
               />
@@ -70,6 +82,7 @@ export function PayoutAccountForm({
                 aria-label="Provider account reference"
                 className="mt-1 w-full rounded-md border px-3 py-2"
                 autoComplete="off"
+                placeholder={env.VITE_LOCAL_DEMO_PROVIDERS ? "paid:demo_account" : undefined}
                 value={field.state.value}
                 onChange={(event) => field.handleChange(event.target.value)}
               />

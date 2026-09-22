@@ -6,7 +6,7 @@ import { useCartQuery } from "../hooks/use-cart-wishlist";
 export function MiniCart({ load = true }: { load?: boolean }) {
   const cart = useCartQuery(load);
 
-  if (!load && !cart.data) {
+  if (!load) {
     return (
       <Link to="/cart" className="marketplace-cart-link">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h2l2.2 10.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 2-1.6L21 7H6m4 12a1 1 0 1 1-2 0 1 1 0 0 1 2 0Zm9 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z" /></svg>

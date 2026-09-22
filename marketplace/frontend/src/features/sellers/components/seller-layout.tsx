@@ -10,6 +10,7 @@ import {
   WorkspaceSidebar,
 } from "@/components/workspace/workspace-shell";
 import { AuthenticatedPanel } from "@/features/auth/components/authenticated-panel";
+import { CATALOG_PERMISSION, hasCatalogPermission } from "@/features/catalog-taxonomy/catalog-taxonomy.constants";
 import type { AuthenticatedUser } from "@/features/auth/types/auth.types";
 import { COMMISSIONS_PERMISSION } from "@/features/commissions/commissions.constants";
 import { REPORTS_PERMISSION } from "@/features/reports/reports.constants";
@@ -22,6 +23,7 @@ function SellerNavigation({ user }: { user: AuthenticatedUser }) {
   const canManageStores = hasSellerPermission(user.permissions, SELLER_PERMISSION.STORE_MANAGE);
   const canManageStaff = hasSellerPermission(user.permissions, SELLER_PERMISSION.STAFF_MANAGE);
   const canReadProducts = user.permissions.includes("seller.products.read");
+  const canReadCatalog = hasCatalogPermission(user.permissions, CATALOG_PERMISSION.READ);
   const canReadInventory = user.permissions.includes("inventory.read");
   const canManagePromotions = user.permissions.includes("seller.promotions.manage");
   const canReadOrders = user.permissions.includes("seller.orders.read");
@@ -51,6 +53,7 @@ function SellerNavigation({ user }: { user: AuthenticatedUser }) {
         {user.permissions.includes("dashboard.read") ? <Link to="/dashboard" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Dashboard <span>⌂</span></Link> : null}
         {canReadOrders ? <Link to="/seller/orders" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Orders <span>›</span></Link> : null}
         {canReadProducts ? <Link to="/seller/products" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Products <span>›</span></Link> : null}
+        {canReadCatalog ? <Link to="/seller/catalog-taxonomy" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Catalog taxonomy <span>›</span></Link> : null}
         {canReadInventory ? <Link to="/seller/inventory" className={WORKSPACE_NAV_LINK_CLASS} activeProps={{ className: WORKSPACE_NAV_ACTIVE_CLASS }}>Inventory <span>›</span></Link> : null}
       </WorkspaceNavGroup>
 

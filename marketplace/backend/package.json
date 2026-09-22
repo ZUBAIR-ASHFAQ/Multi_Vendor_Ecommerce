@@ -25,6 +25,7 @@
                     "test:regression:contracts":  "vitest run tests/regression/implemented-api-contracts.test.ts",
                     "test:foundation":  "node scripts/run-foundation-tests.mjs",
                     "test:migrations":  "node scripts/apply-test-migrations.mjs",
+                    "db:clear:manual-data":  "node scripts/clear-manual-marketplace-data.mjs",
                     "lint":  "eslint . --max-warnings=0",
                     "db:seed:administration":  "tsx src/database/seeds/platform-rbac.seed.ts",
                     "test:foundation:specs":  "vitest run tests/unit tests/http tests/integration/foundation.persistence.integration.test.ts tests/integration/redis.integration.test.ts",

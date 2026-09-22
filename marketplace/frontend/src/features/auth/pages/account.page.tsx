@@ -113,7 +113,11 @@ function AccountContent({ user }: { user: AuthenticatedUser }) {
           variant="outline"
           disabled={logout.isPending}
           onClick={() => {
-            void logout.mutateAsync().then(() => navigate({ to: "/login" }));
+            logout.mutate(undefined, {
+              onSuccess: () => {
+                void navigate({ to: "/login" });
+              },
+            });
           }}
         >
           Sign out

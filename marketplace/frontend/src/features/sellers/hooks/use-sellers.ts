@@ -1,4 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  invalidateSellerLifecycleCommerceState,
+  invalidateStoreCommerceState,
+} from "@/lib/commerce-cache-invalidation";
 import { sellersApi } from "../api/sellers.api";
 import type {
   CreateStoreInput,
@@ -75,7 +79,7 @@ export function useCreateStoreMutation() {
   return useMutation({
     mutationFn: (input: CreateStoreInput) => sellersApi.createStore(input),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: sellerQueryKeys.mySeller });
+      await invalidateStoreCommerceState(queryClient);
     },
   });
 }
@@ -86,10 +90,7 @@ export function useUpdateStoreMutation(storeId: string) {
   return useMutation({
     mutationFn: (input: UpdateStoreInput) => sellersApi.updateStore(storeId, input),
     onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: sellerQueryKeys.mySeller }),
-        queryClient.invalidateQueries({ queryKey: sellerQueryKeys.publicStores }),
-      ]);
+      await invalidateStoreCommerceState(queryClient);
     },
   });
 }
@@ -110,7 +111,7 @@ export function useSuspendSellerMutation() {
     mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
       sellersApi.suspendSeller(id, reason),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: sellerQueryKeys.all });
+      await invalidateSellerLifecycleCommerceState(queryClient);
     },
   });
 }

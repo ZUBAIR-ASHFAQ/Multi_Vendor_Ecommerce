@@ -89,7 +89,20 @@ export function AdminNavigation({ user }: { user: AuthenticatedUser }) {
           <p>Operational navigation stays permission-aware and backed by your current API authorization model.</p>
           <div className="workspace-account-actions">
             <Button variant="outline" size="sm" asChild><Link to="/account">Account</Link></Button>
-            <Button variant="outline" size="sm" disabled={logout.isPending} onClick={() => { void logout.mutateAsync().then(() => navigate({ to: "/login" })); }}>Sign out</Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={logout.isPending}
+              onClick={() => {
+                logout.mutate(undefined, {
+                  onSuccess: () => {
+                    void navigate({ to: "/login" });
+                  },
+                });
+              }}
+            >
+              Sign out
+            </Button>
           </div>
         </>
       )}

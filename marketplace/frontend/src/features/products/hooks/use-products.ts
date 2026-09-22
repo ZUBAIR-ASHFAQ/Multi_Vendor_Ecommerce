@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DOCUMENT_PURPOSE } from "@/features/documents-audit/documents-audit.constants";
+import { invalidateProductCommerceState } from "@/lib/commerce-cache-invalidation";
 import { documentsAuditApi } from "@/features/documents-audit/api/documents-audit.api";
 import { productsApi } from "../api/products.api";
 import type {
@@ -69,10 +70,7 @@ export function useUpdateProductMutation(productId: string) {
     mutationFn: (input: UpdateProductInput) => productsApi.updateProduct(productId, input),
     onSuccess: async (product) => {
       queryClient.setQueryData(productQueryKeys.sellerDetail(productId), product);
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: productQueryKeys.seller }),
-        queryClient.invalidateQueries({ queryKey: productQueryKeys.public }),
-      ]);
+      await invalidateProductCommerceState(queryClient);
     },
   });
 }
@@ -84,7 +82,7 @@ export function useAddProductVariantMutation(productId: string) {
     mutationFn: (input: CreateProductVariantInput) => productsApi.addVariant(productId, input),
     onSuccess: async (product) => {
       queryClient.setQueryData(productQueryKeys.sellerDetail(productId), product);
-      await queryClient.invalidateQueries({ queryKey: productQueryKeys.public });
+      await invalidateProductCommerceState(queryClient);
     },
   });
 }
@@ -97,10 +95,7 @@ export function useUpdateProductVariantMutation(productId: string, variantId: st
       productsApi.updateVariant(productId, variantId, input),
     onSuccess: async (product) => {
       queryClient.setQueryData(productQueryKeys.sellerDetail(productId), product);
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: productQueryKeys.seller }),
-        queryClient.invalidateQueries({ queryKey: productQueryKeys.public }),
-      ]);
+      await invalidateProductCommerceState(queryClient);
     },
   });
 }
@@ -132,7 +127,7 @@ export function useUploadProductMediaMutation() {
     },
     onSuccess: async (product, input) => {
       queryClient.setQueryData(productQueryKeys.sellerDetail(input.productId), product);
-      await queryClient.invalidateQueries({ queryKey: productQueryKeys.public });
+      await invalidateProductCommerceState(queryClient);
     },
   });
 }
@@ -144,10 +139,7 @@ export function usePublishProductMutation(productId: string) {
     mutationFn: () => productsApi.publishProduct(productId),
     onSuccess: async (product) => {
       queryClient.setQueryData(productQueryKeys.sellerDetail(productId), product);
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: productQueryKeys.seller }),
-        queryClient.invalidateQueries({ queryKey: productQueryKeys.public }),
-      ]);
+      await invalidateProductCommerceState(queryClient);
     },
   });
 }
@@ -159,10 +151,7 @@ export function useUnpublishProductMutation(productId: string) {
     mutationFn: () => productsApi.unpublishProduct(productId),
     onSuccess: async (product) => {
       queryClient.setQueryData(productQueryKeys.sellerDetail(productId), product);
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: productQueryKeys.seller }),
-        queryClient.invalidateQueries({ queryKey: productQueryKeys.public }),
-      ]);
+      await invalidateProductCommerceState(queryClient);
     },
   });
 }
@@ -192,11 +181,7 @@ export function useApproveProductMutation(productId: string) {
     mutationFn: () => productsApi.approveProduct(productId),
     onSuccess: async (product) => {
       queryClient.setQueryData(productQueryKeys.adminDetail(productId), product);
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: productQueryKeys.admin }),
-        queryClient.invalidateQueries({ queryKey: productQueryKeys.seller }),
-        queryClient.invalidateQueries({ queryKey: productQueryKeys.public }),
-      ]);
+      await invalidateProductCommerceState(queryClient, { includeAdmin: true });
     },
   });
 }

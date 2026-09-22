@@ -3,6 +3,7 @@ import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/money";
+import { useStableIdempotencyKey } from "@/lib/use-stable-idempotency-key";
 import { useSellerOrderDetailQuery } from "@/features/orders/hooks/use-orders";
 import { ORDERS_PERMISSION } from "@/features/orders/orders.constants";
 import { RequireSellerPermission, SellerLayout } from "@/features/sellers/components/seller-layout";
@@ -45,6 +46,21 @@ function ShipmentCard({ shipment, canManage }: { shipment: SellerShipment; canMa
   const markShipped = useMarkShipmentShippedMutation(shipment.id);
   const markDelivered = useMarkShipmentDeliveredMutation(shipment.id);
   const commandError = lifecycleError(markShipped.error, markDelivered.error);
+  const lifecycleKey = useStableIdempotencyKey();
+
+  /** Runs one Shipment lifecycle command while retaining its key across failed retries. */
+  const runLifecycleCommand = (action: "mark-shipped" | "mark-delivered"): void => {
+    const fingerprint = `${shipment.id}:${action}`;
+    const idempotencyKey = lifecycleKey.keyFor(fingerprint);
+    /** Releases the retry key only after the server confirms this lifecycle transition. */
+    const onSuccess = () => lifecycleKey.complete(fingerprint);
+
+    if (action === "mark-shipped") {
+      markShipped.mutate(idempotencyKey, { onSuccess });
+    } else {
+      markDelivered.mutate(idempotencyKey, { onSuccess });
+    }
+  };
 
   return (
     <article className="space-y-4 rounded-xl border bg-white p-5 shadow-sm">
@@ -74,7 +90,7 @@ function ShipmentCard({ shipment, canManage }: { shipment: SellerShipment; canMa
           <Button
             type="button"
             disabled={markShipped.isPending || !shipment.carrier || !shipment.trackingNo}
-            onClick={() => void markShipped.mutateAsync(crypto.randomUUID())}
+            onClick={() => runLifecycleCommand("mark-shipped")}
           >
             {markShipped.isPending ? "Marking shipped..." : "Mark shipped"}
           </Button>
@@ -83,7 +99,7 @@ function ShipmentCard({ shipment, canManage }: { shipment: SellerShipment; canMa
           <Button
             type="button"
             disabled={markDelivered.isPending}
-            onClick={() => void markDelivered.mutateAsync(crypto.randomUUID())}
+            onClick={() => runLifecycleCommand("mark-delivered")}
           >
             {markDelivered.isPending ? "Marking delivered..." : "Mark delivered"}
           </Button>

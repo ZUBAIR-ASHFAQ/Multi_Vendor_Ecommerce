@@ -112,66 +112,84 @@ export function ProductVariantForm({
         </form.Field>
 
         <form.Field name="title">
-          {(field) => (
-            <label className="block text-sm font-medium">
-              Variant title
-              <input
-                aria-label={variant ? `Variant title ${variant.id}` : "Variant title"}
-                className="mt-1 w-full rounded-md border px-3 py-2"
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(event) => field.handleChange(event.target.value)}
-              />
-            </label>
-          )}
+          {(field) => {
+            const fieldError = firstFieldError(field.state.meta.errors);
+            return (
+              <label className="block text-sm font-medium">
+                Variant title
+                <input
+                  aria-label={variant ? `Variant title ${variant.id}` : "Variant title"}
+                  className="mt-1 w-full rounded-md border px-3 py-2"
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                />
+                {fieldError ? <span className="mt-1 block text-xs text-red-600">{fieldError}</span> : null}
+              </label>
+            );
+          }}
         </form.Field>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <form.Field name="price">
-          {(field) => (
-            <label className="block text-sm font-medium">
-              Price
-              <input
-                aria-label={variant ? `Variant price ${variant.id}` : "Variant price"}
-                inputMode="decimal"
-                className="mt-1 w-full rounded-md border px-3 py-2"
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(event) => field.handleChange(event.target.value)}
-              />
-            </label>
-          )}
+          {(field) => {
+            const fieldError = firstFieldError(field.state.meta.errors);
+            return (
+              <label className="block text-sm font-medium">
+                Price
+                <input
+                  aria-label={variant ? `Variant price ${variant.id}` : "Variant price"}
+                  inputMode="decimal"
+                  className="mt-1 w-full rounded-md border px-3 py-2"
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                />
+                {fieldError ? <span className="mt-1 block text-xs text-red-600">{fieldError}</span> : null}
+              </label>
+            );
+          }}
         </form.Field>
 
         <form.Field name="compareAtPrice">
-          {(field) => (
-            <label className="block text-sm font-medium">
-              Compare-at price
-              <input
-                aria-label={variant ? `Variant compare price ${variant.id}` : "Variant compare price"}
-                inputMode="decimal"
-                className="mt-1 w-full rounded-md border px-3 py-2"
-                value={field.state.value}
-                onChange={(event) => field.handleChange(event.target.value)}
-              />
-            </label>
-          )}
+          {(field) => {
+            const fieldError = firstFieldError(field.state.meta.errors);
+            return (
+              <label className="block text-sm font-medium">
+                Compare-at price
+                <input
+                  aria-label={variant ? `Variant compare price ${variant.id}` : "Variant compare price"}
+                  inputMode="decimal"
+                  className="mt-1 w-full rounded-md border px-3 py-2"
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                />
+                {fieldError ? <span className="mt-1 block text-xs text-red-600">{fieldError}</span> : null}
+              </label>
+            );
+          }}
         </form.Field>
 
         <form.Field name="currency">
-          {(field) => (
-            <label className="block text-sm font-medium">
-              Currency
-              <input
-                aria-label={variant ? `Variant currency ${variant.id}` : "Variant currency"}
-                className="mt-1 w-full rounded-md border px-3 py-2 uppercase"
-                maxLength={3}
-                value={field.state.value}
-                onChange={(event) => field.handleChange(event.target.value.toUpperCase())}
-              />
-            </label>
-          )}
+          {(field) => {
+            const fieldError = firstFieldError(field.state.meta.errors);
+            return (
+              <label className="block text-sm font-medium">
+                Currency
+                <input
+                  aria-label={variant ? `Variant currency ${variant.id}` : "Variant currency"}
+                  className="mt-1 w-full rounded-md border px-3 py-2 uppercase"
+                  maxLength={3}
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(event) => field.handleChange(event.target.value.toUpperCase())}
+                />
+                {fieldError ? <span className="mt-1 block text-xs text-red-600">{fieldError}</span> : null}
+              </label>
+            );
+          }}
         </form.Field>
       </div>
 
@@ -194,18 +212,24 @@ export function ProductVariantForm({
         </form.Field>
 
         <form.Field name="weight">
-          {(field) => (
-            <label className="block text-sm font-medium">
-              Weight <span className="font-normal text-slate-500">(optional)</span>
-              <input
-                aria-label={variant ? `Variant weight ${variant.id}` : "Variant weight"}
-                inputMode="decimal"
-                className="mt-1 w-full rounded-md border px-3 py-2"
-                value={field.state.value}
-                onChange={(event) => field.handleChange(event.target.value)}
-              />
-            </label>
-          )}
+          {(field) => {
+            const fieldError = firstFieldError(field.state.meta.errors);
+            return (
+              <label className="block text-sm font-medium">
+                Weight <span className="font-normal text-slate-500">(optional, numeric)</span>
+                <input
+                  aria-label={variant ? `Variant weight ${variant.id}` : "Variant weight"}
+                  inputMode="decimal"
+                  className="mt-1 w-full rounded-md border px-3 py-2"
+                  placeholder="e.g. 1.000"
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                />
+                {fieldError ? <span className="mt-1 block text-xs text-red-600">{fieldError}</span> : null}
+              </label>
+            );
+          }}
         </form.Field>
       </div>
 

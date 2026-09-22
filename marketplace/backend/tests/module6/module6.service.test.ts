@@ -203,6 +203,30 @@ describe("Module 6 service authorization and boundary guards", () => {
     expect(repository.listSellerProducts).not.toHaveBeenCalled();
   });
 
+  it("returns an empty seller Product list when an approved seller has no active store yet", async () => {
+    const sellerId = randomUUID();
+    const repository = repositoryStub();
+    const service = new ProductsService({ repository });
+    const context = sellerContext([PRODUCT_PERMISSION.SELLER_READ], sellerId);
+    context.storeIds = new Set();
+
+    const result = await service.listSellerProducts(context, {
+      page: 1,
+      pageSize: 20,
+      sort: "createdAt",
+      direction: "desc",
+    });
+
+    expect(result).toEqual({
+      items: [],
+      meta: { page: 1, pageSize: 20, totalItems: 0, totalPages: 0 },
+    });
+    expect(repository.listSellerProducts).toHaveBeenCalledWith(
+      { sellerIds: [sellerId], storeIds: [] },
+      expect.objectContaining({ page: 1, pageSize: 20 }),
+    );
+  });
+
   it("returns the enriched seller Product management projection without changing Product lifecycle fields", async () => {
     const sellerId = randomUUID();
     const storeId = randomUUID();

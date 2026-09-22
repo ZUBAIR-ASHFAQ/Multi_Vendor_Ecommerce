@@ -40,11 +40,14 @@ export function ReportExportControls({
               variant="outline"
               disabled={createRun.isPending}
               onClick={() => {
-                void createRun
-                  .mutateAsync({ reportCode, filters, outputFormat })
-                  .then((run) =>
-                    navigate({ to: "/reports/runs/$runId", params: { runId: run.id } }),
-                  );
+                createRun.mutate(
+                  { reportCode, filters, outputFormat },
+                  {
+                    onSuccess: (run) => {
+                      void navigate({ to: "/reports/runs/$runId", params: { runId: run.id } });
+                    },
+                  },
+                );
               }}
             >
               Export {outputFormat.toUpperCase()}

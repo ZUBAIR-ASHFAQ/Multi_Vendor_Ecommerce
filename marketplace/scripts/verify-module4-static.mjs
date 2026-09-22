@@ -518,6 +518,13 @@ function main() {
     "useSuspendSellerMutation",
   ]);
 
+  requireText("frontend/src/features/sellers/components/seller-layout.tsx", [
+    "CATALOG_PERMISSION.READ",
+    "hasCatalogPermission(user.permissions, CATALOG_PERMISSION.READ)",
+    'to="/seller/catalog-taxonomy"',
+    "Catalog taxonomy",
+  ]);
+
   requireText("frontend/src/app/routes/sellers.routes.tsx", [
     'path: "/seller/staff"',
     'path: "/admin/sellers/suspend"',
@@ -545,8 +552,10 @@ function main() {
   ]);
 
   requireText("frontend/src/features/sellers/hooks/use-sellers.ts", [
-    "sellerQueryKeys.publicStores",
-    "Promise.all",
+    'import {',
+    'invalidateStoreCommerceState',
+    'invalidateSellerLifecycleCommerceState',
+    'from "@/lib/commerce-cache-invalidation"',
   ]);
 
   requireText("backend/src/database/seeds/module21-e2e.seed.ts", [

@@ -1,8 +1,15 @@
 ﻿$ErrorActionPreference = "Stop"
 
 $root = $PSScriptRoot
-$backend = Join-Path $root "marketplace-backend"
-$frontend = Join-Path $root "marketplace-frontend"
+$backend = Join-Path $root "backend"
+$frontend = Join-Path $root "frontend"
+if (-not (Test-Path (Join-Path $backend "package.json"))) {
+    throw "Backend directory not found or invalid: $backend"
+}
+
+if (-not (Test-Path (Join-Path $frontend "package.json"))) {
+    throw "Frontend directory not found or invalid: $frontend"
+}
 
 Write-Host ""
 Write-Host "========================================"
@@ -64,20 +71,35 @@ $env:STORAGE_SIGNED_URL_TTL_SECONDS =
 $env:DOCUMENT_UPLOAD_POLICY_JSON =
     '{"seller_verification":{"allowedMimeTypes":["application/pdf","image/png","image/jpeg"],"maxSizeBytes":5242880},"store_asset":{"allowedMimeTypes":["image/png","image/jpeg","image/webp"],"maxSizeBytes":5242880},"product_media":{"allowedMimeTypes":["image/png","image/jpeg","image/webp"],"maxSizeBytes":5242880}}'
 
-$env:STRIPE_SECRET_KEY =
-    "sk_test_local_development_placeholder"
-
-$env:STRIPE_WEBHOOK_SECRET =
-    "whsec_local_development_placeholder"
-
+# Stripe credentials are intentionally not set here. The backend loads backend/.env and
+# the frontend loads frontend/.env.local, so this launcher must never overwrite real test keys
+# with placeholders. Backend environment validation fails fast when the required Stripe secrets
+# are missing.
 $env:STRIPE_CURRENCY_EXPONENTS_JSON =
     '{"USD":2,"PKR":2}'
 
+# Local development keeps real Stripe test credentials from backend/.env + frontend/.env.local,
+# while email delivery and seller payouts use deterministic non-production adapters so those
+# workflows can be exercised end to end without external provider accounts. Production rejects
+# both deterministic modes.
 $env:NOTIFICATION_EMAIL_PROVIDER_MODE =
-    "disabled"
+    "deterministic_test"
+
+$env:NOTIFICATION_EMAIL_FROM =
+    "notifications@marketplace.local"
 
 $env:PAYOUT_PROVIDER_MODE =
-    "unconfigured"
+    "deterministic_test"
+
+$env:PAYOUT_PROVIDER_TYPE =
+    "local_dev"
+
+$env:WALLET_PAYOUT_TEST_CLOCK_OFFSET_DAYS =
+    "0"
+
+# Prevent stale provider-module settings inherited from an existing PowerShell session from
+# changing deterministic local behavior.
+Remove-Item Env:PAYOUT_PROVIDER_ADAPTER_MODULE -ErrorAction SilentlyContinue
 
 $env:HOST = "0.0.0.0"
 $env:PORT = "4000"
@@ -91,8 +113,10 @@ $env:VITE_API_BASE_URL =
 $env:VITE_APP_NAME =
     "Marketplace"
 
-$env:VITE_STRIPE_PUBLISHABLE_KEY =
-    "pk_test_local_development_placeholder"
+# Enables development-only UI guidance for the deterministic payout adapter. This variable is
+# browser-visible and carries no secret.
+$env:VITE_LOCAL_DEMO_PROVIDERS =
+    "true"
 
 # Never allow the test database variable to affect normal development.
 Remove-Item Env:TEST_DATABASE_URL -ErrorAction SilentlyContinue
@@ -227,3 +251,4 @@ Write-Host "Backend : http://localhost:4000"
 Write-Host ""
 
 Start-Process "http://localhost:5174"
+

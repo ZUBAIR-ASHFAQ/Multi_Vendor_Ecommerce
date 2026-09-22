@@ -208,11 +208,12 @@ function validateEnvironmentRelationships(value: EnvironmentObject, ctx: z.Refin
 
   validateStripeCurrencyExponentMap(value.STRIPE_CURRENCY_EXPONENTS_JSON, ctx);
 
-  if (hasStripeSecret !== hasStripeWebhookSecret) {
+  if (!hasStripeSecret || !hasStripeWebhookSecret) {
     ctx.addIssue({
       code: "custom",
       path: ["STRIPE_SECRET_KEY"],
-      message: "STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET must be configured together.",
+      message:
+        "STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET are required because the Payments service is always enabled.",
     });
   }
 
